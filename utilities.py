@@ -4,6 +4,8 @@ from typing import List
 from models.medico import Medico
 from models.storage import Storage
 
+# TODO: Probabilmente da creare classe Rules
+
 
 def count_turni_occupati_in_combinazione(info_combinations_for_turno, combination: List[Medico]):
     nuovi_turni_occupati = 0
@@ -42,14 +44,3 @@ def is_nuovo_medico_e_gia_soddisfatto(combination, info):
 def check_if_skip(combination: List[Medico], info, turno: datetime.datetime):
     return are_there_duplicates(combination) or is_nuovo_medico_e_gia_soddisfatto(combination,info) \
            or is_medico_in_12_ore_prec(combination, turno)
-
-
-""" Non eliminarlo che è in un commento da un'altra parte del codice
-def check_turno_okay_for_recursion(turno: datetime.datetime):
-    is_turno_okay = True
-    for sede in Storage.sedi:
-        if not sede.is_day_okay(turno):
-            is_turno_okay = False  # non ha senso testare un giorno già a posto
-            break
-    return is_turno_okay
-"""

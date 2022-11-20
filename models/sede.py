@@ -46,12 +46,6 @@ class Sede:
     def __repr__(self):
         return str(self)
 
-    def get_dates_of_month(self, year: int, month: int):
-        return None
-
-    def set_special_date(self, year: int, month: int, day: int, medici_per_turno: int, n_turni: int):
-        return None
-
     def clear_medici_disponibili(self):
         for v in self.month_calendar.values():
             v.clear_medici_disponibili()
@@ -65,7 +59,7 @@ class Sede:
         print('Setting medici...')
         for med in medici:
             # supponiamo che le disponibilità siano tutte e solo di quel mese
-            # set serve solo pr generzione dinamica di medici, togliere poi
+            # set serve solo per generazione dinamica di medici, togliere poi
             if self.nome in med.sedi:
                 for disp in set(med.disponibilita):
                     if disp in self.month_calendar:
@@ -76,15 +70,8 @@ class Sede:
             return self.month_calendar[turno].medici_disponibili
         return []
 
-    # def remove_medico(self, medico: Medico, day: datetime.date):
-    #    return self.month_calendar[day].tu
-
     def clear_medici_per_turno(self, turno: datetime.datetime):
         self.month_calendar[turno].turni_occupati = []
 
     def set_medico(self, medico: Medico, turno: datetime.datetime):
         self.month_calendar[turno].turni_occupati.append(medico)
-
-    def is_day_okay(self, day: datetime.datetime):
-        """It tells you if day has all the doctors that are needed"""
-        return self.month_calendar[day].medici_per_turno == len(self.month_calendar[day].turni_occupati)

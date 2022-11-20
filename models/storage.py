@@ -26,7 +26,7 @@ def get_turni_effettivi():
     """Tiene in conto anche le ore che non possono essere riempite"""
     tot_turni = 0  # non riempiti a priori
     Storage.tot_turni_occ_a_priori = 0
-    Storage.turni_non_riempibili = 0
+    # Storage.turni_non_riempibili = 0
     i = 0
     for turno in Storage.calendar_turni:
         i += 1
@@ -45,11 +45,11 @@ def get_turni_effettivi():
             if len(medici_liberi) == 0:
                 continue
             elif len(medici_liberi) + len(turni_occ) <= sede.medici_per_turno:
-                tot_turni += sede.medici_per_turno - len(medici_liberi) - len(turni_occ)  # da testare con 18 dic-20:00
-                continue
+                tot_turni += sede.medici_per_turno + len(medici_liberi) - len(turni_occ)  # da testare con 18 dic-20:00
+                continue  # TODO: Da capire bene questo if
             else:
                 tot_turni += sede.medici_per_turno
-        Storage.turni_non_riempibili = (i*4) - (tot_turni + Storage.tot_turni_occ_a_priori)  # hardcode del 4
+        Storage.turni_non_riempibili = (i*4) - (tot_turni + Storage.tot_turni_occ_a_priori)  # hardcode del 4, debug
 
     turni_riempibili_e_riempiti = tot_turni + Storage.tot_turni_occ_a_priori
     return turni_riempibili_e_riempiti
@@ -64,6 +64,7 @@ def init_storage(all_medici, year: int, month: int):
     Storage.calendar_turni = calendar_turni
     Storage.all_medici = all_medici
     Storage.sedi = sedi
+    calculate_how_may_doctors_da_soddisfare(Storage.all_medici)
 # Storage.tot_turni = get_turni_effettivi() se lo lasci qua prima devi effettivamente settare i medici a prescindere!
 
 

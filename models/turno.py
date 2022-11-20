@@ -7,12 +7,15 @@ from models.medico import Medico, real_update_sodd
 class Turno:
     def __init__(self, data: datetime.datetime, medici_per_turno: int):
         self.data = data
-        self.turni_occupati = []  # dentro ci sarà l'oggetto [Medico]
-        self.medici_disponibili = []
-        self.medici_per_turno = medici_per_turno
+        self.turni_occupati: List[Medico] = []
+        self.medici_disponibili: List[Medico] = []
+        self.medici_per_turno: int = medici_per_turno
 
     def clear_medici_disponibili(self):
         self.medici_disponibili = []
+
+    def __str__(self):
+        return 'Turno ' + str(self.data) + ' con medici ' + str(self.turni_occupati)
 
 
 def copy_list(my_list: List[Medico]):
@@ -24,13 +27,7 @@ def get_all_medici_disp_per_turno(sedi: List, turno: datetime.datetime, con_sost
     container_combinations_for_turno = []
     info_combinations_for_turno = []
     # list_medici_disponibili = []
-    """
-    reminder_medici = []
-    for sede in sedi:
-        medici_gia_assegnati = sede.get_medici_occupati_per_turno(turno)
-        for med in medici_gia_assegnati:
-            reminder_medici.append(med) 
-    """  # TODO: Trova modo più performante per farlo, e capire se effettivamente serve, forse no
+
     for sede in sedi:
         medici_gia_assegnati = sede.get_medici_occupati_per_turno(turno)
         n_medici_necessari = sede.medici_per_turno - len(medici_gia_assegnati)
@@ -78,10 +75,11 @@ def set_combinazione_turno(turno: datetime.datetime, combination: List[Medico], 
         for sede in sedi:
             sede.clear_medici_per_turno(turno)
     for i in range(len(combination)):
-        sede = info_combinations_for_turno[i]['sede']
+        info_med = info_combinations_for_turno[i]
+        sede = info_med['sede']
         med = combination[i]
         # Medico già inserito quindi non c'è bisogno di aggiornare ne in 'add' ne in 'sub'
-        if not info_combinations_for_turno[i]['nuovo'] and mode == 'add':
+        if not info_med['nuovo'] and mode == 'add':
             if med is not None:
                 sede.set_medico(med, turno)
             continue
@@ -89,6 +87,7 @@ def set_combinazione_turno(turno: datetime.datetime, combination: List[Medico], 
             continue
         if mode == 'add':
             sede.set_medico(med, turno)  # IMPORTANTE
-        real_update_sodd(med, mode, out)
+        if info_med['nuovo']:
+            real_update_sodd(med, mode, out)
 
     return out
