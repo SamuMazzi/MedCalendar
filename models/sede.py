@@ -1,6 +1,6 @@
 import calendar
 import datetime
-from typing import List
+from typing import List, Dict
 from collections import OrderedDict
 
 from models.enums import Sedi
@@ -27,15 +27,19 @@ class Sede:
     tot_medici_per_turno = 0
 
     def __init__(self, nome: Sedi,
-                 medici_per_turno: int, calendar_turni: List[datetime.datetime]):  # TODO: Specificare mese e date speciali nei parametri magari
+                 medici_per_turno: int,
+                 calendar_turni: List[datetime.datetime],
+                 special_days: Dict[datetime.datetime, Turno] = {}):
         self.nome = nome
         # iter_days = calendar.Calendar().itermonthdates(datetime.date.today().year, datetime.date.today().month)
         self.month_calendar = OrderedDict()
         """Giorni ordinati del mese grazie a OrderedDict"""
         self.medici_per_turno = medici_per_turno
-        self.special_days = {}
-        for date_day in calendar_turni:
-            self.month_calendar[date_day] = Turno(date_day, medici_per_turno)
+        self.special_days = special_days
+        for turno_date in calendar_turni:
+            self.month_calendar[turno_date] = Turno(turno_date, medici_per_turno)
+        for turno_date in special_days:
+            self.month_calendar[turno_date] = Turno(turno_date, medici_per_turno)
 
     def __str__(self):
         out = "Sede " + self.nome.name + "\n"

@@ -13,6 +13,7 @@ class TestFindSoluzione(unittest.TestCase):
         cls.month_calendar = {}
 
     def setup_turni_generali(self):
+        """Deve essere il primo metodo della classe"""
         for sede in self.best_sol.sedi:
             for date_day, turno in sede.month_calendar.items():
                 if date_day in self.month_calendar:

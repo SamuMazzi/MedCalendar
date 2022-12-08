@@ -44,7 +44,6 @@ class FindSolution:
         info_combinations_for_turno, container_combinations_for_turno = get_all_medici_disp_per_turno(Storage.sedi,
                                                                                                       turno)
         # TODO: Serve una funzione che in un certo giorno ti dica quanti turni mancano al giorno finale
-        # TODO: Medici soddisfatti è sempre == 0, problema!
         if container_combinations_for_turno is None:
             return self.handle_empty_container_turno(s, turni_occupati, doc_sodd, conv_sodd, inc_sodd, mode)
 

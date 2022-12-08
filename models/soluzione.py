@@ -9,7 +9,7 @@ class Soluzione:
         self.sostituti_soddisfatti = 0
         self.n_count_poss = 0
         self.best_sol_already_found = False
-        self.n_best_sol = 0  # è una prova
+        self.n_best_sol = 0  # è una prova, debug
 
     def reset_best_sol_found(self):
         self.best_sol_already_found = False

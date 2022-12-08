@@ -22,7 +22,6 @@ def delete_turni_vuoti():
             if len(sede.get_medici_disp_per_turno(turno)) == 0:
                 delete_list.append(turno)
                 turni_vuoti[turno] = 1 if turni_vuoti[turno] is None else turni_vuoti[turno] + 1
-        # TODO: Gestire poi comportamento nelle fn (forse già fatto)
         for key in delete_list:
             del sede.month_calendar[key]
 
@@ -40,14 +39,12 @@ def set_medici_disponibili():
 def set_default_medici():  # TODO: Aggiungere controllo su 12 ore precedenti, (e massimo numero per persona (?))
     turni_posizionati_a_prescindere = 0
     sodd = [0, 0, 0]
-    # TODO: In entrambe le versioni -> e se su 3 persone in 2 sedi da 2, 1 si occupa nella seconda sede? L'altra potrebbe essere occupata
     for turno in Storage.calendar_turni:
         sedi_turni_liberi_per_turno = {}
         medici_gia_occupati_per_turno = []
         for i in range(len(Storage.sedi)):
             for sede in Storage.sedi:
                 medici_disp = list(filter(lambda med: med not in medici_gia_occupati_per_turno, sede.get_medici_disp_per_turno(turno)))
-                # TODO: Miglioramento futuro se su 3 persone 2 possono in 2 sedi e l'altra solo in 1, conviene mettere quell'una dove può e le altre dove vogliono
                 # Setta medici obbligati
                 if 0 < len(medici_disp) <= sede.medici_per_turno:
                     for med in medici_disp:
@@ -100,7 +97,6 @@ def sedi_hanno_stessi_medici_liberi_per_turno(medici_per_turno_per_sede: dict):
 
 
 class MainHandler:
-
     def setup(self):
         set_medici_disponibili()
         delete_turni_vuoti()
@@ -130,7 +126,7 @@ def copy_sol_in_new_sedi(best_sol):  # Non dovrebbe servire ma a causa di un bug
                         sede.month_calendar[turno].turni_occupati = meds.turni_occupati
 
 
-def handle_new_round(main_handler, best_sol, medici):  # TODO: Cambia nome
+def handle_new_round(main_handler, best_sol, medici):
     best_sol.reset_best_sol_found()
     if best_sol.turni_occupati == Storage.tot_turni:
         return True
@@ -141,7 +137,7 @@ def handle_new_round(main_handler, best_sol, medici):  # TODO: Cambia nome
 
 
 def start():
-    all_medici = read_dati('input.xlsx')
+    all_medici = read_dati('assets/input.xlsx')
     init_storage(all_medici, 2022, 12)
     main_handler = MainHandler()
     main_handler.setup()
