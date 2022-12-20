@@ -1,0 +1,69 @@
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/router';
+import { useAppSelector }  from '../logic/redux/store'
+import { getFromStorage } from './local_storage';
+export { RouteGuard };
+
+function RouteGuard({ children }) {    
+    const authState = useAppSelector((state) => state.auth);
+    const [authorized, setAuthorized] = useState(false);
+    const router = useRouter();
+
+    useEffect(() => {
+        // on initial load - run auth check 
+        authCheck(router.asPath);
+
+        // on route change start - hide page content by setting authorized to false  
+        const hideContent = () => setAuthorized(false);
+        router.events.on('routeChangeStart', hideContent);
+
+        // on route change complete - run auth check 
+        router.events.on('routeChangeComplete', authCheck)
+
+        // unsubscribe from events in useEffect return function
+        return () => {
+            router.events.off('routeChangeStart', hideContent);
+            router.events.off('routeChangeComplete', authCheck);
+        }
+
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [authState]);
+
+    function authCheck(url) {
+        console.log(authState)
+        const normal_user = authState.id.length > 0
+        const admin_user = authState.admin
+        // redirect to login page if accessing a private page and not logged in 
+        const publicPaths = ['/login'];
+        const adminPaths = ['/admin_page', '/add_configuration_admin', '/upload_turni_admin'];
+        const path = url.split('?')[0];
+        const { distretto } = router.query;
+        //const passInserted = getFromStorage('password_inserted')
+
+        // const query = url.split('?')[1];
+        /* if (!passInserted) { //TODO: Ancora da testare, dava dei problemi l'ultima volta
+            console.log('pass non inserita o sbagliata')
+            setAuthorized(false);
+            router.push({
+                pathname: '/page_password',
+                query: { returnUrl: router.asPath }
+            })
+        } else */ if (!normal_user && !publicPaths.some((el) => path.includes(el))) {
+            setAuthorized(false);
+            router.push({
+                pathname: '/login',
+                query: { returnUrl: router.asPath }
+            })
+            //* condizione sui distretti deve ancora essere testata
+        } else if (false) { //TODO: (!admin_user || (distretto && authState.distretti.includes(distretto))) && adminPaths.some(el => path.includes(el))
+            setAuthorized(false);
+            router.back()
+        } else {
+            console.log('User logged in');
+            setAuthorized(true);
+        }
+        return;
+    }
+
+    return (authorized && children);
+}

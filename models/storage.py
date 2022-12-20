@@ -1,10 +1,9 @@
-import copy
 import datetime
 from typing import List
 
-from models.enums import Sedi, Roles
+from models.enums import Roles
 from models.medico import Medico
-from models.sede import create_calendar_turni, Sede
+from models.sede import Sede, create_calendar_turni_from_data, parse_turno, create_calendar_turni
 
 
 def print_statistics_pre_start():
@@ -15,9 +14,9 @@ def print_statistics_pre_start():
 
 def calculate_how_may_doctors_da_soddisfare(all_medici: List[Medico]):
     for med in all_medici:
-        if med.ruolo == Roles.CONVENZIONATO24:
+        if med.ruolo == Roles.conv24:
             Storage.convenzionati_da_soddisfare += 1
-        elif med.ruolo == Roles.INCARICATO12 or med.ruolo == Roles.INCARICATO24:
+        elif med.ruolo == Roles.inc12 or med.ruolo == Roles.inc24:
             Storage.incaricati_da_soddisfare += 1
     print_statistics_pre_start()
 
@@ -55,13 +54,30 @@ def get_turni_effettivi():
     return turni_riempibili_e_riempiti
 
 
-def init_storage(all_medici, year: int, month: int):
-    calendar_turni = create_calendar_turni(year, month)
+def translate_turni(disp, year, month):
+    out = []
+    for fascia, giorni in disp.items():
+        for day in giorni:
+            d = datetime.datetime(year, month, day)
+            out.append(parse_turno(d, fascia))
+    return out
+
+
+def init_storage(data):
     sedi = []
-    s3 = Sede(Sedi.FORMIGINE, 2, copy.deepcopy(calendar_turni))
-    s4 = Sede(Sedi.SASSUOLO, 2, copy.deepcopy(calendar_turni))
-    sedi.extend([s3, s4])
-    Storage.calendar_turni = calendar_turni
+    total_calendar_turni = []
+    for sede in data['sedi']:
+        calendar_sede = create_calendar_turni(data['year'], data['month'])
+        # create_calendar_turni_from_data(data['year'], data['month'], sede['fasce_turno'])
+        s = Sede(sede['nome'], sede['medici_per_turno'], calendar_sede)
+        sedi.append(s)
+        total_calendar_turni.extend([turno for turno in calendar_sede if turno not in total_calendar_turni])
+    Storage.calendar_turni = list(set(list(total_calendar_turni)))  # Lista con tutti i turni, ripetuti solo una volta
+    if isinstance(data['medici'][0], Medico):  # debug
+        all_medici = data['medici']
+    else:
+        all_medici = [Medico(info['id'], info['nome'], info['ruolo'], translate_turni(info['disponibilita'], data['year'], data['month']), info['sedi']) for info in data['medici'] if True]
+    Storage.calendar_turni = total_calendar_turni
     Storage.all_medici = all_medici
     Storage.sedi = sedi
     calculate_how_may_doctors_da_soddisfare(Storage.all_medici)

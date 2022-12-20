@@ -1,0 +1,16 @@
+/* add css styles here (optional) */
+
+.test {
+  display: inline-block;
+  margin: 2em auto;
+  border: 2px solid #000;
+  font-size: 2em;
+}
+
+.mainPaper {
+  max-width: "100%";
+  margin: "0 auto";
+  background-color: "rgba(0,0,0,0.8)";
+  height: "100%";
+  overflow: "auto";
+}

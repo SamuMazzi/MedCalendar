@@ -6,26 +6,27 @@ import DialogContentText from '@mui/material/DialogContentText';
 import DialogTitle from '@mui/material/DialogTitle';
 import { useRouter } from 'next/router'
 
-import { RootState, useAppSelector }  from '../logic/store'
-import { setMeseMedico } from '../logic/firestore';
+import { useAppSelector }  from '../logic/redux/store'
+import { setMeseMedico } from '../logic/server/firestore';
+import { mesi } from '../pages/raccolta_disponibilita';
 
 export interface PropsAlert {
     onCloseFn: Function
 }
 
 export default function AlertDialog(props: PropsAlert) {
-  const generalState = useAppSelector((state: RootState) => state.turni)
+  const generalState = useAppSelector((state) => state.turni)
+  const authState = useAppSelector((state) => state.auth)
   const [ loading, setLoading ] = useState(false)
   const router = useRouter()
-
 
   const getTextRiassunto = () => {
     const sedi = generalState.sedi;
     const disponibilita = generalState.disponibilita
-    const medico = generalState.medico
-    const mese = generalState.mese
+    const medico = authState.nome
+    const mese = mesi[(new Date(generalState.mese!)).getMonth() + 1]
     const nOre = generalState.value
-    const premessa = "Medico: "+ medico +"\nSedi: " + sedi.join(', ') + "\nMese: " + mese.toString() + "\nOre massime: " + nOre.toString()
+    const premessa = "Medico: "+ medico +"\nSedi: " + sedi.join(', ') + "\nMese: " + mese + "\nOre massime: " + nOre.toString()
     let riassuntoDisponibilita = "\n\nLe disponibilità sono:\n"
     for(let turno of Object.keys(disponibilita)){
         riassuntoDisponibilita += "Turno: " + turno
@@ -37,7 +38,7 @@ export default function AlertDialog(props: PropsAlert) {
   const onConfirm = async () => {
     setLoading(true)
     try {
-        await setMeseMedico(generalState.id_medico, generalState)
+        await setMeseMedico("distretto", generalState.id_medico, generalState)
         //props.onCloseFn()
         router.push("/greetings")
     } finally {

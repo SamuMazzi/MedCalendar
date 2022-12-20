@@ -1,6 +1,6 @@
 import { Grid, Alert, AlertTitle, Button } from '@mui/material';
 
-export default function Raccolta() {
+export default function Greetings() {
   return (
     <Grid container spacing={2} sx={{p:8}} 
         direction="column"

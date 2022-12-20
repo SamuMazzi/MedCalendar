@@ -1,11 +1,6 @@
-// Import the functions you need from the SDKs you need
 import { initializeApp } from "firebase/app";
-//import { getAnalytics } from "firebase/analytics";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+import { getAnalytics, isSupported } from "firebase/analytics";
 
-// Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
 const firebaseConfig = {
   apiKey: "AIzaSyA3wL8d2of_SePR0dRY4AuLBKf9JvcUKA0",
   authDomain: "programmazione-turni-gm.firebaseapp.com",
@@ -16,6 +11,5 @@ const firebaseConfig = {
   measurementId: "G-1M9KL6CP1P"
 };
 
-// Initialize Firebase
 export const firebaseApp = initializeApp(firebaseConfig);
-//const analytics = getAnalytics(firebaseApp); window is not defined //TODO Risolvi
+const analytics = isSupported().then(yes => yes ? getAnalytics(firebaseApp) : null);

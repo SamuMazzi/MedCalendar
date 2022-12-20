@@ -4,15 +4,15 @@ import datetime
 from openpyxl import load_workbook, Workbook
 from openpyxl.styles import PatternFill, Border, Side
 
-from models.enums import Roles, Sedi
+from models.enums import Roles
 from models.medico import Medico
-from models.sede import create_calendar_turni
 from models.soluzione import Soluzione
 
 
 # ws.merge_cells('A2:D2')
 from models.storage import Storage
 
+# TODO: Il write Excel ha un bug per cui se la lista di giorni non è ordinata, ti può sbagliare posizizonam sulle righe
 
 def is_weekend(day: datetime.datetime):
     weekday = calendar.weekday(day.year, day.month, day.day)
@@ -22,15 +22,15 @@ def is_weekend(day: datetime.datetime):
 
 
 def get_color_from_role(med: Medico):
-    if med.ruolo == Roles.CONVENZIONATO24:
+    if med.ruolo.lower() == Roles.conv24:
         return PatternFill(start_color='FFb1f4ff',
                            end_color='FFb1f4ff',
                            fill_type='solid')
-    elif med.ruolo == Roles.INCARICATO24 or med.ruolo == Roles.INCARICATO12:
+    elif med.ruolo.lower() == Roles.inc24 or med.ruolo == Roles.inc12:
         return PatternFill(start_color='FFccff9b',
                            end_color='FFccff9b',
                            fill_type='solid')
-    elif med.ruolo == Roles.SOSTITUTO:
+    elif med.ruolo.lower() == Roles.sost:
         return PatternFill(start_color='FFffd07d',
                            end_color='FFffd07d',
                            fill_type='solid')
@@ -45,7 +45,7 @@ def write_soluzione(sol: Soluzione, filename: str):
                            end_color='FFfb5959',
                            fill_type='solid')
 
-    turni = create_calendar_turni(2022, 12)
+    turni = Storage.calendar_turni  # create_calendar_turni(2022, 12)
     for i in range(len(turni)):
         ws.cell(row=i + 2, column=1).value = str(turni[i])
         cell = ws.cell(row=i + 2, column=1)
@@ -65,7 +65,7 @@ def write_soluzione(sol: Soluzione, filename: str):
             for j in range(len(turno.turni_occupati)):
                 med: Medico = turno.turni_occupati[j]
                 med_cell = ws.cell(row=count_row, column=count_col + i + j)
-                med_cell.value = med.nome + ' ' + med.cognome
+                med_cell.value = med.nome
                 med_cell.fill = get_color_from_role(med)
 
             count_row += 1
@@ -96,23 +96,25 @@ def write_soluzione(sol: Soluzione, filename: str):
 
 def parse_ruolo(ruolo: str):
     if ruolo.startswith('TITOLARE'):
-        return Roles.CONVENZIONATO24
+        return Roles.conv24
     if ruolo.startswith('INCARICO 48'):
-        return Roles.INCARICATO24
+        return Roles.inc24
+    if ruolo.startswith('INCARICO 24'):
+        return Roles.inc24
     if ruolo.startswith('INCARICO 12'):
-        return Roles.INCARICATO12
+        return Roles.inc12
     if ruolo.startswith('SOSTITUTO'):
-        return Roles.SOSTITUTO
+        return Roles.sost
 
 
 def parse_sedi(sedi: str):
     list_sedi = sedi.split(',')
     out_list = []
     for sede in list_sedi:
-        if sede.strip() == 'SASSUOLO':
-            out_list.append(Sedi.SASSUOLO)
-        elif sede.strip() == 'FORMIGINE':
-            out_list.append(Sedi.FORMIGINE)
+        if sede.strip().lower() == 'sassuolo':
+            out_list.append('sassuolo')
+        elif sede.strip().lower() == 'formigine':
+            out_list.append('formigine')
     return out_list
 
 
@@ -121,21 +123,25 @@ def read_dati(filename: str):
     ws = wb.active
 
     medici = []
+    # 18, 19, 23, 26, 28
+    for i in range(2, 1000):  # iterate over medici
+        nome = ws.cell(row=i, column=2).value
+        if nome is None:
+            break
+        cognome = ws.cell(row=i, column=3).value
+        ruolo = parse_ruolo(ws.cell(row=i, column=4).value)
+        turni_max = ws.cell(row=i, column=6).value
+        sedi_disp = parse_sedi(ws.cell(row=i, column=7).value)
 
-    for i in range(2, 34):
-        nome = ws.cell(row=i, column=3).value
-        cognome = ws.cell(row=i, column=4).value
-        ruolo = parse_ruolo(ws.cell(row=i, column=5).value)
-        sedi_disp = parse_sedi(ws.cell(row=i, column=6).value)
-
-        med: Medico = Medico(i, nome, cognome, ruolo, [], sedi_disp)
+        med: Medico = Medico(str(i), nome + ' ' + cognome, ruolo, [], sedi_disp, n_turni_max=turni_max)
         all_disp = []
         mode = 'night'
-        for j in range(7, 41):
+        for j in range(8, 47):
             el = ws.cell(row=i, column=j).value
             header_cell = ws.cell(row=1, column=j).value
             if type(el) is datetime.datetime:
-                all_disp.append(datetime.datetime(el.year, el.month, el.day, hour=20 if mode == 'night' else 8))
+                # el.year + 1 è per colpa di un bug con il file gennaio23!!!
+                all_disp.append(datetime.datetime(el.year + 1, el.month, el.day, hour=20 if mode == 'night' else 8))
             elif header_cell is not None and header_cell.startswith('INDICA UNA'):
                 mode = 'day'
         med.disponibilita = all_disp

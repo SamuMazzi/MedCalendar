@@ -2,12 +2,13 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import type { RootState } from './store'
 
 export type SediType = Record<string, Record<string, number[]>>;
+type LocalTimestamp = number;
 
-interface StateType {
+interface StateTurnoType {
   sedi: string[],
   disponibilita: Record<string, number[]>,
   value: number
-  mese: number
+  mese: LocalTimestamp | undefined
   medico: string
   id_medico: string
 }
@@ -22,18 +23,21 @@ interface ParamMedico {
   id: string
 }
 
-const initialState: StateType = {
+const today = new Date()
+//
+
+const initialStateTurni: StateTurnoType = {
   sedi: [],
   disponibilita: <Record<string, number[]>>{},
   value: 0,
-  mese: 0,
+  mese: (new Date(today.getFullYear(), today.getMonth()+1, today.getDate())).getTime(),
   medico: "",
   id_medico: ""
 }
 
 export const turnoSlice = createSlice({
   name: 'turno', 
-  initialState: initialState,
+  initialState: initialStateTurni,
   /**
    * sedi:{
    *    'Formigine': {
@@ -47,6 +51,7 @@ export const turnoSlice = createSlice({
       state.value = action.payload
     },
     setMese: (state, action) => {
+      console.log('Slice: setting mese')
       state.mese = action.payload
     },
     setMedico: (state, action: PayloadAction<ParamMedico>) => {

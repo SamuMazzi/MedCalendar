@@ -1,7 +1,7 @@
 import copy
 import unittest
 
-from main import start
+from scheduler import start
 from models.medico import Medico, get_n_turni_per_ruolo
 
 

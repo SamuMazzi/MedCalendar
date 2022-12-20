@@ -1,6 +1,4 @@
 import { Grid, FormControl, InputLabel, Select, MenuItem, Container, SelectChangeEvent } from '@mui/material'
-import { RootState, useAppDispatch,useAppSelector }  from '../logic/store'
-import { setMese, setMedico } from '../logic/slice'
 import { ReactNode } from 'react'
 
 export interface PropsMapDropdown {
@@ -10,11 +8,11 @@ export interface PropsMapDropdown {
     onChangeFn: (event: SelectChangeEvent<any>, child: ReactNode) => void
 }
 
-export default function MapDropdownForm(props: PropsMapDropdown) {
+export function MapDropdownForm(props: PropsMapDropdown) {
   return (
     <Container sx={{py: 1}}>
           <Grid item xs={8} md={6}>
-            <FormControl fullWidth style={{minWidth: 120}}>
+            <FormControl fullWidth>
               <InputLabel>{props.label}</InputLabel>
               <Select
                 value={!Object.keys(props.inputMap).includes(props.value) ? "" : props.value}
@@ -25,6 +23,38 @@ export default function MapDropdownForm(props: PropsMapDropdown) {
                   return (
                     <MenuItem value={keyMap} key={keyMap}>
                       {props.inputMap[keyMap]}
+                    </MenuItem>)
+                  })
+                }
+              </Select>
+            </FormControl>
+          </Grid>
+    </Container>
+  )
+}
+
+export interface PropsListDropdown {
+  value: any
+  label: string
+  inputList: any[],
+  onChangeFn: (event: SelectChangeEvent<any>, child: ReactNode) => void
+}
+
+export function ListDropdownForm(props: PropsListDropdown) {
+  return (
+    <Container sx={{py: 1}}>
+          <Grid item xs={8} md={6}>
+            <FormControl fullWidth sx={{minWidth: 130}}>
+              <InputLabel>{props.label}</InputLabel>
+              <Select
+                value={!props.inputList.includes(props.value) ? "" : props.value}
+                label={props.label}
+                onChange={props.onChangeFn}
+              >
+                {props.inputList.map((val: any) => {
+                  return (
+                    <MenuItem value={val} key={val}>
+                      {val}
                     </MenuItem>)
                   })
                 }

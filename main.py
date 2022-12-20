@@ -1,162 +1,150 @@
-from typing import List
+import json
+
+import flask
+import jsonpickle
 
 from excel_handler import write_soluzione, read_dati
-from models.enums import *
-from models.find_solution import FindSolution
-from models.medico import Medico, real_update_sodd
-from models.sede import Sede
 from models.soluzione import Soluzione
-from models.storage import Storage, init_storage, get_turni_effettivi
-from models.turno import Turno
-from ui import show_UI
+from models.storage import Storage
+from scheduler import start
+
+import functions_framework
 
 
-# TODO calcolo a priori se può esistere una soluzione ottimale
-# TODO Implementare seconda passata che riempe i buchi vuoti anche sforando il numero di turni per medico
+# functions-framework --target hello_world --debug
+"""
+https://europe-west1-programmazione-turni-gm.cloudfunctions.net/schedule_from_data
+"""
+"""
+gcloud functions deploy schedule_from_data --region europe-west1 --allow-unauthenticated --memory 128MB --runtime python310 --timeout 90 --min-instances 0 --max-instances 1 --trigger-http 
+--service-account hello-world-function-sa@for-developers-343319.iam.gserviceaccount.com
+gcloud functions deploy schedule_from_data --runtime python310 --trigger-http --allow-unauthenticated
+"""
 
-def delete_turni_vuoti():
-    turni_vuoti = {}
-    for sede in Storage.sedi:
-        delete_list = []
-        for turno in sede.month_calendar.keys():
-            if len(sede.get_medici_disp_per_turno(turno)) == 0:
-                delete_list.append(turno)
-                turni_vuoti[turno] = 1 if turni_vuoti[turno] is None else turni_vuoti[turno] + 1
-        for key in delete_list:
-            del sede.month_calendar[key]
+@functions_framework.http
+def schedule_from_data(request: flask.request):
+    """Responds to any HTTP request.
+    Args:
+        request (flask.Request): HTTP request object.
+    Returns:
+        The response text or any set of values that can be turned into a
+        Response object using
+        `make_response <http://flask.pocoo.org/docs/1.0/api/#flask.Flask.make_response>`.
+    """
+    """
+     if request.args and 'message' in request.args:
+        return request.args.get('message')
+    elif request_json and 'message' in request_json:
+        return request_json['message']
+    else:
+        return f'Hello World!'
+    """
+    # Set CORS headers for the preflight request
+    if request.method == 'OPTIONS':
+        # Allows GET requests from any origin with the Content-Type
+        # header and caches preflight response for an 3600s
+        headers = {
+            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Methods': 'POST',
+            'Access-Control-Allow-Headers': 'Content-Type',
+            'Access-Control-Max-Age': '3600'
+        }
+        return '', 204, headers
+    headers = {
+        'Access-Control-Allow-Origin': '*'
+    }
 
-    for turno, count in turni_vuoti.items():
-        if count == len(Storage.sedi):
-            Storage.calendar_turni.remove(turno)
+    if request.method != 'POST':
+        return "Method not allowed", 404, headers
 
-
-def set_medici_disponibili():
-    for sede in Storage.sedi:
-        Sede.tot_medici_per_turno += sede.medici_per_turno
-        sede.set_medici_disponibili_per_mese_curr(Storage.all_medici)
-
-
-def set_default_medici():  # TODO: Aggiungere controllo su 12 ore precedenti, (e massimo numero per persona (?))
-    turni_posizionati_a_prescindere = 0
-    sodd = [0, 0, 0]
-    for turno in Storage.calendar_turni:
-        sedi_turni_liberi_per_turno = {}
-        medici_gia_occupati_per_turno = []
-        for i in range(len(Storage.sedi)):
-            for sede in Storage.sedi:
-                medici_disp = list(filter(lambda med: med not in medici_gia_occupati_per_turno, sede.get_medici_disp_per_turno(turno)))
-                # Setta medici obbligati
-                if 0 < len(medici_disp) <= sede.medici_per_turno:
-                    for med in medici_disp:
-                        turni_posizionati_a_prescindere += setta_single_default_medico(med, sede, turno, sodd)
-                    medici_gia_occupati_per_turno.extend(medici_disp)
-                    sedi_turni_liberi_per_turno[sede.nome] = []
-                else:
-                    sedi_turni_liberi_per_turno[sede.nome] = medici_disp
-        # Setta medici se il numero complessivo di questi è == fra tutte le sedi e <= al numero di turni totale per quel giorno, fra le sedi
-        # Se, in quel giorno, tutti possono in tutte le sedi non verranno settati con l'algoritmo di prima, ma con questo si
-        if len(sedi_turni_liberi_per_turno.keys()) == len(Storage.sedi) and sedi_hanno_stessi_medici_liberi_per_turno(sedi_turni_liberi_per_turno):
-            turni_posizionati_a_prescindere += setta_default_medici_in_un_turno_fra_le_sedi(sedi_turni_liberi_per_turno, turno, sodd)
-    return sodd, turni_posizionati_a_prescindere
-
-
-def setta_single_default_medico(med, sede, turno, sodd):
-    sede.set_medico(med, turno)
-    real_update_sodd(med, 'add', sodd)
-    return 1
-
-
-def setta_default_medici_in_un_turno_fra_le_sedi(sedi_turni_liberi_per_turno, turno, sodd):
-    turni_posizionati_a_prescindere = 0
-    medici_disp_per_sede = sedi_turni_liberi_per_turno.values()
-    medici_disp = list(medici_disp_per_sede)[0]  # Prendo la prima lista, tanto sono tutte uguali
-    i = 0
-    for sede in Storage.sedi:
-        for j in range(sede.medici_per_turno):
-            if i >= len(medici_disp):
-                break
-            turni_posizionati_a_prescindere += setta_single_default_medico(medici_disp[i], sede, turno, sodd)
-            i += 1
-    return turni_posizionati_a_prescindere
+    if not request.is_json:
+        return "No JSON attached", 400, headers
+    if len(request.data) > 0:
+        input_data = request.json
+        if 'year' not in input_data or 'month' not in input_data or 'sedi' not in input_data or 'medici' not in input_data:
+            return {'message': "Dati male formattati"}, 400, headers
+        for med in input_data['medici']:
+            if type(med['disponibilita']) != list:
+                print('err')
+                print(med['disponibilita'])
+                return {'message': "Dati male formattati"}, 400, headers
+        data['medici'] = read_dati('assets/gennaio23.xlsx')  # debug
+        sol = start(data)  # request.json
+        string_sol = create_soluzione_response(sol)
+        return string_sol, 200, headers
+    else:
+        return {'message': "Inserisci dei dati"}, 404, headers
 
 
-def sedi_hanno_stessi_medici_liberi_per_turno(medici_per_turno_per_sede: dict):
-    """Per ora controlla solo che il numero di medici totale liberi per quel turno sia minore o uguale al numero
-    massimo, nel caso li posiziona, in futuro si può pensare di ampliarlo per fare in modo che possa prenderne
-    solo una sotto-porzione"""
-    num_medici_disp_in_sede = [len(x) for x in medici_per_turno_per_sede.values()]
-    if len(num_medici_disp_in_sede) == 0 or max(num_medici_disp_in_sede) > Sede.tot_medici_per_turno:
-        return False
-    for medici_per_turno in medici_per_turno_per_sede.values():
-        for medici_per_turno2 in medici_per_turno_per_sede.values():
-            medici_per_turno.sort()
-            medici_per_turno2.sort()
-            if medici_per_turno != medici_per_turno2:
-                return False
-    return True
+# Il client che chiama la funzione scarica dal database i dati di tutti i medici, li invia all'API
+# Poi sempre con quei dati può fare sostituzioni, cosi si evita un doppio download dei dati
+
+# TODO Valutare di togliere medici per turno e data dall'oggetto Turno, sono ridondanti (magari si può aggiungere un riferimento alla classe Sede appartenente)
 
 
-class MainHandler:
-    def setup(self):
-        set_medici_disponibili()
-        delete_turni_vuoti()
-        # TODO: tot_turni non tiene conto delle festività "speciali" di ogni particolare sede
-        sodd, turni_posizionati_a_prescindere = set_default_medici()
-        Storage.tot_turni = get_turni_effettivi()
-        tmp_sol = Soluzione(inc_sodd=sodd[1], conv_sodd=sodd[0], doc_sodd=sodd[2],
-                            turni_occupati=turni_posizionati_a_prescindere)
-        self.find_sol = FindSolution(Storage.all_medici, sol=tmp_sol)
-        return self.find_sol
+def create_soluzione_response(sol: Soluzione):
+    data_out = {}
+    for sede in sol.sedi:
+        data_out[sede.nome] = {}
+        data_json = json.loads(jsonpickle.encode(sede, unpicklable=False))
+        for day_str, turno in data_json['month_calendar'].items():
+            data_out[sede.nome][str(turno['data'])] = [med['uid'] for med in turno['turni_occupati']]
+        data_out[sede.nome]['medici_per_turno'] = data_json['medici_per_turno']
 
-    def update_with_new_docs(self, list_docs: List[Medico]):
-        for sede in Storage.sedi:
-            sede.clear_medici_disponibili()
-            sede.set_medici_disponibili_per_mese_curr(list_docs)
+    data_out['medici'] = [med.__dict__ for med in Storage.all_medici]
+    data_out['turni_occ'] = sol.turni_occupati
+    data_out['tot_turni'] = Storage.tot_turni
+    data_out['turni_non_riemp'] = Storage.turni_non_riempibili
+    data_out['turni_posizionabili'] = Storage.tot_turni - Storage.tot_turni_occ_a_priori
 
-        self.find_sol.medici = list_docs
+    return jsonpickle.encode(data_out, unpicklable=False)
 
 
-def copy_sol_in_new_sedi(best_sol):  # Non dovrebbe servire ma a causa di un bug è cosi
-    for best_sede in best_sol.sedi:
-        for sede in Storage.sedi:
-            if sede.nome == best_sede.nome:
-                meds: Turno
-                for turno, meds in best_sede.month_calendar.items():
-                    if len(best_sede.month_calendar[turno].turni_occupati) > 0:
-                        sede.month_calendar[turno].turni_occupati = meds.turni_occupati
-
-
-def handle_new_round(main_handler, best_sol, medici):
-    best_sol.reset_best_sol_found()
-    if best_sol.turni_occupati == Storage.tot_turni:
-        return True
-
-    main_handler.update_with_new_docs(medici)
-    copy_sol_in_new_sedi(best_sol)
-    return False
-
-
-def start():
-    all_medici = read_dati('assets/input.xlsx')
-    init_storage(all_medici, 2022, 12)
-    main_handler = MainHandler()
-    main_handler.setup()
-    medici_conv = list(filter(lambda med: med.ruolo == Roles.CONVENZIONATO24, Storage.all_medici))
-    medici_inc = list(
-        filter(lambda med: med.ruolo == Roles.INCARICATO12 or med.ruolo == Roles.INCARICATO24, Storage.all_medici))
-    medici_sost = list(filter(lambda med: med.ruolo == Roles.SOSTITUTO, Storage.all_medici))
-    best_sol = main_handler.find_sol.sol
-    type_medici = [medici_conv, medici_inc, medici_sost]
-    mode_medici = ['convenzionati', 'incaricati', 'normale']
-    for i in range(len(type_medici)):
-        handle_new_round(main_handler, best_sol, type_medici[i])
-        main_handler.find_sol.recursive_fn(0, mode_medici[i], best_sol.turni_occupati, doc_sodd=best_sol.medici_soddisfatti,
-                                           conv_sodd=best_sol.convenzionati_soddisfatti, inc_sodd=best_sol.incaricati_soddisfatti)
-
-    return best_sol
-
+data = {
+    'year': 2023,
+    'month': 1,
+    'sedi': [
+        {
+            'nome': 'Formigine',
+            'medici_per_turno': 2,
+            'fasce_turno': {
+                '20-8': "1,2,3,4,5",
+                '8-20': "6,7"
+            }
+        },
+        {
+            'nome': 'Sassuolo',
+            'medici_per_turno': 2,
+            'fasce_turno': {
+                '20-8': "1,2,3,4,5",
+                '8-20': "6,7"
+            }
+        }
+    ],
+    'medici': [
+        {
+            'id': 1,
+            'nome': 'Samuele Mazzi',
+            'ruolo': 'titolare',
+            'disponibilita': [
+                {
+                    '20-8': [1, 13, 14, 15, 18],
+                    '8-20': [1, 3, 4, 5, 10]
+                }
+            ],
+            'sedi': ['Formigine']
+        }
+    ]
+}
 
 if __name__ == '__main__':
-    final_sol = start()
-    write_soluzione(final_sol, "programmazione")
-    show_UI(final_sol)
+    print('main called')
+    data['medici'] = read_dati('assets/gennaio23.xlsx')
+    final_sol = start(data)
+    a = create_soluzione_response(final_sol)
+    print(a)
+    write_soluzione(final_sol, "programmazione_gen_23")
+
+"""
+{"Formigine": {"2023-01-01T20:00:00": ["17"], "2023-01-02T20:00:00": ["2", "4"], "2023-01-03T20:00:00": ["8", "9"], "2023-01-04T20:00:00": ["7", "17"], "2023-01-05T20:00:00": ["2", "4"], "2023-01-06T20:00:00": ["5", "21"], "2023-01-07T08:00:00": ["7", "11"], "2023-01-07T20:00:00": ["23"], "2023-01-08T08:00:00": ["19", "5"], "2023-01-08T20:00:00": ["29"], "2023-01-09T20:00:00": ["4", "7"], "2023-01-10T20:00:00": ["5", "6"], "2023-01-11T20:00:00": ["8", "17"], "2023-01-12T20:00:00": ["4", "6"], "2023-01-13T20:00:00": ["5", "29"], "2023-01-14T08:00:00": ["2", "6"], "2023-01-14T20:00:00": ["4", "21"], "2023-01-15T08:00:00": ["5", "13"], "2023-01-15T20:00:00": ["8", "29"], "2023-01-16T20:00:00": ["2", "6"], "2023-01-17T20:00:00": ["5", "9"], "2023-01-18T20:00:00": ["6", "16"], "2023-01-19T20:00:00": ["5", "8"], "2023-01-20T20:00:00": ["26", "27"], "2023-01-21T08:00:00": ["7", "11"], "2023-01-21T20:00:00": ["6", "21"], "2023-01-22T08:00:00": ["9", "19"], "2023-01-22T20:00:00": ["8"], "2023-01-23T20:00:00": ["5", "6"], "2023-01-24T20:00:00": ["9", "12"], "2023-01-25T20:00:00": ["5", "6"], "2023-01-26T20:00:00": ["9", "12"], "2023-01-27T20:00:00": ["5", "6"], "2023-01-28T08:00:00": ["8", "13"], "2023-01-28T20:00:00": ["21"], "2023-01-29T08:00:00": ["19", "28"], "2023-01-29T20:00:00": ["29"], "2023-01-30T20:00:00": ["16", "17"], "2023-01-31T20:00:00": ["8", "29"], "medici_per_turno": 2}, "Sassuolo": {"2023-01-02T20:00:00": ["3", "7"], "2023-01-03T20:00:00": ["10", "14"], "2023-01-04T20:00:00": ["3"], "2023-01-05T20:00:00": ["8", "10"], "2023-01-06T20:00:00": [], "2023-01-07T08:00:00": ["13"], "2023-01-07T20:00:00": [], "2023-01-08T08:00:00": ["6"], "2023-01-08T20:00:00": [], "2023-01-09T20:00:00": ["8", "10"], "2023-01-10T20:00:00": ["3", "14"], "2023-01-11T20:00:00": ["10", "18"], "2023-01-12T20:00:00": ["3", "14"], "2023-01-13T20:00:00": ["15"], "2023-01-14T08:00:00": ["26"], "2023-01-14T20:00:00": [], "2023-01-15T08:00:00": ["24"], "2023-01-15T20:00:00": ["15"], "2023-01-16T20:00:00": ["7", "10"], "2023-01-17T20:00:00": ["3", "14"], "2023-01-18T20:00:00": ["10"], "2023-01-19T20:00:00": ["3", "14"], "2023-01-20T20:00:00": ["15"], "2023-01-21T08:00:00": ["24", "28"], "2023-01-21T20:00:00": [], "2023-01-22T08:00:00": ["26"], "2023-01-22T20:00:00": ["3"], "2023-01-23T20:00:00": ["7", "10"], "2023-01-24T20:00:00": ["14", "29"], "2023-01-25T20:00:00": ["3", "7"], "2023-01-26T20:00:00": ["10", "14"], "2023-01-27T20:00:00": ["7", "29"], "2023-01-28T08:00:00": ["24", "26"], "2023-01-28T20:00:00": [], "2023-01-29T08:00:00": [], "2023-01-29T20:00:00": [], "2023-01-30T20:00:00": ["10", "14"], "2023-01-31T20:00:00": ["18", "20"], "2023-01-01T20:00:00": [], "medici_per_turno": 2}, "medici": [{"uid": "2", "nome": "DAVIDE FORNACIARI", "ruolo": "incaricato12", "disponibilita": ["2023-01-02T20:00:00", "2023-01-05T20:00:00", "2023-01-16T20:00:00", "2023-01-17T20:00:00", "2023-01-24T20:00:00", "2023-01-26T20:00:00", "2024-01-07T08:00:00", "2024-01-21T08:00:00", "2023-01-14T08:00:00"], "sedi": ["sassuolo", "formigine"], "n_turni_per_soddisfatto": 4}, {"uid": "3", "nome": "MARCO MASSARINI", "ruolo": "incaricato12", "disponibilita": ["2023-01-02T20:00:00", "2023-01-04T20:00:00", "2023-01-10T20:00:00", "2023-01-12T20:00:00", "2023-01-17T20:00:00", "2023-01-19T20:00:00", "2023-01-22T20:00:00", "2023-01-25T20:00:00"], "sedi": ["sassuolo"], "n_turni_per_soddisfatto": 7}, {"uid": "4", "nome": "FRANCESCA D'IMPRIMA", "ruolo": "incaricato24", "disponibilita": ["2023-01-02T20:00:00", "2023-01-03T20:00:00", "2023-01-05T20:00:00", "2023-01-09T20:00:00", "2023-01-12T20:00:00", "2023-01-13T20:00:00", "2023-01-14T20:00:00", "2023-01-15T20:00:00", "2023-01-16T20:00:00", "2023-01-17T20:00:00", "2023-01-18T20:00:00", "2023-01-20T20:00:00"], "sedi": ["sassuolo", "formigine"], "n_turni_per_soddisfatto": 5}, {"uid": "5", "nome": "ALESSIA PICCININI", "ruolo": "incaricato24", "disponibilita": ["2023-01-06T20:00:00", "2023-01-07T20:00:00", "2023-01-08T20:00:00", "2023-01-09T20:00:00", "2023-01-10T20:00:00", "2023-01-13T20:00:00", "2023-01-14T20:00:00", "2023-01-15T20:00:00", "2023-01-16T20:00:00", "2023-01-17T20:00:00", "2023-01-18T20:00:00", "2023-01-19T20:00:00", "2023-01-23T20:00:00", "2023-01-24T20:00:00", "2023-01-25T20:00:00", "2023-01-26T20:00:00", "2023-01-27T20:00:00", "2023-01-28T20:00:00", "2023-01-29T20:00:00", "2023-01-30T20:00:00", "2023-01-31T20:00:00", "2023-01-07T08:00:00", "2023-01-08T08:00:00", "2023-01-14T08:00:00", "2023-01-15T08:00:00", "2023-01-28T08:00:00", "2023-01-29T08:00:00"], "sedi": ["sassuolo", "formigine"], "n_turni_per_soddisfatto": 8}, {"uid": "6", "nome": "MARTINA SILINGARDI", "ruolo": "incaricato24", "disponibilita": ["2023-01-08T20:00:00", "2023-01-09T20:00:00", "2023-01-10T20:00:00", "2023-01-11T20:00:00", "2023-01-12T20:00:00", "2023-01-13T20:00:00", "2023-01-14T20:00:00", "2023-01-15T20:00:00", "2023-01-16T20:00:00", "2023-01-17T20:00:00", "2023-01-18T20:00:00", "2023-01-19T20:00:00", "2023-01-20T20:00:00", "2023-01-21T20:00:00", "2023-01-22T20:00:00", "2023-01-23T20:00:00", "2023-01-24T20:00:00", "2023-01-25T20:00:00", "2023-01-26T20:00:00", "2023-01-27T20:00:00", "2023-01-28T20:00:00", "2023-01-29T20:00:00", "2023-01-30T20:00:00", "2023-01-31T20:00:00", "2023-01-08T08:00:00", "2023-01-14T08:00:00", "2023-01-15T08:00:00", "2023-01-21T08:00:00", "2023-01-22T08:00:00", "2023-01-28T08:00:00", "2023-01-29T08:00:00", "2023-01-30T08:00:00", "2023-01-31T08:00:00"], "sedi": ["sassuolo", "formigine"], "n_turni_per_soddisfatto": 8}, {"uid": "7", "nome": "CHIARA ANDREOLI", "ruolo": "incaricato24", "disponibilita": ["2023-01-02T20:00:00", "2023-01-03T20:00:00", "2023-01-04T20:00:00", "2023-01-09T20:00:00", "2023-01-16T20:00:00", "2023-01-17T20:00:00", "2023-01-23T20:00:00", "2023-01-25T20:00:00", "2023-01-26T20:00:00", "2023-01-27T20:00:00", "2023-01-06T08:00:00", "2023-01-07T08:00:00", "2023-01-21T08:00:00"], "sedi": ["sassuolo", "formigine"], "n_turni_per_soddisfatto": 10}, {"uid": "8", "nome": "HAJAR NAFIDI", "ruolo": "incaricato24", "disponibilita": ["2023-01-03T20:00:00", "2023-01-05T20:00:00", "2023-01-09T20:00:00", "2023-01-11T20:00:00", "2023-01-15T20:00:00", "2023-01-19T20:00:00", "2023-01-22T20:00:00", "2023-01-23T20:00:00", "2023-01-28T20:00:00", "2023-01-31T20:00:00", "2023-01-22T08:00:00", "2023-01-28T08:00:00"], "sedi": ["sassuolo", "formigine"], "n_turni_per_soddisfatto": 9}, {"uid": "9", "nome": "VERONICA GIANCOLA", "ruolo": "incaricato24", "disponibilita": ["2023-01-02T20:00:00", "2023-01-03T20:00:00", "2023-01-05T20:00:00", "2023-01-09T20:00:00", "2023-01-10T20:00:00", "2023-01-12T20:00:00", "2023-01-16T20:00:00", "2023-01-17T20:00:00", "2023-01-19T20:00:00", "2023-01-23T20:00:00", "2023-01-24T20:00:00", "2023-01-26T20:00:00", "2023-01-22T08:00:00"], "sedi": ["formigine"], "n_turni_per_soddisfatto": 10}, {"uid": "10", "nome": "MARTINA BERTONCELLI", "ruolo": "incaricato24", "disponibilita": ["2023-01-02T20:00:00", "2023-01-03T20:00:00", "2023-01-04T20:00:00", "2023-01-05T20:00:00", "2023-01-09T20:00:00", "2023-01-11T20:00:00", "2023-01-12T20:00:00", "2023-01-16T20:00:00", "2023-01-17T20:00:00", "2023-01-18T20:00:00", "2023-01-19T20:00:00", "2023-01-23T20:00:00", "2023-01-26T20:00:00", "2023-01-30T20:00:00"], "sedi": ["sassuolo"], "n_turni_per_soddisfatto": 9}, {"uid": "11", "nome": "MARTINA BERTONCELLI", "ruolo": "incaricato24", "disponibilita": ["2023-01-06T08:00:00", "2023-01-07T08:00:00", "2023-01-21T08:00:00"], "sedi": ["formigine"], "n_turni_per_soddisfatto": 2}, {"uid": "12", "nome": "FRANCESCO VITOLLA", "ruolo": "incaricato24", "disponibilita": ["2023-01-03T20:00:00", "2023-01-05T20:00:00", "2023-01-10T20:00:00", "2023-01-12T20:00:00", "2023-01-17T20:00:00", "2023-01-19T20:00:00", "2023-01-24T20:00:00", "2023-01-26T20:00:00"], "sedi": ["formigine"], "n_turni_per_soddisfatto": 8}, {"uid": "13", "nome": "ELENA MOCCIA", "ruolo": "incaricato24", "disponibilita": ["2023-01-06T08:00:00", "2023-01-07T08:00:00", "2023-01-15T08:00:00", "2023-01-28T08:00:00"], "sedi": ["sassuolo", "formigine"], "n_turni_per_soddisfatto": 3}, {"uid": "14", "nome": "ELENA MOCCIA", "ruolo": "incaricato24", "disponibilita": ["2023-01-02T20:00:00", "2023-01-03T20:00:00", "2023-01-04T20:00:00", "2023-01-05T20:00:00", "2023-01-09T20:00:00", "2023-01-10T20:00:00", "2023-01-11T20:00:00", "2023-01-12T20:00:00", "2023-01-16T20:00:00", "2023-01-17T20:00:00", "2023-01-18T20:00:00", "2023-01-19T20:00:00", "2023-01-24T20:00:00", "2023-01-25T20:00:00", "2023-01-26T20:00:00", "2023-01-30T20:00:00", "2023-01-31T20:00:00"], "sedi": ["sassuolo"], "n_turni_per_soddisfatto": 8}, {"uid": "15", "nome": "LAURA ORLANDI", "ruolo": "sostituto", "disponibilita": ["2023-01-02T20:00:00", "2023-01-03T20:00:00", "2023-01-05T20:00:00", "2023-01-13T20:00:00", "2023-01-14T20:00:00", "2023-01-15T20:00:00", "2023-01-20T20:00:00"], "sedi": ["sassuolo"], "n_turni_per_soddisfatto": 4}, {"uid": "16", "nome": "ARIANNA DI TOMMASO", "ruolo": "sostituto", "disponibilita": ["2023-01-18T20:00:00", "2023-01-26T20:00:00", "2023-01-30T20:00:00"], "sedi": ["sassuolo", "formigine"], "n_turni_per_soddisfatto": 3}, {"uid": "17", "nome": "FRANCESCO SPATAFORA", "ruolo": "sostituto", "disponibilita": ["2023-01-01T20:00:00", "2023-01-02T20:00:00", "2023-01-03T20:00:00", "2023-01-04T20:00:00", "2023-01-09T20:00:00", "2023-01-10T20:00:00", "2023-01-11T20:00:00", "2023-01-12T20:00:00", "2023-01-16T20:00:00", "2023-01-17T20:00:00", "2023-01-18T20:00:00", "2023-01-23T20:00:00", "2023-01-26T20:00:00", "2023-01-30T20:00:00", "2023-01-31T20:00:00"], "sedi": ["formigine"], "n_turni_per_soddisfatto": 5}, {"uid": "18", "nome": "AGNESE VITI", "ruolo": "sostituto", "disponibilita": ["2023-01-03T20:00:00", "2023-01-09T20:00:00", "2023-01-10T20:00:00", "2023-01-11T20:00:00", "2023-01-12T20:00:00", "2023-01-16T20:00:00", "2023-01-19T20:00:00", "2023-01-23T20:00:00", "2023-01-24T20:00:00", "2023-01-25T20:00:00", "2023-01-26T20:00:00", "2023-01-30T20:00:00", "2023-01-31T20:00:00"], "sedi": ["sassuolo", "formigine"], "n_turni_per_soddisfatto": 7}, {"uid": "19", "nome": "VALERIA PEDRINI", "ruolo": "sostituto", "disponibilita": ["2023-01-06T08:00:00", "2023-01-08T08:00:00", "2023-01-22T08:00:00", "2023-01-29T08:00:00"], "sedi": ["sassuolo", "formigine"], "n_turni_per_soddisfatto": 3}, {"uid": "20", "nome": "PATRIZIA GOZDZIEWSKA", "ruolo": "sostituto", "disponibilita": ["2023-01-03T20:00:00", "2023-01-10T20:00:00", "2023-01-12T20:00:00", "2023-01-17T20:00:00", "2023-01-19T20:00:00", "2023-01-24T20:00:00", "2023-01-31T20:00:00"], "sedi": ["sassuolo", "formigine"], "n_turni_per_soddisfatto": 6}, {"uid": "21", "nome": "ARBER MULLALLI", "ruolo": "sostituto", "disponibilita": ["2023-01-02T20:00:00", "2023-01-03T20:00:00", "2023-01-04T20:00:00", "2023-01-05T20:00:00", "2023-01-06T20:00:00", "2023-01-07T20:00:00", "2023-01-09T20:00:00", "2023-01-10T20:00:00", "2023-01-11T20:00:00", "2023-01-12T20:00:00", "2023-01-13T20:00:00", "2023-01-14T20:00:00", "2023-01-15T20:00:00", "2023-01-16T20:00:00", "2023-01-17T20:00:00", "2023-01-18T20:00:00", "2023-01-19T20:00:00", "2023-01-20T20:00:00", "2023-01-21T20:00:00", "2023-01-22T20:00:00", "2023-01-23T20:00:00", "2023-01-24T20:00:00", "2023-01-25T20:00:00", "2023-01-26T20:00:00", "2023-01-27T20:00:00", "2023-01-28T20:00:00", "2023-01-29T20:00:00", "2023-01-30T20:00:00", "2023-01-31T20:00:00"], "sedi": ["formigine"], "n_turni_per_soddisfatto": 8}, {"uid": "22", "nome": "IRENE BRUSCHI", "ruolo": "sostituto", "disponibilita": [], "sedi": ["sassuolo"], "n_turni_per_soddisfatto": 2}, {"uid": "23", "nome": "GIULIA BALEGNO", "ruolo": "sostituto", "disponibilita": ["2023-01-07T20:00:00", "2023-01-19T20:00:00", "2023-01-25T20:00:00", "2023-01-07T08:00:00"], "sedi": ["sassuolo", "formigine"], "n_turni_per_soddisfatto": 3}, {"uid": "24", "nome": "ASIA FRANCESCHIN", "ruolo": "sostituto", "disponibilita": ["2023-01-15T08:00:00", "2023-01-21T08:00:00", "2023-01-28T08:00:00"], "sedi": ["sassuolo", "formigine"], "n_turni_per_soddisfatto": 3}, {"uid": "25", "nome": "ELENA BACHMAN", "ruolo": "incaricato24", "disponibilita": ["2023-01-03T20:00:00", "2023-01-05T20:00:00", "2023-01-10T20:00:00", "2023-01-12T20:00:00", "2023-01-17T20:00:00", "2023-01-19T20:00:00", "2023-01-24T20:00:00", "2023-01-26T20:00:00", "2024-01-07T08:00:00", "2024-01-21T08:00:00", "2023-01-14T08:00:00"], "sedi": ["formigine"], "n_turni_per_soddisfatto": 6}, {"uid": "26", "nome": "ADDALA HAJAR", "ruolo": "sostituto", "disponibilita": ["2023-01-14T20:00:00", "2023-01-20T20:00:00", "2023-01-27T20:00:00", "2023-01-28T20:00:00", "2023-01-14T08:00:00", "2023-01-15T08:00:00", "2023-01-22T08:00:00", "2023-01-28T08:00:00", "2023-01-29T08:00:00"], "sedi": ["sassuolo", "formigine"], "n_turni_per_soddisfatto": 4}, {"uid": "27", "nome": "BEATRICE SERRA", "ruolo": "sostituto", "disponibilita": ["2023-01-20T20:00:00", "2023-01-06T08:00:00"], "sedi": ["sassuolo", "formigine"], "n_turni_per_soddisfatto": 4}, {"uid": "28", "nome": "ELENA ROSSI", "ruolo": "sostituto", "disponibilita": ["2023-01-21T08:00:00", "2023-01-22T08:00:00", "2023-01-29T08:00:00"], "sedi": ["sassuolo", "formigine"], "n_turni_per_soddisfatto": 4}, {"uid": "29", "nome": "CHIARA FORNETTI", "ruolo": "incaricato12", "disponibilita": ["2023-01-10T20:00:00", "2023-01-12T20:00:00", "2023-01-19T20:00:00", "2023-01-25T20:00:00", "2023-01-17T20:00:00", "2023-01-08T20:00:00", "2023-01-13T20:00:00", "2023-01-15T20:00:00", "2023-01-24T20:00:00", "2023-01-26T20:00:00", "2023-01-27T20:00:00", "2023-01-28T20:00:00", "2023-01-29T20:00:00", "2023-01-31T20:00:00"], "sedi": ["sassuolo", "formigine"], "n_turni_per_soddisfatto": 7}]}
+"""
