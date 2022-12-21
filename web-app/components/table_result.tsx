@@ -2,7 +2,7 @@ import { Paper, TableContainer, Grid, FormControlLabel, Checkbox, Table, TableHe
 import { useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../logic/redux/store'
 import { swapMediciInTurno } from '../logic/redux/scheduler_slice'
-import { mesi } from '../pages/raccolta_disponibilita'
+import { mesi } from '../logic/local_storage'
 
 
 const getAllTurni = (formatted_data: any) => {

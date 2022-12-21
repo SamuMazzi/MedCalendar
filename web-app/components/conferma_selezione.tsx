@@ -8,7 +8,7 @@ import { useRouter } from 'next/router'
 
 import { useAppSelector }  from '../logic/redux/store'
 import { setMeseMedico } from '../logic/server/firestore';
-import { mesi } from '../pages/raccolta_disponibilita';
+import { mesi } from '../logic/local_storage';
 
 export interface PropsAlert {
     onCloseFn: Function

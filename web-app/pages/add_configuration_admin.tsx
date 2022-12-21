@@ -116,6 +116,7 @@ export default function Raccolta() {
     if(configurationDistrState.sedi.length === 0) {
       addNewSede()
     }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (

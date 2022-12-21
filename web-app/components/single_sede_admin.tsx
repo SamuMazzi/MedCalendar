@@ -33,6 +33,7 @@ export default function SingleSede(props: SingleSedeProps) {
 
     useEffect(() => {
         addNewTurno();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
   
     const changeDaysTurno = (

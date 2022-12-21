@@ -1,7 +1,6 @@
 import { Container, Button, Typography, Grid, CircularProgress, Checkbox, FormControlLabel } from '@mui/material'
 import { getDistrettiForAdmin, getDisponibilitaMeseDistretto, getInfoSediDistretto } from '../logic/server/firestore'
 import { useState, ChangeEvent } from 'react';
-import Calendar from '../components/material_calendar/index' //TODO: Rimuovere se non serve più
 import TableResult from '../components/table_result';
 import { useAppDispatch } from '../logic/redux/store';
 import { populateScheduler, clearScheduler } from '../logic/redux/scheduler_slice';

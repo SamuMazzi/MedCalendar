@@ -1,3 +1,20 @@
+export type MesiType = Record<number, string>
+export const mesi: MesiType = {
+    1: 'Gennaio',
+    2: 'Febbraio',
+    3: 'Marzo',
+    4: 'Aprile',
+    5: 'Maggio',
+    6: 'Giugno',
+    7: 'Luglio',
+    8: 'Agosto',
+    9: 'Settembre',
+    10: 'Ottobre',
+    11: 'Novembre',
+    12: 'Dicembre'
+}
+
+
 const scontrini_local_key = 'scontrini';
 const categories_local_key = 'categories';
 const info_local_key = 'info_local';
