@@ -87,10 +87,11 @@ export default function Raccolta() {
   };
 
   const callApi = async () => {
-    const localUrl = "http://127.0.0.1:8080"
+    // const debugUrlApi = "http://127.0.0.1:8080"
+    const urlApi ="https://europe-west1-programmazione-turni-gm.cloudfunctions.net/schedule_from_data"
     setLoadingTurni(true)
     try {
-      const res = await fetch(localUrl,
+      const res = await fetch(urlApi,
         {
           method: "POST",
           headers: {
