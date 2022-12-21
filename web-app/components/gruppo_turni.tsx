@@ -9,6 +9,8 @@ interface PropsGruppoTurni {
   distretto: string | undefined
 }
 
+type mockTurniType = Record<string, string>
+
 export default function GruppoTurni(props: PropsGruppoTurni) {
   const [infoSedi, loading, error] = useDocumentDataOnce(getInfoSediRef(props.distretto ? props.distretto : ""));
   const stateNOre = useAppSelector((state: RootState) => state.turni.value)
@@ -16,7 +18,7 @@ export default function GruppoTurni(props: PropsGruppoTurni) {
   const stateSedi = useAppSelector((state: RootState) => state.turni.sedi)
   const dispatch = useAppDispatch()
   const mockSedi = ['Sassuolo', 'Formigine', 'Vignola']
-  const mockTurni = {"20:30-8": "1,2,3,4,5", "8-20": "6,7"}
+  const mockTurni: mockTurniType = {"20:30-8": "1,2,3,4,5", "8-20": "6,7"}
 
   return (
     <Container>
