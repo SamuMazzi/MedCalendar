@@ -19,5 +19,6 @@ venv
 web-app
 assets
 test
+__pycache__
 
 #!include:.gitignore

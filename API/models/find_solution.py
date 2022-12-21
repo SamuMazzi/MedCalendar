@@ -15,6 +15,7 @@ class FindSolution:
         self.sol = sol if sol is not None else Soluzione()
 
     def check_sol(self, turni_occupati: int, doc_soddisfatti: int, conv_sodd: int, inc_sodd: int):
+        self.sol.n_tentativi_dopo_sol += 1
         if turni_occupati >= self.sol.turni_occupati:
             if conv_sodd > self.sol.convenzionati_soddisfatti or inc_sodd > self.sol.incaricati_soddisfatti or doc_soddisfatti > self.sol.medici_soddisfatti:
                 assert conv_sodd >= self.sol.convenzionati_soddisfatti and inc_sodd >= self.sol.incaricati_soddisfatti
@@ -30,7 +31,9 @@ class FindSolution:
         self.sol.turni_occupati = turni_occupati
         # copia stato corrente sedi nella soluzione
         self.sol.sedi = copy.deepcopy(Storage.sedi)
-        self.sol.set_best_sol_found()  # debug
+        self.sol.set_sol_found()
+        if self.sol.turni_occupati == Storage.tot_turni - Storage.turni_non_riempibili:
+            self.sol.set_best_sol_found()
         if conv_sodd == Storage.convenzionati_da_soddisfare and Storage.incaricati_da_soddisfare == inc_sodd:
             print('Soluzione quasi migliore trovata')
 
@@ -58,7 +61,6 @@ class FindSolution:
         if len(all_comb) == 0:
             return self.handle_empty_container_turno(s, turni_occupati, doc_sodd, conv_sodd, inc_sodd, mode)
 
-
         combination: List[Medico]
         for combination in all_comb:
             if check_if_skip(combination, info_combination, turno):
@@ -71,14 +73,15 @@ class FindSolution:
                                                conv_sodd=conv_sodd + new_soddisfatti[0],
                                                inc_sodd=inc_sodd + new_soddisfatti[1])
             set_combinazione_turno(turno, combination, info_combination, Storage.sedi, mode='sub')
-            if self.sol.best_sol_already_found is True:  # (mode == 'convenzionati' and self.sol.n_best_sol >= 1) or self.sol.n_best_sol >= 1:
+            if self.sol.solution_found:
+                # best_sol_found or (self.sol.solution_found and self.sol.n_tentativi_dopo_sol > 10000):
+                # TODO: Ancora non funziona, debugga (problema che alla fine recursive_fn torna True anche se non dovrebbe)
                 return True
+        return False
 
     def handle_last_round(self, turni_occupati, doc_soddisfatti, conv_sodd, inc_sodd, mode):
         self.check_sol(turni_occupati, doc_soddisfatti, conv_sodd, inc_sodd)
-        if turni_occupati == Storage.tot_turni:
-            self.sol.set_best_sol_found()
-        elif mode == 'incaricati' and self.sol.incaricati_soddisfatti == Storage.incaricati_da_soddisfare:
+        if mode == 'incaricati' and self.sol.incaricati_soddisfatti == Storage.incaricati_da_soddisfare:
             self.sol.set_best_sol_found()
         elif mode == 'convenzionati' and self.sol.convenzionati_soddisfatti == Storage.convenzionati_da_soddisfare:
             self.sol.set_best_sol_found()

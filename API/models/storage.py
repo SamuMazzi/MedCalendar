@@ -1,3 +1,4 @@
+import copy
 import datetime
 from typing import List
 
@@ -79,6 +80,7 @@ def init_storage(data):
         all_medici = [Medico(info['id'], info['nome'], info['ruolo'], translate_turni(info['disponibilita'], data['year'], data['month']), info['sedi']) for info in data['medici'] if True]
     Storage.calendar_turni = total_calendar_turni
     Storage.all_medici = all_medici
+    Storage.original_all_medici = copy.deepcopy(all_medici)
     Storage.sedi = sedi
     calculate_how_may_doctors_da_soddisfare(Storage.all_medici)
 # Storage.tot_turni = get_turni_effettivi() se lo lasci qua prima devi effettivamente settare i medici a prescindere!
@@ -87,6 +89,7 @@ def init_storage(data):
 class Storage:
     calendar_turni: List[datetime.datetime] = []
     all_medici: List[Medico] = []
+    original_all_medici: List[Medico] = []  # Non saranno intaccati dalle modifiche durante il processo
     sedi: List[Sede] = []
     convenzionati_da_soddisfare = 0
     incaricati_da_soddisfare = 0

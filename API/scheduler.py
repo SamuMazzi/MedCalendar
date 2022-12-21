@@ -134,6 +134,7 @@ def copy_sol_in_new_sedi(best_sol):  # Non dovrebbe servire ma a causa di un bug
 
 def handle_new_round(main_handler, best_sol, medici):
     best_sol.reset_best_sol_found()
+    best_sol.reset_sol_found()
     if best_sol.turni_occupati == Storage.tot_turni:
         return True
 

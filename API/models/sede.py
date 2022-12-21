@@ -95,7 +95,6 @@ class Sede:
         return self.month_calendar[turno].turni_occupati
 
     def set_medici_disponibili_per_mese_curr(self, medici: List[Medico]):
-        print('Setting medici...')
         for med in medici:
             # supponiamo che le disponibilità siano tutte e solo di quel mese
             # set serve solo per generazione dinamica di medici, togliere poi
