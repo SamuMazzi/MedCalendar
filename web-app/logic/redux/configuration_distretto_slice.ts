@@ -56,7 +56,9 @@ export const configuration_distretti_slice = createSlice({
     initialState: initialState,
     reducers: {
         addSede: (state, action: PayloadAction<ParamSede>) => {
+            console.log(state.sedi)
             if(state.sedi.some(sede => sede.nome === action.payload.nome)) {
+                console.log(state)
                 throw "Nome già utilizzato" //TODO: Creare custom exception
             }
             const newSede: Sede = {
@@ -91,7 +93,7 @@ export const configuration_distretti_slice = createSlice({
             if(state.sedi.length - 1 < index) {
                 throw "Errore nel trovare la sede"
             }
-            //TODO: Here
+            //* Here
         },
     }
 })

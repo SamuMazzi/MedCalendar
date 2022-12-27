@@ -23,8 +23,8 @@ gcloud functions deploy schedule_from_data --runtime python310 --trigger-http --
 Prossimi step:
  - 1. Sistema cambio turni (colore rosso nei festivi)
 2. Creazione turni a partire da Excel (React)
-3. Sistemare Python per fargli provare qualche combinazione in più
-4. Deploy API
+ () 3. Sistemare Python per fargli provare qualche combinazione in più
+ - 4. Deploy API
 """
 
 @functions_framework.http

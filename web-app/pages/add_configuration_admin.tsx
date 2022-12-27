@@ -1,17 +1,18 @@
-import { Button, Typography, Grid, CircularProgress } from '@mui/material'
+import Grid from '@mui/material/Grid'
+import Button from '@mui/material/Button'
+import Typography from '@mui/material/Typography'
+import CircularProgress from '@mui/material/CircularProgress'
 import AddIcon from '@mui/icons-material/Add';
-import { getDisponibilitaMeseDistretto, getInfoSediDistretto, setConfigurationDistrettoMese } from '../logic/server/firestore'
+import SingleSede from '../components/single_sede_admin';
+import { MenuAppBar } from '../components/app_bar';
+import MessageSnackbar from '../components/message_snackbar';
+import Greetings from '../components/greetings';
+import { setConfigurationDistrettoMese } from '../logic/server/firestore'
 import { useState, useEffect } from 'react'
 import { useAppSelector, useAppDispatch } from '../logic/redux/store'
 import { addSede, Turno } from '../logic/redux/configuration_distretto_slice'
-import SingleSede from '../components/single_sede_admin';
-import { Alert, AlertTitle, Snackbar } from '@mui/material';
 
 export default function Raccolta() {
-  const [ distretti, setDistretti ] = useState<string[]>([])
-  const [ distrettoSel, setDistrettoSel ] = useState("")
-  const [ infoDistretto, setInfoDistretto ] = useState({})
-  const [ disponibilitaDistretto, setDisponibilitaDistretto ] = useState({})
   const configurationDistrState = useAppSelector(state => state.configurationDistr)
   const dispatch = useAppDispatch()
   const [ loading, setLoading ] = useState(false)
@@ -26,14 +27,6 @@ export default function Raccolta() {
    * 2. Bisogna poter fare modifiche puntuali a specifici giorni //!
    */
 
-  const handleCloseSnackbar = (event?: React.SyntheticEvent | Event, reason?: string) => {
-    if (reason === 'clickaway') {
-      return;
-    }
-
-    setIsOpenSnackbar(false);
-  };
-
   const showError = (msg: string) => {
     setMessageSnackbar(msg)
     setIsOpenSnackbar(true)
@@ -41,12 +34,13 @@ export default function Raccolta() {
 
   const validateConfiguration = () => {
     for(let sede of configurationDistrState.sedi) {
-      if(sede.nome) {
+      if(!sede.nome) {
         showError("Il nome di una sede non può essere vuoto")
-        return
+        return false
       }
-      if(!validateTurni(sede.fasce_turno)) return
+      if(!validateTurni(sede.fasce_turno)) return false
     }
+    return true
   }
 
   const validateTurni = (fasce_turno: Turno[]) => {
@@ -74,10 +68,11 @@ export default function Raccolta() {
   const creaConfiguration = async () => {
     setLoading(true)
     try {
-      validateConfiguration()  
-      //new Date() dovrebbe essere del mese dopo
-      await setConfigurationDistrettoMese(new Date(), "distretto", configurationDistrState.sedi)
-      setInfoSent(true)
+      if(validateConfiguration()) {
+        //new Date() dovrebbe essere del mese dopo
+        await setConfigurationDistrettoMese(new Date(), "distretto", configurationDistrState.sedi)
+        setInfoSent(true)
+      }
     } catch (e: any) {
       showError(e.toString())
     } finally {
@@ -96,22 +91,6 @@ export default function Raccolta() {
     }))
   }
 
-  const handleSelDistretto = async (distretto: string) => {
-    setLoading(true);
-    setDistrettoSel(distretto)
-    const d = new Date();
-    const year = d.getFullYear()
-    const month = d.getMonth()
-    const dispNextMonth = await getDisponibilitaMeseDistretto(distretto, year, month)
-    if (dispNextMonth === undefined) {
-      setLoading(false)
-      return;
-    }
-    const info = await getInfoSediDistretto(distretto) //! Da cambiare!!
-    setInfoDistretto(info!)
-    setDisponibilitaDistretto(dispNextMonth)
-  }
-
   useEffect(() => {
     if(configurationDistrState.sedi.length === 0) {
       addNewSede()
@@ -120,64 +99,53 @@ export default function Raccolta() {
   }, [])
 
   return (
-    <Grid container
-      display="flex"
-      direction="column"
-      alignItems="center"
-      justifyContent="center"
-      //sx={{minWidth: "200px"}}
-    >
-      <Typography variant="h3" component="h3" sx={{py: 5}}>Pagina admin!</Typography>
-      {
-        distretti.map((distretto) => 
-          <Button key={distretto} onClick={() => handleSelDistretto(distretto)}>
-            {distretto}
-          </Button>
-        )
-      }
+    <>
+      <MenuAppBar />
       <Grid container
         display="flex"
-        direction="row"
+        direction="column"
         alignItems="center"
         justifyContent="center"
+        sx = {{ pb: 5 }}
         //sx={{minWidth: "200px"}}
-      >  
-      {
-        configurationDistrState.sedi.map((val, index) => {
-          return (
-            <SingleSede key={index} index={index}/>
-          )
-        })
-      }
-      <Grid item>
-        <Button onClick={addNewSede} sx={{ borderRadius: 50, py: 1.8 }} variant='outlined'>
-          <AddIcon fontSize="large"/>
-        </Button>
-      </Grid>
-      </Grid>
-      {
-        !infoSent ? <Button
-          variant="contained"
-          component="label"
-          onClick={creaConfiguration}
-        >
-          Invia
-        </Button>
-        :
-        <Alert severity="success" sx={{ width: '100%' }}>
-            <AlertTitle>Operazione completata con successo!</AlertTitle>
-            {"Abbiamo ricevuto le nuove informazioni, grazie mille!"}
-        </Alert>
+      >
+        <Typography variant="h3" component="h3" sx={{py: 5}}>Pagina admin!</Typography>
+        <Grid container
+          display="flex"
+          direction="row"
+          alignItems="center"
+          justifyContent="center"
+        >  
+        {
+          configurationDistrState.sedi.map((val, index) => {
+            return (
+              <SingleSede key={index} index={index}/>
+            )
+          })
+        }
+        <Grid item>
+          <Button onClick={addNewSede} sx={{ borderRadius: 50, py: 1.8 }} variant='outlined'>
+            <AddIcon fontSize="large"/>
+          </Button>
+        </Grid>
+        </Grid>
+        {
+          !infoSent ? <Button
+            variant="contained"
+            component="label"
+            onClick={creaConfiguration}
+          >
+            Invia
+          </Button>
+          :
+          <Greetings />
 
-      }
-      {
-        loading && <CircularProgress />
-      }
-      <Snackbar open={isOpenSnackbar} autoHideDuration={3000} onClose={handleCloseSnackbar}>
-          <Alert onClose={handleCloseSnackbar} severity="error" sx={{ width: '100%' }}>
-              {messageSnackbar}
-          </Alert>
-      </Snackbar>
-    </Grid>
+        }
+        {
+          loading && <CircularProgress />
+        }
+        <MessageSnackbar isOpen={isOpenSnackbar} handleClose={() => setIsOpenSnackbar(false)} message={messageSnackbar}/>
+      </Grid>
+    </>
   )
 }

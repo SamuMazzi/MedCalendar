@@ -1,16 +1,14 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import assert from 'assert'
 
-// TODO: Ancora da fare tutto
-
-interface SchedulerState {
+export interface SchedulerState {
     year: number,
     month: number,
     head: string[],
     turni: Record<string, Record<string, string[]>>, // sede -> data -> [id occupati]
     med_per_turno: Record<string, number>,
-    medici_orig: Record<string, any>,
-    medici_mod: Record<string, any>,
+    medici_orig: Record<string, InfoMedico>,
+    medici_mod: Record<string, InfoMedico>,
 }
 
 const initialState: SchedulerState = {
@@ -21,6 +19,14 @@ const initialState: SchedulerState = {
     med_per_turno: {},
     medici_orig: {}, //* Qui ci sarà una copia dei medici
     medici_mod: {} //* Qui verranno fatte le modifiche ai medici, sarà quasi sicuramente necessario creare un reducer per gestire tutte le info   
+}
+
+export interface InfoMedico {
+    uid: string,
+    nome: string,
+    ruolo: string,
+    disponibilita: string[],
+    n_turni_per_soddisfatto: number
 }
 
 const insertMedicoInTurno = (state: SchedulerState, sede: string, turno: string, id_med: string) => {
@@ -53,9 +59,7 @@ export const scheduler_slice = createSlice({
             state['medici_mod'] = JSON.parse(JSON.stringify(input['medici']))
             Object.keys(input['sedi']).forEach((sede: string) => {
                 const medici_per_turno = sedi_input[sede]['medici_per_turno']
-                for (let i = 0; i < medici_per_turno; i++) {
-                    state['head'].push(sede + ' ' + i.toString())
-                }
+                state['head'].push(sede)
                 state['med_per_turno'][sede] = medici_per_turno
                 state['turni'][sede] = {}
                 Object.keys(sedi_input[sede]['turni']).forEach((turno: string) => {

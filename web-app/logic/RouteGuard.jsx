@@ -35,13 +35,13 @@ function RouteGuard({ children }) {
         const admin_user = authState.admin
         // redirect to login page if accessing a private page and not logged in 
         const publicPaths = ['/login'];
-        const adminPaths = ['/admin_page', '/add_configuration_admin', '/upload_turni_admin'];
+        const adminPaths = ['/admin_page', '/add_configuration_admin', '/pianificazione_turni_admin'];
         const path = url.split('?')[0];
         const { distretto } = router.query;
-        //const passInserted = getFromStorage('password_inserted')
+        /* const passInserted = getFromStorage('password_inserted')
 
-        // const query = url.split('?')[1];
-        /* if (!passInserted) { //TODO: Ancora da testare, dava dei problemi l'ultima volta
+        const query = url.split('?')[1];
+        if (!passInserted) { //* Ancora da testare, dava dei problemi l'ultima volta
             console.log('pass non inserita o sbagliata')
             setAuthorized(false);
             router.push({

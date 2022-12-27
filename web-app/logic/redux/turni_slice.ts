@@ -4,13 +4,11 @@ import type { RootState } from './store'
 export type SediType = Record<string, Record<string, number[]>>;
 type LocalTimestamp = number;
 
-interface StateTurnoType {
+export interface StateTurno {
   sedi: string[],
   disponibilita: Record<string, number[]>,
-  value: number
+  oreMassime: number
   mese: LocalTimestamp | undefined
-  medico: string
-  id_medico: string
 }
 
 interface ParamDisponibilita {
@@ -18,21 +16,13 @@ interface ParamDisponibilita {
   giorno: number
 }
 
-interface ParamMedico {
-  nome: string,
-  id: string
-}
-
 const today = new Date()
-//
 
-const initialStateTurni: StateTurnoType = {
+const initialStateTurni: StateTurno = {
   sedi: [],
   disponibilita: <Record<string, number[]>>{},
-  value: 0,
-  mese: (new Date(today.getFullYear(), today.getMonth()+1, today.getDate())).getTime(),
-  medico: "",
-  id_medico: ""
+  oreMassime: 0,
+  mese: (new Date(today.getFullYear(), today.getMonth()+1, today.getDate())).getTime()
 }
 
 export const turnoSlice = createSlice({
@@ -47,16 +37,15 @@ export const turnoSlice = createSlice({
    * }
    */
   reducers: {
-    setValue: (state, action) => {
-      state.value = action.payload
+    clearState: (state) => {
+      state = initialStateTurni
+    },
+    setOreMassime: (state, action) => {
+      state.oreMassime = action.payload
     },
     setMese: (state, action) => {
       console.log('Slice: setting mese')
       state.mese = action.payload
-    },
-    setMedico: (state, action: PayloadAction<ParamMedico>) => {
-      state.id_medico = action.payload.id
-      state.medico = action.payload.nome
     },
     handleDisponibilita: (state, action: PayloadAction<ParamDisponibilita>) => {
         //action.payload -> sedi, fasciaTurno, giorno
@@ -83,7 +72,7 @@ export const turnoSlice = createSlice({
 })
 
 // Action creators are generated for each case reducer function
-export const { setValue, handleDisponibilita, handleSede, setMese, setMedico } = turnoSlice.actions
+export const { setOreMassime, handleDisponibilita, handleSede, setMese, clearState } = turnoSlice.actions
 // Other code such as selectors can use the imported `RootState` type
 export const selectListSedi = (state: RootState) => Object.keys(state.turni.sedi)
 

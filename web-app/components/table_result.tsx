@@ -1,9 +1,28 @@
-import { Paper, TableContainer, Grid, FormControlLabel, Checkbox, Table, TableHead, TableRow, TableCell, TableBody, Modal, Box, Typography, List, ListItem, ListItemButton, ListItemText } from '@mui/material'
+import TableContainer from '@mui/material/TableContainer'
+import Grid from '@mui/material/Grid'
+import Table from '@mui/material/Table'
+import TableHead from '@mui/material/TableHead'
+import TableRow from '@mui/material/TableRow'
+import TableCell from '@mui/material/TableCell'
+import TableBody from '@mui/material/TableBody'
+import Modal from '@mui/material/Modal'
+import Box from '@mui/material/Box'
+import List from '@mui/material/List'
+import ListItem from '@mui/material/ListItem'
+import ListItemButton from '@mui/material/ListItemButton'
+import ListItemText from '@mui/material/ListItemText'
+import Typography from '@mui/material/Typography'
+import CircleIcon from '@mui/icons-material/Circle';
+import Button from '@mui/material/Button'
 import { useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../logic/redux/store'
 import { swapMediciInTurno } from '../logic/redux/scheduler_slice'
-import { mesi } from '../logic/local_storage'
+import { getGiornoSettimana } from '../logic/local_storage'
+import ListItemIcon from '@mui/material/ListItemIcon'
 
+const getColorRole = (ruolo: string) => {
+  return ruolo.startsWith("inc") ? "#ccff9b" : ruolo.startsWith("conven") ? "#b1f4ff" : "#ffd07d"
+}
 
 const getAllTurni = (formatted_data: any) => {
   const list_turni: string[] = []
@@ -13,17 +32,89 @@ const getAllTurni = (formatted_data: any) => {
   list_turni.sort()
   return list_turni
 }
-// Anche i turni vuoti devono essere cliccabili
-// Devo poter aggiungere medici ai turni vuoti
-// Devo poter semplicemente togliere un medico se voglio
-export default function TableResult() {
+
+interface PropsTableResult {
+  dettagli: boolean
+}
+
+interface PropsTableCellMedici {
+  formatted_data: any,
+  sede: string,
+  turno: string,
+  dettagli: boolean,
+  onClick: (arg0: string, arg1: string, arg2: string | undefined) => void
+}
+
+function TableCellMedici(props: PropsTableCellMedici) {
+  const getInfoTextMedico = (medico: any | undefined) => {
+    if (medico === undefined) return ""
+    let out = medico.nome
+    if (props.dettagli) {
+      out += "\nTurni rimanenti: " + medico.n_turni_per_soddisfatto
+    }
+    return out
+  }
+
+  return (
+    <TableCell width="10%">
+      <Grid container direction="column" sx={{maxWidth: 250}}>
+      {Array.from(Array(props.formatted_data['med_per_turno'][props.sede])).map((x, index) => {
+        const medici_in_turno: string[] = props.formatted_data['turni'][props.sede][props.turno] !== undefined ? props.formatted_data['turni'][props.sede][props.turno] : []
+        let medico: any = undefined
+        let id_medico: string | undefined
+        if (index < medici_in_turno.length) {
+          id_medico = medici_in_turno[index]
+          medico = props.formatted_data['medici_mod'][id_medico]
+        }
+
+        return (
+          <Button
+            key={props.sede + index}
+            sx={{
+              pl: 2, py: 0.8, mb: 0.5, '&& .MuiTouchRipple-rippleVisible': {
+                animationDuration: '500ms',
+              },
+            }}
+            style={{
+              borderRadius: 20,
+              backgroundColor: "#EFEFEF",
+              justifyContent: "flex-start",
+              color: 'black',
+              textTransform: 'none'
+            }}
+            onClick={() => props.onClick(props.sede, props.turno, id_medico)}
+          >
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              //justifyContent: 'center',
+              //flexWrap: 'wrap',
+            }}>
+              {
+                medico ?
+                  <>
+                    <Typography style={{ whiteSpace: "pre-line" }} align="left">{getInfoTextMedico(medico)}</Typography>
+                    <CircleIcon fontSize="small" sx={{ ml: 1 }} style={{ color: getColorRole(medico.ruolo) }} />
+                  </> :
+                  <Typography style={{ whiteSpace: "pre-line", color: '#ACACAC' }}>(Vuoto)</Typography>
+              }
+            </div>
+          </Button>
+        )
+      })}
+
+      </Grid>
+    </TableCell>
+  )
+}
+
+export default function TableResult(props: PropsTableResult) {
     const formatted_data = useAppSelector(state => state.scheduler)
     const [ openModal, setOpenModal ] = useState(false)
     const [ filteredMedici, setFilteredMedici ] = useState<any[]>([])
     const [ idMedicoSel, setIdMedicoSel ] = useState<string | undefined>("")
     const [turnoSel, setTurnoSel] = useState<string | undefined>("")
     const [sedeSel, setSedeSel] = useState<string | undefined>("")
-    const [ details, setDetails] = useState(false)
     const listTurni = getAllTurni(formatted_data)
     const dispatch = useAppDispatch()
 
@@ -35,7 +126,7 @@ export default function TableResult() {
         transform: 'translate(-50%, -50%)',
         width: 400,
         bgcolor: 'background.paper',
-        border: '2px solid #000',
+        borderRadius: 10,
         boxShadow: 24,
         p: 4,
     };
@@ -59,7 +150,7 @@ export default function TableResult() {
       return false
     }
 
-    const openModalMedico = (sede:string, turno: string, id_selected_medico: string | undefined) => {
+    const openModalMedico = (sede: string, turno: string, id_selected_medico: string | undefined) => {
         const medici = Object.keys(formatted_data['medici_orig']).filter((id_med: string) => {
             if (id_selected_medico !== undefined && id_selected_medico === id_med) return false
             const tmp_medico = formatted_data['medici_orig'][id_med]
@@ -72,41 +163,28 @@ export default function TableResult() {
         setFilteredMedici(medici)
         setOpenModal(true)
     };
-    //TODO: Sistemare bug, Medico Demo ha settate 6 ore da fare, mentre dovrebbero essere 10 (stesso bug in molti altri)
 
-    const getInfoTextMedico = (medico: any | undefined) => {
-        if (medico === undefined) return ""
-        let out = medico.nome 
-        if (details) {
-            out += "\nTurni rimanenti: " + medico.n_turni_per_soddisfatto + "\nRuolo: " + medico.ruolo
-        }
-        return out
+    const getTextTurno = (turno: string) => {
+      const numberDay = parseInt(turno.split('T')[0])
+      let out = ""
+      out += getGiornoSettimana((new Date(formatted_data.year, formatted_data.month)).getTime(), numberDay)
+      out += ' ' + numberDay.toString()
+      out += ', ' + turno.split('T')[1].substring(0, 5)
+      return out
     }
 
     return (
-        formatted_data.head.length === 0 ? <Grid container /> :
-        <Grid container
-          alignItems="center"
-          justifyContent="center"
-        >
-          <Grid item>
-            <FormControlLabel
-              control={<Checkbox
-                value={details}
-                onChange={(event) => setDetails(event.target.checked)}
-              />}
-              label="Dettagli" />
-          </Grid>
-          <Grid item>
-            <Typography variant="h5" component="h5">{"Programmazione per: " + mesi[formatted_data['month']] + ' ' + formatted_data['year']}</Typography>
-          </Grid>
-          <TableContainer component={Paper} sx={{p:10}}>
+        formatted_data.head.length === 0 ? <></> :
+          <TableContainer sx={{pt:10}}>
           <Table>
             <TableHead>
-              <TableRow>
-                <TableCell>Turno</TableCell>
-                {formatted_data['head'].map((sede_key: string) => (
-                    <TableCell key={sede_key} align="right">{sede_key}</TableCell>
+                <TableRow sx={{ '&:last-child td, &:last-child th': { border: 0 } }}>
+                <TableCell width="10%" style={{ fontWeight: 'bold' }}>
+                  TURNO
+                </TableCell>
+                {
+                  formatted_data['head'].map((sede_key: string) => (
+                    <TableCell key={sede_key} align="left" style={{ fontWeight: 'bold' }}>{sede_key.toUpperCase()}</TableCell>
                   ))
                 }
               </TableRow>
@@ -115,43 +193,17 @@ export default function TableResult() {
               {listTurni.map((turno: string) => (
                 <TableRow
                   key={turno}
-                  sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
                 >
-                  <TableCell key={turno} style={{
-                        borderBottom:"none",
-                        //color: "red",
-                        background: new Date(formatted_data.year + '-' + formatted_data.month + '-' + turno).getHours() === 8 ? "#fb5959" : "white"
+                  <TableCell key={turno} 
+                    style={{
+                        // background: turno.split('T')[1].startsWith('08') ? "#fb5959" : "white"
                       }}
                   >
-                    {turno}
+                    {getTextTurno(turno)}
                   </TableCell>
                   {
                     Object.keys(formatted_data['turni']).map((sede: string) => 
-                      Array.from(Array(formatted_data['med_per_turno'][sede])).map((x, index) => {
-                        const medici_in_turno: string[] = formatted_data['turni'][sede][turno] !== undefined ? formatted_data['turni'][sede][turno] : []
-                        let medico: any = undefined
-                        let id_medico: string | undefined
-                        if (index < medici_in_turno.length) {
-                          id_medico = medici_in_turno[index]
-                          medico = formatted_data['medici_mod'][id_medico]
-                        }
-
-                        return (
-                          <TableCell style={{
-                            borderBottom:"none",
-                            margin: 0,
-                            padding: 0
-                          }} key={turno + index.toString()} align="center" onClick={() => openModalMedico(sede, turno, id_medico)}>
-                            <Box sx={{px: 0, py: 1}} style={{
-                            borderRadius: 12,
-                            margin: 1,
-                            background: medico === undefined ? "black" : medico.ruolo.startsWith("inc") ? "#ccff9b" : medico.ruolo.startsWith("conven") ? "#b1f4ff" : "#ffd07d"
-                          }}>
-                                <Typography style={{ whiteSpace: "pre-line" }}>{getInfoTextMedico(medico)}</Typography>
-                            </Box>
-                          </TableCell>
-                        )
-                      })
+                      <TableCellMedici key={sede} onClick={openModalMedico} formatted_data={formatted_data} sede={sede} turno={turno} dettagli={props.dettagli}/>
                     )
                   }
                 </TableRow>
@@ -164,7 +216,7 @@ export default function TableResult() {
               aria-labelledby="modal-modal-title"
               >
               <Box sx={styleModal}>
-              <Typography variant="h6" component="h2">
+              <Typography variant="h6" component="h6" style={{fontWeight: 'bold'}}>
                   Cambio turno
               </Typography>
               <List>
@@ -179,7 +231,8 @@ export default function TableResult() {
                               setSedeSel(undefined)
                               setOpenModal(false)
                           }}>
-                            <ListItemText primary={formatted_data['medici_mod'][id_med].nome} />
+                            <ListItemIcon><CircleIcon style={{ color: getColorRole(formatted_data['medici_mod'][id_med].ruolo)}}/></ListItemIcon>
+                            <ListItemText primary={formatted_data['medici_mod'][id_med].nome} secondary={"Turni rimanenti: " + formatted_data['medici_mod'][id_med].n_turni_per_soddisfatto} />
                           </ListItemButton>
                           </ListItem>
                       )
@@ -202,6 +255,5 @@ export default function TableResult() {
               </Box>
           </Modal>
         </TableContainer>
-      </Grid>
     )
 }

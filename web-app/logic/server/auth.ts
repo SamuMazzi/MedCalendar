@@ -17,14 +17,6 @@ export class SignError extends Error {
 }
 
 const auth = getAuth(firebaseApp);
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-      const uid = user.uid;
-      console.log("User logged with uid: " + uid);
-    } else {
-      console.log("User not logged")
-    }
-});
 
 export const signInAdminWithEmail = async (email: string, password: string) => {
     try {

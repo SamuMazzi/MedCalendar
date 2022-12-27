@@ -1,11 +1,19 @@
-import { Box, Grid, Typography, ToggleButtonGroup, ToggleButton, TextField, Button, Grow, Divider } from "@mui/material";
+import Grid from '@mui/material/Grid'
+import Button from '@mui/material/Button'
+import Typography from '@mui/material/Typography'
+import Divider from '@mui/material/Divider'
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup'
+import ToggleButton from '@mui/material/ToggleButton'
+import Grow from '@mui/material/Grow'
+import Box from '@mui/material/Box'
+import TextField from '@mui/material/TextField'
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import { useEffect } from "react";
 import { useAppSelector, useAppDispatch } from '../logic/redux/store'
 import { changeFasceTurnoSede, changeNumMediciPerTurnoSede, changeNomeSede } from '../logic/redux/configuration_distretto_slice'
 import DeleteIcon from '@mui/icons-material/Delete';
-import { ListDropdownForm } from "./form_dropdown";
+import { NewListDropdown } from "./form_dropdown";
 
 interface SingleSedeProps {
     index: number
@@ -80,11 +88,11 @@ export default function SingleSede(props: SingleSedeProps) {
     const changeFasciaTurno = (val: string, index: number, mode: string) => {
         let newFascia = ''
         if(mode === 'inizio') {
-            newFascia = val + stateTurni[index].fascia.split('-')[1]
+            newFascia = val + '-' + stateTurni[index].fascia.split('-')[1]
         } else if (mode === 'fine') {
-            newFascia = stateTurni[index].fascia.split('-')[0] + val
+            newFascia = stateTurni[index].fascia.split('-')[0] + '-' + val
         } else {
-            throw "Nessuna modalita con questo nome: " + mode 
+            throw "Nessuna modalità con questo nome: " + mode 
         }
         const newTurno = {
             fascia: newFascia,
@@ -171,15 +179,15 @@ export default function SingleSede(props: SingleSedeProps) {
                 alignItems="center"
                 justifyContent="center">
                     <Grid item>
-                        <ListDropdownForm 
+                        <NewListDropdown
                             label="Dalle"
-                            value={stateTurni[index].fascia.split('-')[0]}
+                            value={val.fascia.split('-')[0].padStart(2, '0')}
                             inputList={turni_disp}
                             onChangeFn={(event) => changeFasciaTurno(event.target.value, index, 'inizio')}
                         />
-                        <ListDropdownForm
+                        <NewListDropdown
                             label="Alle"
-                            value={stateTurni[index].fascia.split('-')[1]}
+                            value={val.fascia.split('-')[1].padStart(2, '0')}
                             inputList={turni_disp}
                             onChangeFn={(event) => changeFasciaTurno(event.target.value, index, 'fine')}
                         />
@@ -200,8 +208,8 @@ export default function SingleSede(props: SingleSedeProps) {
                             }
                         </ToggleButtonGroup>
                     </Grid>
-                    { //Non so perchè non funziona
-                        index !== stateTurni.length - 1 && <Divider /> 
+                    { //!Non so perchè non funziona
+                        (index !== stateTurni.length - 1) && <Divider style={{color: 'black'}}/> 
                     }
                 </Grid>
                 )

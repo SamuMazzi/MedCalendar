@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import dayjs, { Dayjs } from 'dayjs';
 import Badge from '@mui/material/Badge';
-import { IconButton } from '@mui/material';
+import IconButton from '@mui/material/IconButton';
 import EventIcon from '@mui/icons-material/Event';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -62,7 +62,7 @@ export function PersonalCalendar(props: PropsCalendar) {
         minDate={mese !== undefined ? dayjs(mese).startOf('month') : undefined}
         closeOnSelect={false}
         shouldDisableMonth={mese !== undefined ? (date) => date.month() !== dayjs(mese).month() : undefined}
-        shouldDisableDate={(date) => !props.selectableDays.includes(date.day())} //TODO Risolvere mini bug
+        shouldDisableDate={(date) => !props.selectableDays.includes(date.day())}
         showDaysOutsideCurrentMonth={mese === undefined}
         open={isOpen}
         disableHighlightToday={true}

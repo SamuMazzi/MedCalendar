@@ -11,6 +11,7 @@
   "dependencies": {
     "@emotion/react": "^11.10.5",
     "@emotion/styled": "^11.10.5",
+    "@fontsource/public-sans": "^4.5.11",
     "@mui/icons-material": "^5.10.16",
     "@mui/material": "^5.10.17",
     "@mui/x-date-pickers": "^5.0.9",
@@ -18,6 +19,7 @@
     "@vercel/analytics": "^0.1.6",
     "date-fns": "^2.29.3",
     "dayjs": "^1.11.6",
+    "file-saver": "^2.0.5",
     "firebase": "^9.14.0",
     "next": "13.0.6",
     "react": "18.2.0",
@@ -25,9 +27,12 @@
     "react-firebase-hooks": "^5.1.1",
     "react-redux": "^8.0.5",
     "redux": "^4.2.0",
+    "sharp": "^0.31.3",
+    "sheetjs-style": "^0.15.8",
     "typescript": "4.9.3"
   },
   "devDependencies": {
+    "@types/file-saver": "^2.0.5",
     "@types/mocha": "^10.0.1",
     "@types/node": "^18.11.17",
     "@types/react": "^18.0.26",

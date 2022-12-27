@@ -1,16 +1,15 @@
+import MenuItem from '@mui/material/MenuItem'
+import Menu from '@mui/material/Menu'
+import IconButton from '@mui/material/IconButton'
+import Grid from '@mui/material/Grid'
+import Typography from '@mui/material/Typography'
+import Person from '@mui/icons-material/Person'
+import Image from 'next/image';
 import { useState } from 'react';
-import AppBar from '@mui/material/AppBar';
-import Box from '@mui/material/Box';
-import Toolbar from '@mui/material/Toolbar';
-import Typography from '@mui/material/Typography';
-import IconButton from '@mui/material/IconButton';
-import MenuIcon from '@mui/icons-material/Menu';
-import AccountCircle from '@mui/icons-material/AccountCircle';
-import MenuItem from '@mui/material/MenuItem';
-import Menu from '@mui/material/Menu';
 import { useAppDispatch, useAppSelector }  from '../logic/redux/store'
 import { setAdmin, setUser } from '../logic/redux/auth_slice'
 import { logoutFirebase } from '../logic/server/auth';
+import Link from 'next/link'
 
 export function MenuAppBar() {
   const [ anchorEl, setAnchorEl ] = useState<null | HTMLElement>(null);
@@ -42,21 +41,18 @@ export function MenuAppBar() {
   };
 
   return (
-    <Box sx={{ flexGrow: 1 }}>
-      <AppBar position="static">
-        <Toolbar>
-          <IconButton
-            size="large"
-            edge="start"
-            color="inherit"
-            aria-label="menu"
-            sx={{ mr: 2 }}
-          >
-            <MenuIcon />
-          </IconButton>
-          <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
-            Programmazione turni
-          </Typography>
+    <Grid container
+      direction="row"
+      justifyContent="space-around"
+      alignItems="center"
+      sx={{pb: 3, pt: 2}}
+    >
+      <Grid item>
+        <Link href="/">
+          <Image priority alt="logo" src="/logo.png" width="130" height="80"/>
+        </Link>
+      </Grid>
+      <Grid item>
           {authState.id !== "" && (
             <div>
               <IconButton
@@ -66,7 +62,7 @@ export function MenuAppBar() {
                 onClick={handleMenu}
                 color="inherit"
               >
-                <AccountCircle />
+                <Person fontSize="large" style={{ color: '#1976D2' }} />
               </IconButton>
               <Menu
                 id="menu-appbar"
@@ -82,14 +78,38 @@ export function MenuAppBar() {
                 }}
                 open={Boolean(anchorEl)}
                 onClose={handleClose}
+                style={{
+                  color: '#D8ECFD',
+                  borderRadius: 30,
+                  boxShadow: 'none'
+                }}
+                sx={{
+                  mb: 1,
+                  
+                  borderRadius: '20px',
+                  boxShadow: 'none',
+
+                  '.MuiMenu-paper': {
+                    backgroundColor: '#D8ECFD',
+                    borderRadius: '20px',
+                    boxShadow: 'none',
+                  },
+                }}
               >
-                <MenuItem onClick={handleClose}>{authState.id}</MenuItem>
-                <MenuItem onClick={logout}>Logout</MenuItem>
+              <Typography style={{ fontWeight: "bold", display: 'inline-block', whiteSpace: 'pre-line', fontSize: 20 }} sx={{px: 2, pt: 1}}>
+                  {"Benvenuto\n" + authState.id
+                    //* Valutare di creare una box unica con dentro testo e button e non dei menuItem 
+                  }
+                </Typography>
+                <MenuItem onClick={logout}>
+                  <Typography style={{textDecoration: 'underline', color: 'black'}}>
+                    Logout
+                  </Typography>
+                </MenuItem>
               </Menu>
             </div>
           )}
-        </Toolbar>
-      </AppBar>
-    </Box>
+      </Grid>
+    </Grid>
   );
 }

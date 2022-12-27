@@ -1,6 +1,8 @@
 // Import the functions you need from the SDKs you need
 import { firebaseApp } from "./firebase";
-import { getFirestore, doc, setDoc, collection, getDocs, getDoc, collectionGroup, query, where, arrayUnion, Timestamp } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, collection, getDocs, getDoc, collectionGroup, query, where, arrayUnion, serverTimestamp } from 'firebase/firestore';
+import { StateTurno } from "../redux/turni_slice";
+import { SchedulerState } from "../redux/scheduler_slice";
 
 const firestore = getFirestore(firebaseApp);
 
@@ -10,9 +12,8 @@ const infoMediciKey = 'info_medici'
 const infoSediKey = 'info_sedi'
 const listaMediciKey = 'list_medici' //TODO: Capire perchè serve questa voce, si potrebbe fare filter su users, ma forse diventa complicato/costoso
 const distrettiCollectionKey = 'distretti'
+const disponibilitaSedeKey = 'disponibilita'
 
-//*     x               V                       V                       V
-//* password -> chi sei? medico/admin -> scegli distretto -> cambia turno/raccolta disp ->...
 
 export const getAllMedici = async () => {
     const collectionUsersRef = collection(firestore, usersKey);
@@ -41,7 +42,7 @@ export const setInfoMedico = async (distretto: string, id_medico: string, nome: 
 
 /**
  * 
- * @param mese Date del giorno 3 del mese designato
+ * @param mese Data del giorno 3 del mese designato
  * @param distretto Distretto per firestore
  * @param sedi Ancora da definire bene
  */
@@ -59,22 +60,25 @@ export const setConfigurationDistrettoMese = async (mese: Date, distretto: strin
     })
 }
 
-export const setMeseMedico = async (distretto: string, id: string, info: any) => {    
-    const key_mese = "2023-"+ info.mese.toString()
-    const data: Record<any, any> = {}
-    /**
-     *  usersRef.update({
-            ["requests.outgoing."+personID]: data
-        })
-     */
+export const setMeseMedico = async (distretto: string, id: string, info: StateTurno) => {  
+    const key_mese = "2023-"+ (new Date(info.mese!).getMonth()+1).toString()
+    const data: Record<string, any> = {}
     Object.keys(info.disponibilita).forEach((turno) => {
-        const giorni: any[] = info.disponibilita[turno]
-        giorni.forEach(giorno => data[giorno+"."+turno] = arrayUnion([id]))
-        //* 14.20-8 = union[id]
-        //* 18.20-8 = union[id]
+        info.disponibilita[turno].forEach(giorno => data[giorno] = { [turno]: arrayUnion(id) })
     })
+    await setDoc(doc(firestore, distrettiCollectionKey, distretto, disponibilitaSedeKey, key_mese), data, { merge: true });
+}
+
+export const uploadDefConfigurazione = async (distretto: string, info: SchedulerState) => {
+    const key_mese = "2023-" + info.month
+    const data: Record<string, any> = {
+        'create_at': serverTimestamp(),
+        'turni': info.turni,
+        'medici': info.medici_mod
+    }    
     
-    await setDoc(doc(firestore, distrettiCollectionKey, distretto, 'disponbilita', key_mese), data, { merge: true });
+    await setDoc(doc(firestore, distrettiCollectionKey, distretto, "turni_mese", key_mese), data);
+
 }
 
 // doc.data() is never undefined for query doc snapshots (official documentation)
@@ -90,14 +94,10 @@ export const getAllDistretti = async () => {
 export const getDistrettiForMedico = async (id: string) => {
     const queryDistretti = query(collectionGroup(firestore, infoCollectionKey), where('list', "array-contains", id));
     const querySnapshot = await getDocs(queryDistretti);
-    console.log('query' + querySnapshot.docs)
-    console.log(querySnapshot.docs)
     const outList = querySnapshot.docs.map((doc) => {
-        console.log(doc.ref.path)
         const firstSlash = doc.ref.path.indexOf("/", 1)
         const secondSlash = doc.ref.path.indexOf("/", firstSlash+1)
         const distretto = doc.ref.path.substring(firstSlash+1, secondSlash)
-        console.log(distretto)
         return distretto
     })
     return outList;
@@ -119,17 +119,36 @@ export const getInfoMediciDistretto = async (distretto: string) => {
 }
 
 export const getInfoSediRef = (distretto: string) => {
-    console.log('Distretto ref: ' + distretto)
     return doc(firestore, distrettiCollectionKey, distretto, infoCollectionKey, infoSediKey)
 }
 export const getInfoSediDistretto = async (distretto: string) => {
-    const distrettoInfoRef = doc(firestore, distrettiCollectionKey, distretto, infoCollectionKey, infoSediKey);
-    const snap = await getDoc(distrettoInfoRef);
-    return snap.data();
+    const snap = await getDoc(getInfoSediRef(distretto));
+
+    const data = snap.data()!
+    const out: RemoteSediInfo = {
+        sedi: data.sedi,
+        turni: data.turni
+    }
+    return out
+}
+interface RemoteInfoSingleSede {
+    medici_per_turno: number
+}
+export interface RemoteSediInfo {
+    sedi: Record<string, RemoteInfoSingleSede>
+    turni: Record<string, string>
 }
 
+/**
+ * Struttura disp: <giorno> -> <turno> -> id_medici
+ *                 Record<giorno, Record<turno, <id_medici>[]>>
+ * @param distretto 
+ * @param anno 
+ * @param mese 
+ * @returns 
+ */ 
 export const getDisponibilitaMeseDistretto = async (distretto: string, anno: number, mese: number) => {
-    const distrettoDispRef = doc(firestore, distrettiCollectionKey, distretto, 'disponibilita', anno.toString() + '-' + mese.toString());
+    const distrettoDispRef = doc(firestore, distrettiCollectionKey, distretto, 'disponibilita', anno.toString() + '-' + mese.toString().padStart(2, '0'));
     const snap = await getDoc(distrettoDispRef);
     return snap.data();
 }
@@ -141,4 +160,10 @@ export const getDisponibiltiaOfSediOfAdminUser = async (mese: string, distretto:
         doc.ref.path //Possiamo risalire ad ID medico
         console.log(doc.id, ' => ', doc.data());
     });
+}
+
+export const getGenericPassword = async () => {
+    const secretsRef = doc(firestore, 'generic_info', 'secrets');
+    const secrets = await getDoc(secretsRef);
+    return secrets.get('password');
 }

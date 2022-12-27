@@ -14,6 +14,13 @@ export const mesi: MesiType = {
     12: 'Dicembre'
 }
 
+const giorni_settimana = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato']
+export const getGiornoSettimana = (timestamp: number, day: number) => {
+    const mese = new Date(timestamp)
+    mese.setDate(day)
+    return giorni_settimana[mese.getDay()]
+}
+
 
 const scontrini_local_key = 'scontrini';
 const categories_local_key = 'categories';

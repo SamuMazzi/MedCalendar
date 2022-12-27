@@ -1,9 +1,11 @@
-import { Typography, CircularProgress, Grid } from '@mui/material'
+import Grid from '@mui/material/Grid'
+import CircularProgress from '@mui/material/CircularProgress'
+import Typography from '@mui/material/Typography'
 import { useEffect, useState } from 'react';
 import { useAppSelector } from '../logic/redux/store';
-import { getDistrettiForAdmin, getDistrettiForMedico } from '../logic/server/firestore'
+import { getDistrettiForMedico } from '../logic/server/firestore'
 import { getLocalDistretti, saveToStorage } from '../logic/local_storage'
-import { ListDropdownForm } from './form_dropdown';
+import { NewListDropdown } from './form_dropdown';
 
 interface ParamSelectDistretto {
     distretto: string,
@@ -23,12 +25,14 @@ export default function SelectDistretto(props: ParamSelectDistretto) {
         let distretti_admin = getLocalDistretti(true)
         if(!distretti || distretti.length === 0 || !distretti_admin || distretti_admin.length === 0) {
           if(!distretti || distretti.length === 0) {
-            distretti = await getDistrettiForMedico(authState.id);
-            saveToStorage('distretti', distretti)
+            distretti = ['Sassuolo', 'Modena']
+            //distretti = await getDistrettiForMedico(authState.id);
+            //saveToStorage('distretti', distretti)
           }
           if(authState.admin && (!distretti_admin || distretti_admin.length === 0)) {
-            distretti_admin = await getDistrettiForAdmin(authState.id)
-            saveToStorage('distretti_admin', distretti_admin)
+            distretti_admin = ['Sassuolo', 'Modena']
+            //distretti_admin = await getDistrettiForAdmin(authState.id)
+            //saveToStorage('distretti_admin', distretti_admin)
           }
         }
         setDistrettiMedico(distretti) 
@@ -53,7 +57,7 @@ export default function SelectDistretto(props: ParamSelectDistretto) {
 
         } 
         return (
-            <ListDropdownForm 
+            <NewListDropdown
                 label="Distretto"
                 onChangeFn={(event) => props.setDistretto(event.target.value)}
                 value={props.distretto}
