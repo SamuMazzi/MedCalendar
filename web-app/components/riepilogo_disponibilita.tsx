@@ -38,8 +38,8 @@ export default function RiepilogoDisponibilita(props: PropsDisponibilita) {
     const stateTurni = useAppSelector(state => state.turni)
     const stateAuth = useAppSelector(state => state.auth)
     const textMese = mesi[new Date(stateTurni.mese!).getMonth() + 1]
-    const titles = ['Medico', 'Ruolo', 'Sedi', 'Mese', 'Ore massime']
-    const descriptions = [(stateAuth ? stateAuth.nome : "")!, 'Mock', stateTurni.sedi.join(', '), textMese, stateTurni.oreMassime.toString()]
+    const titles = ['Medico', 'Ruolo', 'Sedi', 'Mese', 'Turni massimi']
+    const descriptions = [(stateAuth ? stateAuth.nome : "")!, stateAuth.ruolo, stateTurni.sedi.join(', '), textMese, stateTurni.oreMassime.toString()]
     const generalState = useAppSelector((state) => state.turni)
     const [loading, setLoading] = useState(false)
     const dispatch = useAppDispatch()
@@ -47,8 +47,7 @@ export default function RiepilogoDisponibilita(props: PropsDisponibilita) {
     const onConfirm = async () => {
         setLoading(true)
         try {
-            console.log('Setting mese...')
-            await setMeseMedico(props.distretto!, stateAuth.id, generalState)
+            await setMeseMedico(props.distretto!, stateAuth.uid, generalState)
             dispatch(clearState())
             setDone(true)
         } catch(e: any) {
@@ -69,9 +68,9 @@ export default function RiepilogoDisponibilita(props: PropsDisponibilita) {
                     <Typography sx={{pt: 1}}>{"DISTRETTO: " + (props.distretto !== undefined ? props.distretto!.toUpperCase() : "")}</Typography>
                 </Grid>
                 <Grid item>
-                    <Grid container direction="row">
+                    <Grid key="containerSezioni" container direction="row">
                         <Grid item>
-                            <Grid container direction="column">
+                            <Grid key="contSingleSez" container direction="column">
                                 {
                                     titles.map((title, index) => (
                                         <TitleAndDescription key={title} title={title} description={descriptions[index]} pb={undefined} />

@@ -30,16 +30,14 @@ function RouteGuard({ children }) {
     }, [authState]);
 
     function authCheck(url) {
-        console.log(authState)
-        const normal_user = authState.id.length > 0
+        const normal_user = authState.uid.length > 0
         const admin_user = authState.admin
         // redirect to login page if accessing a private page and not logged in 
         const publicPaths = ['/login'];
         const adminPaths = ['/admin_page', '/add_configuration_admin', '/pianificazione_turni_admin'];
         const path = url.split('?')[0];
         const { distretto } = router.query;
-        /* const passInserted = getFromStorage('password_inserted')
-
+        /*
         const query = url.split('?')[1];
         if (!passInserted) { //* Ancora da testare, dava dei problemi l'ultima volta
             console.log('pass non inserita o sbagliata')
@@ -59,7 +57,7 @@ function RouteGuard({ children }) {
             setAuthorized(false);
             router.back()
         } else {
-            console.log('User logged in');
+            //console.log('User logged in');
             setAuthorized(true);
         }
         return;

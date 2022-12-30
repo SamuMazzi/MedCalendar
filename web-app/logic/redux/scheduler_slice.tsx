@@ -47,10 +47,8 @@ export const scheduler_slice = createSlice({
     name: 'scheduler_slice',
     initialState: initialState,
     reducers: {
-        clearScheduler: (state) => {
-            state = initialState
-        },
         populateScheduler: (state, action) => {
+            state = initialState // Clear state
             const input = action.payload
             const sedi_input = input['sedi']
             state['year'] = input['year']
@@ -94,6 +92,6 @@ export const scheduler_slice = createSlice({
 })
 
 // Action creators are generated for each case reducer function
-export const { populateScheduler, swapMediciInTurno, clearScheduler } = scheduler_slice.actions
+export const { populateScheduler, swapMediciInTurno } = scheduler_slice.actions
 
 export default scheduler_slice.reducer

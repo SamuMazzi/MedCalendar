@@ -28,7 +28,7 @@ def create_calendar_turni(year: int, month: int):
 # 11 -> ogni 1 o 0 ti dice se l'ora d'inizio/fine ha la mezz'ora -> 12.30-14.30
 
 
-def parse_turno(day: datetime.datetime, fascia):
+def parse_turno(day: datetime.date, fascia):
     inizio_ora = fascia.split('-')[0]  # Per ora si possono usare solo ore senza mezz'ore
     inizio = inizio_ora.split(':')
     inizio_ora = inizio[0]
@@ -41,20 +41,19 @@ def parse_turno(day: datetime.datetime, fascia):
     return datetime.datetime(day.year, day.month, day.day, int(inizio_ora), int(fine_ora), final_minuti)
 
 
-def create_calendar_turni_from_data(year, month, data_sede):
+def create_calendar_turni_from_data(year, month, fasce):
     first_day = datetime.date(year, month, 1)
     list_days = list(calendar.Calendar().itermonthdates(first_day.year, first_day.month))
     real_list = []
-    fasce = data_sede['fasce_turno']
     for fascia in fasce.keys():
         giorni = fasce.get(fascia)
+        list_giorni = [int(giorno) for giorno in giorni.split(',')]
         for day in list_days:
             if day.month == first_day.month:
                 weekday = calendar.weekday(day.year, day.month, day.day)
-                if weekday in giorni:  # Tanto le ore verranno scelte da un dropdown con solo ore intere o mezze
+                if weekday in list_giorni:  # Tanto le ore verranno scelte da un dropdown con solo ore intere o mezze
                     real_list.append(parse_turno(day, fascia))
 
-    # TODO: Da finire!!
     return real_list
 
 

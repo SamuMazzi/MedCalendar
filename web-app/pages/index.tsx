@@ -17,7 +17,10 @@ interface ChoiceParams {
 function ChoiceButton(props: ChoiceParams) {
   return (
     <Grid item sx={{px: 1}}>
-      <Link href={{ pathname: props.path, query: { distretto: props.distretto } }}>
+      <Link 
+        style={{cursor: !props.distretto ? "default" : undefined}} 
+        href={{ pathname: props.path, query: { distretto: props.distretto } }}
+        onClick={!props.distretto ? (event) => event.preventDefault() : undefined}>
         <Button
           disabled={!props.distretto}
           variant="contained"
@@ -34,11 +37,6 @@ export default function Home() {
 
   return (
     <div className={styles.container}>
-      <Head>
-        <title>MED Calendar</title>
-        <meta name="description" content="Programmazione turni medici" />
-        <link rel="icon" href="/favicon.ico" />
-      </Head>
       <main className={styles.main}>
       <MenuAppBar />
         <Grid container spacing={2} 

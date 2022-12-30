@@ -8,6 +8,7 @@ import { Analytics } from '@vercel/analytics/react';
 import "@fontsource/public-sans"
 import "@fontsource/public-sans/900.css";
 import "@fontsource/public-sans/700.css";
+import Head from 'next/head'
 
 //-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
 //Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans - serif;
@@ -65,6 +66,9 @@ const theme = createTheme({
 export default function App({ Component, pageProps }: AppProps) {
   return (
     <>
+      <Head>
+        <title>Med Calendar</title>
+      </Head>
       <ThemeProvider theme={theme}>
         <Provider store={store}>
           <RouteGuard>

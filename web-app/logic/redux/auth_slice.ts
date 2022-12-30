@@ -1,26 +1,42 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import { getFromStorage, saveToStorage } from '../local_storage';
 
+//TODO: Dopo logout <andato male> (o cambio pagina?) FirebaseError: Expected first argument to collection() to be a CollectionReference, a DocumentReference or FirebaseFirestore
+//! Assolutamente da risolvere questo BUG qua sopra
+
 interface StateAuthType {
   admin: boolean,
-  id: string,
-  distretti: string[]
-  nome: string | undefined
+  uid: string,
+  distretti: string[],
+  sedi: string[],
+  nome: string | undefined,
+  ruolo: string
 }
 
 export interface ParamSetUser {
-  id: string,
-  data: Record<any, any>
+  uid: string,
+  data: Record<string, any>
 }
 
 const initialUser = getFromStorage('user');
 const initialAdmin = getFromStorage('admin');
 
+const emptyState: StateAuthType = {
+  admin: false,
+  uid: "",
+  distretti: [],
+  sedi: [],
+  nome: "",
+  ruolo: ""
+}
+
 const initialStateAuth: StateAuthType = {
   admin: initialAdmin !== undefined ? initialAdmin : false,
-  id: initialUser?.id !== undefined ? initialUser.id : "",
+  uid: initialUser?.uid !== undefined ? initialUser.uid : "",
   distretti: initialUser?.distretti !== undefined ? initialUser.distretti : [],
-  nome: initialUser?.nome !== undefined ? initialUser.nome : ""
+  sedi: initialUser?.sedi !== undefined ? initialUser.sedi : [],
+  nome: initialUser?.nome !== undefined ? initialUser.nome : "",
+  ruolo: initialUser?.ruolo !== undefined ? initialUser.ruolo : ""
 }
 
 export const authSlice = createSlice({
@@ -29,9 +45,10 @@ export const authSlice = createSlice({
   reducers: {
     setUser: (state, action: PayloadAction<ParamSetUser>) => {
       state.nome = action.payload.data.nome
-      state.id = action.payload.id
-      state.distretti = action.payload.data.distretti
-      saveToStorage('user', action.payload)
+      state.uid = action.payload.uid
+      state.sedi = action.payload.data.sedi
+      state.ruolo = action.payload.data.ruolo
+      saveToStorage('user', state)
     },
     setAdmin: (state, action: PayloadAction<boolean>) => {
       state.admin = action.payload
@@ -41,10 +58,20 @@ export const authSlice = createSlice({
       state.distretti = action.payload
       saveToStorage('distretti_admin', action.payload)
     },
+    clearUserAndAdmin: (state) => {
+      //state = {...emptyState} Non funziona
+      state.nome = emptyState.nome
+      state.uid = emptyState.uid
+      state.sedi = emptyState.sedi
+      state.ruolo = emptyState.ruolo
+      state.admin = emptyState.admin
+      saveToStorage('user', emptyState)
+      saveToStorage('admin', emptyState.admin)
+    }
   }
 })
 
 // Action creators are generated for each case reducer function
-export const { setUser, setAdmin, setDistrettiAdmin } = authSlice.actions
+export const { setUser, setAdmin, setDistrettiAdmin, clearUserAndAdmin } = authSlice.actions
 
 export default authSlice.reducer

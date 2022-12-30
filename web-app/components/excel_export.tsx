@@ -1,12 +1,69 @@
-import React from 'react'
+import React, { ChangeEvent, useState } from 'react'
 import Button from '@mui/material/Button'
 import FileSaver from 'file-saver'
-import { write, utils } from 'sheetjs-style'
+import { write, utils, read } from 'xlsx' //Capire perchè non ti installa la 0.19.1
 import Tooltip from '@mui/material/Tooltip'
 import { SchedulerState } from '../logic/redux/scheduler_slice'
 import { getGiornoSettimana } from '../logic/local_storage'
+import Typography from '@mui/material/Typography'
 
 //* Da abbellire
+
+export function ImportFileExcel() {
+    const [loading, setLoading] = useState(false)
+    const [file, setFile] = useState<File | null>(null)
+    const [ resultCsv, setResultCsv ] = useState("")
+
+    // https://stackoverflow.com/questions/8238407/how-to-parse-excel-xls-file-in-javascript-html5
+
+    const importExcel = async (excelFile: File) => {
+        setLoading(true)
+        const textFile = await excelFile.text()
+        console.log("ora inizio")
+        const wb = read(textFile, {
+            type: 'binary'
+        })
+        console.log("Ho finito")
+        const ws = wb.Sheets[wb.SheetNames[0]]
+        const csv = utils.sheet_to_csv(ws)
+        console.log(csv)
+        setLoading(false)
+    }
+
+    const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+
+        if (files && files.length > 0) {
+            if (files.length > 1) {
+                throw "Puoi caricare al massimo 1 file" //* Metti alert
+            }
+            const newFile = files.item(0)
+            setFile(newFile)
+            importExcel(newFile!)
+        }
+    };
+    return (
+        <>
+            <Button
+                variant="contained"
+                component="label"
+            >
+                Carica file turni
+                <input
+                type="file"
+                accept=".xlsx, .xls, .csv"
+                hidden
+                onChange={(e) => handleFileSelect(e)}
+                />
+            </Button>
+            {
+                file && <Typography>{"Hai caricato il file " + file!.name}</Typography>
+            }
+            {
+                resultCsv && <Typography>{resultCsv}</Typography>
+            }
+        </>
+    )}
 
 interface PropsExportExcel {
     excelData: SchedulerState,

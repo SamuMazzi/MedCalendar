@@ -3,6 +3,7 @@ import { firebaseApp } from "./firebase";
 import { getFirestore, doc, setDoc, collection, getDocs, getDoc, collectionGroup, query, where, arrayUnion, serverTimestamp } from 'firebase/firestore';
 import { StateTurno } from "../redux/turni_slice";
 import { SchedulerState } from "../redux/scheduler_slice";
+import { capitalizeFirstLetter } from "../local_storage";
 
 const firestore = getFirestore(firebaseApp);
 
@@ -22,9 +23,10 @@ export const getAllMedici = async () => {
     querySnapshot.forEach((doc) => {
       const data = doc.data()!;
       tmpMedici[doc.id] = {
-        nome: data.nome,
-        distretti: data.distretti,
-        ruolo: data.ruolo
+        nome: data.Nome + ' ' + data.Cognome,
+        ruolo: data.ruolo,
+        uid: data.uid,
+        sedi: data.sedi
       }
     });
     return tmpMedici;
@@ -166,4 +168,34 @@ export const getGenericPassword = async () => {
     const secretsRef = doc(firestore, 'generic_info', 'secrets');
     const secrets = await getDoc(secretsRef);
     return secrets.get('password');
+}
+
+/* async function clearCollection(path: string) {
+    const ref = collection(firestore, path)
+    onSnapshot(ref, (snapshot) => {
+        snapshot.docs.forEach(async (doc) => {
+            await deleteDoc(doc.ref)
+        })
+    })
+} */
+
+export const setDataMedici = async (bufferString: string) => {
+    const futures = []
+    const arr = bufferString.split('\n'); 
+    var headers = arr[0].split(',').map(el => capitalizeFirstLetter(el.trim()));
+    
+    for (var i = 1; i < arr.length; i++) {
+        var data = arr[i].split(',');
+        var obj: any = {};
+        for (var j = 0; j < 3; j++) { //data.length
+            obj[headers[j]] = capitalizeFirstLetter(data[j].trim());
+        }
+        const tmpRuolo = data[5].trim().toLowerCase().startsWith('incar') ? 'INCARICATO' : data[5].trim()
+        obj['ruolo'] = capitalizeFirstLetter(tmpRuolo) + data[4].trim()
+        obj['sedi'] = data.slice(8).filter(el => el !== "")
+        obj['uid'] = obj[headers[0]]
+        futures.push(setDoc(doc(firestore, usersKey, obj['uid']), obj));
+    }
+    //JSON.stringify(jsonObj);
+    await Promise.all(futures)
 }

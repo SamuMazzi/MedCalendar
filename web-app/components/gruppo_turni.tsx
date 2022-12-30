@@ -10,6 +10,7 @@ import { getInfoSediDistretto, RemoteSediInfo } from '../logic/server/firestore'
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { NewListDropdown } from './form_dropdown'
+import { capitalizeFirstLetter } from '../logic/local_storage'
 
 interface PropsGruppoTurni {
   distretto: string | undefined
@@ -21,6 +22,8 @@ const mockTurni: mockTurniType = {"20:30-8": "1,2,3,4,5", "8-20": "6,7"}
 
 export default function GruppoTurni(props: PropsGruppoTurni) {
   const stateTurni = useAppSelector((state) => state.turni)
+  const predefinedSediUser = useAppSelector((state) => state.auth.sedi)
+  const authState = useAppSelector((state) => state.auth)
   const dispatch = useAppDispatch()
   const [loading, setLoading] = useState(false)
   const [messageError, setMessageError] = useState("")
@@ -44,6 +47,12 @@ export default function GruppoTurni(props: PropsGruppoTurni) {
   }
 
   useEffect(() => {
+    console.log(predefinedSediUser)
+    console.log(authState)
+    if (predefinedSediUser.length > 0) {
+      console.log('set def')
+      dispatch(handleSede(predefinedSediUser.map(el => capitalizeFirstLetter(el))))
+    }
     getInfoSedi()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -59,9 +68,11 @@ export default function GruppoTurni(props: PropsGruppoTurni) {
       <Grid container direction="column">
         <Grid item sx={{py: 2}}>
           <Typography fontWeight="fontWeightBold" variant="h6" component="h6" sx={{py: 2}}>
-            {"Numero massimo di ore"}
+            {"Numero massimo di turni"}
           </Typography>
           <TextField
+            label=''
+            placeholder='Turni'
             inputProps={{ inputMode: 'numeric', pattern: '[0-9]*' }} 
             value={stateTurni.oreMassime !== 0 ? stateTurni.oreMassime : ""}
             onChange={(event) => dispatch(setOreMassime(parseInt(event.target.value !== "" ? event.target.value : "0")))}
@@ -75,13 +86,16 @@ export default function GruppoTurni(props: PropsGruppoTurni) {
         <Typography fontWeight="fontWeightBold" variant="h6" component="h6" sx={{py: 2}}>
           {"Seleziona una o più sedi"}
         </Typography>
-        <NewListDropdown 
-            value={stateTurni.sedi}
-            label="Sedi"
-            multiple={true}
-            onChangeFn={(event) => dispatch(handleSede(event.target.value as string[]))}
-            inputList={infoSedi ? Object.keys(infoSedi.sedi) : mockSedi}
-        />
+        {
+          infoSedi && 
+          <NewListDropdown 
+              value={stateTurni.sedi}
+              label="Sedi"
+              multiple={true}
+              onChangeFn={(event) => dispatch(handleSede(event.target.value as string[]))}
+              inputList={Object.keys(infoSedi.sedi)}
+          />
+        }
       </Grid>
           
       </Grid>

@@ -3,8 +3,8 @@ import { useRouter } from "next/router";
 import { useAppDispatch } from "../../logic/redux/store";
 import { getAllMedici, getGenericPassword } from '../../logic/server/firestore';
 import { setAdmin, setUser } from '../../logic/redux/auth_slice';
-import { saveToStorage, getFromStorage } from '../../logic/local_storage';
-import { NewMapDropdown } from '../form_dropdown';
+import { saveToStorage, getFromStorage, getAllLocalMedici } from '../../logic/local_storage';
+import { SearchableDropdownMap } from '../form_dropdown';
 import TextField from "@mui/material/TextField";
 import Grid from "@mui/material/Grid";
 import Typography from "@mui/material/Typography";
@@ -13,7 +13,7 @@ import Button from "@mui/material/Button";
 
 export default function MedicoLogin() {
     const [allMedici, setAllMedici] = useState<Record<string, Record<any, any>>>({});
-    const [medicoSelected, setMedico] = useState("");
+    const [medicoSelected, setMedico] = useState<string | null>();
     const [helperText, setHelperText] = useState("");
     const [helperPassword, setHelperPassword] = useState("")
     const [loading, setLoading] = useState(false);
@@ -36,7 +36,7 @@ export default function MedicoLogin() {
             const serverPassw = await getGenericPassword()
             if (password === serverPassw) {
                 if (returnUrl) {
-                    dispatch(setUser({ id: medicoSelected, data: allMedici[medicoSelected] }))
+                    dispatch(setUser({ uid: medicoSelected, data: allMedici[medicoSelected] }))
                     dispatch(setAdmin(false))
                     router.push(Array.isArray(returnUrl) ? returnUrl.at(0)! : returnUrl)
                 } else {
@@ -53,8 +53,8 @@ export default function MedicoLogin() {
     const retrieveMedici = async () => {
         setLoading(true)
         let docs = getFromStorage("all_medici")
-        if (docs !== undefined) {
-            docs = await getAllMedici()
+        if (docs !== undefined) { //! Se funziona cosi, togliere getFromStorage
+            docs = getAllLocalMedici()//await getAllMedici()
             saveToStorage("all_medici", docs)
         }
         console.log(docs);
@@ -76,21 +76,30 @@ export default function MedicoLogin() {
         }
         {
             !loading &&
-            <NewMapDropdown 
+            <SearchableDropdownMap
+                label="Seleziona il medico"
+                value={medicoSelected ? medicoSelected : null}
+                onChangeFn={(newMed) => setMedico(newMed)}
+                inputMap={allMedici}
+                helperText={helperText}
+                extraFieldMenuItem={'nome'}
+            />
+            /* <NewMapDropdown 
                 label="Seleziona il medico"
                 value={medicoSelected}
                 onChangeFn={(event) => setMedico(event.target.value)}
                 inputMap={allMedici}
                 helperText={helperText}
                 extraFieldMenuItem={'nome'}
-            />  
+            />  */
         }
         {
             !loading &&
             <Grid item>
                 <TextField
                     value={password}
-                    label="Inserisci la password"
+                    label=""
+                    placeholder="Inserisci la password"
                     onChange={(event) => setPassword(event.target.value)}
                     type="password"
                     variant='outlined'

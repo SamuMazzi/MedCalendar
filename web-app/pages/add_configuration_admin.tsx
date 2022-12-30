@@ -11,6 +11,7 @@ import { setConfigurationDistrettoMese } from '../logic/server/firestore'
 import { useState, useEffect } from 'react'
 import { useAppSelector, useAppDispatch } from '../logic/redux/store'
 import { addSede, Turno } from '../logic/redux/configuration_distretto_slice'
+import Head from 'next/head';
 
 export default function Raccolta() {
   const configurationDistrState = useAppSelector(state => state.configurationDistr)
@@ -100,6 +101,9 @@ export default function Raccolta() {
 
   return (
     <>
+      <Head>
+        <title>Aggiungi turni</title>
+      </Head>
       <MenuAppBar />
       <Grid container
         display="flex"

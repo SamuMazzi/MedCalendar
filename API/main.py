@@ -1,5 +1,6 @@
 import flask
 import jsonpickle
+import functions_framework
 
 from excel_handler import write_soluzione, read_dati
 from models.sede import Sede
@@ -7,17 +8,15 @@ from models.soluzione import Soluzione
 from models.storage import Storage
 from scheduler import start
 
-import functions_framework
-
-
-# functions-framework --target hello_world --debug
+# TODO: Attenzione a conteggio medici a fronte di più richieste
+# functions-framework --target schedule_from_data --debug
 """
 https://europe-west1-programmazione-turni-gm.cloudfunctions.net/schedule_from_data
 """
 """
 gcloud functions deploy schedule_from_data --region europe-west1 --allow-unauthenticated --memory 128MB --runtime python310 --timeout 90 --min-instances 0 --max-instances 1 --trigger-http 
 --service-account hello-world-function-sa@for-developers-343319.iam.gserviceaccount.com
-gcloud functions deploy schedule_from_data --runtime python310 --trigger-http --allow-unauthenticated
+gcloud functions deploy schedule_from_data --runtime python310 --region europe-west1 --trigger-http --allow-unauthenticated
 """
 """
 Prossimi step:
@@ -26,6 +25,7 @@ Prossimi step:
  () 3. Sistemare Python per fargli provare qualche combinazione in più
  - 4. Deploy API
 """
+
 
 @functions_framework.http
 def schedule_from_data(request: flask.request):
@@ -36,14 +36,6 @@ def schedule_from_data(request: flask.request):
         The response text or any set of values that can be turned into a
         Response object using
         `make_response <http://flask.pocoo.org/docs/1.0/api/#flask.Flask.make_response>`.
-    """
-    """
-     if request.args and 'message' in request.args:
-        return request.args.get('message')
-    elif request_json and 'message' in request_json:
-        return request_json['message']
-    else:
-        return f'Hello World!'
     """
     # Set CORS headers for the preflight request
     if request.method == 'OPTIONS':
@@ -57,29 +49,40 @@ def schedule_from_data(request: flask.request):
         }
         return '', 204, headers
     headers = {
+        'Access-Control-Allow-Methods': 'POST',
         'Access-Control-Allow-Origin': '*'
     }
 
+    try:
+        response = execute_schedule(request)
+        return response[0], response[1], headers
+    except Exception as error:
+        print(error)
+        return {'message': 'Errore interno'}, 500, headers
+
+
+def execute_schedule(request: flask.request):
     if request.method != 'POST':
-        return "Method not allowed", 404, headers
+        return "Method not allowed", 405
 
     if not request.is_json:
-        return "No JSON attached", 400, headers
+        return {'message': "No JSON attached"}, 400
     if len(request.data) > 0:
         input_data = request.json
         if 'year' not in input_data or 'month' not in input_data or 'sedi' not in input_data or 'medici' not in input_data:
-            return {'message': "Dati male formattati"}, 400, headers
+            return {'message': "Dati male formattati"}, 400
         for med in input_data['medici']:
-            if type(med['disponibilita']) != list:
-                print('err')
-                print(med['disponibilita'])
-                return {'message': "Dati male formattati"}, 400, headers
-        data['medici'] = read_dati('assets/gennaio23.xlsx')  # debug
-        sol = start(data)  # request.json
+            if type(med['disponibilita']) != dict:
+                print(type(med['disponibilita']))
+                return {'message': "Dati male formattati"}, 400
+        # data['medici'] = read_dati('assets/gennaio23.xlsx')  # debug
+        sol = start(data)  # debug # request.json
+        if len(Storage.calendar_turni) == 0:
+            return {'message': 'Inserito dati sbagliati'}, 404
         string_sol = create_soluzione_response(sol)
-        return string_sol, 200, headers
+        return string_sol, 200
     else:
-        return {'message': "Inserisci dei dati"}, 404, headers
+        return {'message': "Inserisci dei dati"}, 404
 
 
 # Il client che chiama la funzione scarica dal database i dati di tutti i medici, li invia all'API
@@ -90,7 +93,7 @@ def schedule_from_data(request: flask.request):
 
 def create_soluzione_response(sol: Soluzione):
     format_turno = "%dT%H:%M:%S"
-    data_out = {
+    data_out = {  # TODO: Ad un certo punto viene resettato calendar turni storage (forse tutto storage)
         'sedi': {},
         'medici': {},
         'turni_occ': sol.turni_occupati,
@@ -145,20 +148,32 @@ data = {
             'id': 1,
             'nome': 'Samuele Mazzi',
             'ruolo': 'titolare',
-            'disponibilita': [
+            'disponibilita':
                 {
                     '20-8': [1, 13, 14, 15, 18],
                     '8-20': [1, 3, 4, 5, 10]
                 }
-            ],
+            ,
             'sedi': ['Formigine']
+        },
+        {
+            'id': 2,
+            'nome': 'Medico Demo',
+            'ruolo': 'Convenzionato24',
+            'disponibilita':
+                {
+                    '20-8': [1, 2, 16, 20, 5],
+                    '8-20': [2, 4, 6, 9]
+                }
+            ,
+            'sedi': ['Formigine', 'Sassuolo']
         }
     ]
 }
 
 if __name__ == '__main__':
     print('main called')
-    data['medici'] = read_dati('assets/gennaio23.xlsx')
+    # data['medici'] = read_dati('assets/gennaio23.xlsx')
     final_sol = start(data)
     a = create_soluzione_response(final_sol)
     print(a)

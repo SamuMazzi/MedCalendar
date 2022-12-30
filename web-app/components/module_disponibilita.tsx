@@ -21,7 +21,7 @@ export default function ModuleDisponibilita(props: PropsDisponibilita) {
         } else if (Object.values(generalState.disponibilita).length === 0) {
             setMessageSnackbar('Devi selezionare almeno una disponibilità');
         } else if (generalState.oreMassime <= 0) {
-            setMessageSnackbar('Inserisci un numero valido per le ore massime');
+            setMessageSnackbar('Inserisci un numero valido per i turni massimi');
         } else {
             props.changeMod()
         }

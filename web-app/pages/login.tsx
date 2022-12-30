@@ -3,9 +3,9 @@ import { MenuAppBar } from '../components/app_bar';
 import AdminLogin from '..//components/login/admin_login';
 import MedicoLogin from '../components/login/medico_login';
 import Grid from '@mui/material/Grid';
-import Container from '@mui/material/Container';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
+import Head from 'next/head';
 //import { Slide, Box } from '@mui/material'
 /**
  *  TODO: Implementa Slide
@@ -23,40 +23,42 @@ export default function FormLogin() {
         display="flex"
         alignItems="center"
         justifyContent="center"
-        sx={{ minHeight: '100vh' }}
       >
+        <Head>
+          <title>Login</title>
+        </Head>
         <MenuAppBar />
-        <Container style={{ position: "absolute", top: "30%", left: "30%" }}>
-          <Grid container direction='column'>
-            <Typography
-              fontFamily="Public+Sans"
-              fontWeight="fontWeightBold"
-              variant="h3"
-              component="h3"
-              sx={{
-                as: 'center',
-                mb: '20px',
-              }}
-            >
-              {adminMode ? "Amministrazione" : "Accedi"}
-            </Typography>
-            {
-              adminMode && <AdminLogin />
-            }
-            {
-              !adminMode && <MedicoLogin />
-            }
+        <Grid item sx={{pt: 15}}>
+              <Grid container direction='column'>
+                <Typography
+                  fontFamily="Public+Sans"
+                  fontWeight="fontWeightBold"
+                  variant="h3"
+                  component="h3"
+                  sx={{
+                    as: 'center',
+                    mb: '20px',
+                  }}
+                >
+                  {adminMode ? "Amministrazione" : "Accedi"}
+                </Typography>
+                {
+                  adminMode && <AdminLogin />
+                }
+                {
+                  !adminMode && <MedicoLogin />
+                }
+              </Grid>
+                <Button onClick={() => setAdminMode(oldVal => !oldVal)} sx={{
+                  "& .MuiTouchRipple-root span": {
+                    backgroundColor: 'transparent',
+                  },
+                }}>
+                  <Typography style={{ textDecoration: 'underline', color: 'black', textTransform: 'none' }}>
+                    {!adminMode ? "Sei un amministratore? Clicca qua" : "Sei un medico? Clicca qua"}
+                  </Typography>
+                </Button>
           </Grid>
-            <Button onClick={() => setAdminMode(oldVal => !oldVal)} sx={{
-              "& .MuiTouchRipple-root span": {
-                backgroundColor: 'transparent',
-              },
-            }}>
-              <Typography style={{ textDecoration: 'underline', color: 'black', textTransform: 'none' }}>
-                {!adminMode ? "Sei un amministratore? Clicca qua" : "Sei un medico? Clicca qua"}
-              </Typography>
-            </Button>
-        </Container>
-      </Grid>
+        </Grid>
   )
 }

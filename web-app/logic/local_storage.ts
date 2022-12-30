@@ -1,3 +1,5 @@
+import Users from "../privateAssets/users.json"
+
 export type MesiType = Record<number, string>
 export const mesi: MesiType = {
     1: 'Gennaio',
@@ -19,6 +21,15 @@ export const getGiornoSettimana = (timestamp: number, day: number) => {
     const mese = new Date(timestamp)
     mese.setDate(day)
     return giorni_settimana[mese.getDay()]
+}
+
+export const getAllLocalMedici = () => {
+    const out: Record<string, Record<string, any>> = Users
+    return out;
+}
+
+export const capitalizeFirstLetter = (inputString: string) => {
+    return inputString.charAt(0).toUpperCase() + inputString.slice(1).toLowerCase();
 }
 
 

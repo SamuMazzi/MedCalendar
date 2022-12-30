@@ -7,10 +7,11 @@ import Person from '@mui/icons-material/Person'
 import Image from 'next/image';
 import { useState } from 'react';
 import { useAppDispatch, useAppSelector }  from '../logic/redux/store'
-import { setAdmin, setUser } from '../logic/redux/auth_slice'
+import { clearUserAndAdmin } from '../logic/redux/auth_slice'
 import { logoutFirebase } from '../logic/server/auth';
 import Link from 'next/link'
 
+//TODO: Nuova logica admin da riparare 
 export function MenuAppBar() {
   const [ anchorEl, setAnchorEl ] = useState<null | HTMLElement>(null);
   const authState = useAppSelector(state => state.auth)
@@ -24,15 +25,8 @@ export function MenuAppBar() {
     if(authState.admin) {
         await logoutFirebase()
     }
-    dispatch(setAdmin(false))
-    dispatch(setUser({
-        id: "",
-        data: {
-            nome: "",
-            ruolo: "",
-            distretti: []
-        }
-    }))
+    dispatch(clearUserAndAdmin())
+    console.log(authState)
     handleClose()
   };
 
@@ -49,11 +43,11 @@ export function MenuAppBar() {
     >
       <Grid item>
         <Link href="/">
-          <Image priority alt="logo" src="/logo.png" width="130" height="80"/>
+          <Image priority alt="logo" src="/logo@2x.png" width="130" height="80"/>
         </Link>
       </Grid>
       <Grid item>
-          {authState.id !== "" && (
+          {authState.uid !== "" && (
             <div>
               <IconButton
                 size="large"
@@ -97,9 +91,7 @@ export function MenuAppBar() {
                 }}
               >
               <Typography style={{ fontWeight: "bold", display: 'inline-block', whiteSpace: 'pre-line', fontSize: 20 }} sx={{px: 2, pt: 1}}>
-                  {"Benvenuto\n" + authState.id
-                    //* Valutare di creare una box unica con dentro testo e button e non dei menuItem 
-                  }
+                  {"Ciao\n" + authState.nome + '!'}
                 </Typography>
                 <MenuItem onClick={logout}>
                   <Typography style={{textDecoration: 'underline', color: 'black'}}>
