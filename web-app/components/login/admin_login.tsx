@@ -33,7 +33,7 @@ export default function AdminLogin() {
         const user = await signInAdminWithEmail(email, password)
         dispatch(setAdmin(true))
         dispatch(setUser({
-            id: user.uid,
+            uid: user.uid,
             data: {}
         }))
     }

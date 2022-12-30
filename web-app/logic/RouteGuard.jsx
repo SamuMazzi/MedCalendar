@@ -39,25 +39,18 @@ function RouteGuard({ children }) {
         const { distretto } = router.query;
         /*
         const query = url.split('?')[1];
-        if (!passInserted) { //* Ancora da testare, dava dei problemi l'ultima volta
-            console.log('pass non inserita o sbagliata')
-            setAuthorized(false);
-            router.push({
-                pathname: '/page_password',
-                query: { returnUrl: router.asPath }
-            })
-        } else */ if (!normal_user && !publicPaths.some((el) => path.includes(el))) {
+        */
+        if (!normal_user && !publicPaths.some((el) => path.includes(el))) {
             setAuthorized(false);
             router.push({
                 pathname: '/login',
                 query: { returnUrl: router.asPath }
             })
             //* condizione sui distretti deve ancora essere testata
-        } else if (false) { //TODO: (!admin_user || (distretto && authState.distretti.includes(distretto))) && adminPaths.some(el => path.includes(el))
+        } else if (!admin_user && adminPaths.some(el => path.includes(el))) { //* (distretto && authState.distretti.includes(distretto)) 
             setAuthorized(false);
             router.back()
         } else {
-            //console.log('User logged in');
             setAuthorized(true);
         }
         return;

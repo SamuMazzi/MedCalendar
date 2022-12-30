@@ -1,4 +1,3 @@
-import Head from 'next/head'
 import { useState } from 'react'
 import styles from '../styles/Home.module.css'
 import Grid from '@mui/material/Grid'
@@ -7,6 +6,7 @@ import Typography from '@mui/material/Typography'
 import { MenuAppBar } from '../components/app_bar'
 import SelectDistretto from '../components/select_distretto'
 import Link from 'next/link'
+import { useAppSelector } from '../logic/redux/store'
 
 interface ChoiceParams {
   distretto: string,
@@ -34,11 +34,12 @@ function ChoiceButton(props: ChoiceParams) {
 
 export default function Home() {
   const [ distretto, setDistretto ] = useState("");
+  const adminState = useAppSelector(state => state.auth.admin)
 
   return (
     <div className={styles.container}>
       <main className={styles.main}>
-      <MenuAppBar />
+        <MenuAppBar />
         <Grid container spacing={2} 
           direction="column"
           alignItems="center"
@@ -53,21 +54,27 @@ export default function Home() {
               <SelectDistretto distretto={distretto} setDistretto={setDistretto}/>
             </Grid>
           }
-          <Grid item>
-            <Grid container direction="row" justifyContent="center">
-              <ChoiceButton label="Raccolta disponibilità" path='/raccolta_disponibilita' distretto={distretto} />
-              <ChoiceButton label="Cambio turno" path='/cambio_turno' distretto={distretto} />
-            </Grid>
-          </Grid>
           {
-            //authState.admin && distrettiAdmin.indexOf(distretto) >= 0
-          }
-          <Grid item>
-            <Grid container direction="row" justifyContent="center">
-              <ChoiceButton label="Aggiungi turni per un mese" path='/add_configuration_admin' distretto={distretto} />
-              <ChoiceButton label="Crea turni per un mese" path='/pianificazione_turni_admin' distretto={distretto} />
+            !adminState &&
+            <Grid item>
+              <Grid container direction="row" justifyContent="center">
+                <ChoiceButton label="Raccolta disponibilità" path='/raccolta_disponibilita' distretto={distretto} />
+                {
+                  //<ChoiceButton label="Cambio turno" path='/cambio_turno' distretto={distretto} />
+                }
+              </Grid>
             </Grid>
-          </Grid>
+          }
+          {
+            //*distrettiAdmin.indexOf(distretto) >= 0
+            adminState &&
+            <Grid item>
+              <Grid container direction="row" justifyContent="center">
+                <ChoiceButton label="Aggiungi turni per un mese" path='/add_configuration_admin' distretto={distretto} />
+                <ChoiceButton label="Pianifica turni per mese" path='/pianificazione_turni_admin' distretto={distretto} />
+              </Grid>
+            </Grid>
+          }
         </Grid>
       </main>
     </div>
