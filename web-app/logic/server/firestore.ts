@@ -28,7 +28,7 @@ function handleFirebaseError(error: any) {
 }
 
 function getKeyMese(date: Date) {
-    const firestoreKeyMese = date.getFullYear() + "-" + date.getMonth()
+    const firestoreKeyMese = date.getFullYear() + "-" + (date.getMonth() + 1) //* Fondamentali le parentesi!
     return firestoreKeyMese
 }
 
@@ -223,11 +223,9 @@ export interface RemoteSediInfo {
 }
 
 /**
- * Struttura disp: <giorno> -> <turno> -> id_medici
- *                 Record<giorno, Record<turno, <id_medici>[]>>
  * @param distretto 
  * @param anno 
- * @param mese 
+ * @param mese Numero compreso tra 0 e 11
  * @returns 
  */ 
 export const getDisponibilitaMeseDistretto = async (distretto: string, anno: number, mese: number) => {
