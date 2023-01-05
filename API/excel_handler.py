@@ -141,7 +141,8 @@ def read_dati(filename: str):
             header_cell = ws.cell(row=1, column=j).value
             if type(el) is datetime.datetime:
                 # el.year + 1 è per colpa di un bug con il file gennaio23!!!
-                all_disp.append(datetime.datetime(el.year + 1, el.month, el.day, hour=20 if mode == 'night' else 8))
+                all_disp.append(datetime.datetime(el.year + 1, el.month, el.day, hour=20 if mode == 'night' else 8,
+                                                  minute=8 if mode == 'night' else 20))  # debug
             elif header_cell is not None and header_cell.startswith('INDICA UNA'):
                 mode = 'day'
         med.disponibilita = all_disp

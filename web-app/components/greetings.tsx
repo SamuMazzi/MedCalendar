@@ -4,14 +4,15 @@ import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 import Link from 'next/link';
 
+//TODO: Fai record screen cambio turni per Matteo
 export default function Greetings() {
     return (
         <>
-            <Grid container spacing={2} sx={{ p: 8 }}
+            <Grid container sx={{ p: 8 }}
                 direction="column"
                 alignItems="center"
                 justifyContent="center"
-                style={{ minHeight: '10vh', minWidth: '50vh' }}
+                minHeight="calc(100vh - 225px)"
             >
                 <Alert severity="success">
                     <AlertTitle>Operazione completata</AlertTitle>

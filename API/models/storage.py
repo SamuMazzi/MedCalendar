@@ -65,6 +65,7 @@ def translate_turni(disp, year, month):
 
 
 def init_storage(data):
+    reset_storage()
     sedi = []
     total_calendar_turni = []
     for sede in data['sedi']:
@@ -86,6 +87,18 @@ def init_storage(data):
     Storage.sedi = sedi
     calculate_how_may_doctors_da_soddisfare(Storage.all_medici)
 # Storage.tot_turni = get_turni_effettivi() se lo lasci qua prima devi effettivamente settare i medici a prescindere!
+
+
+def reset_storage():
+    Storage.calendar_turni = []
+    Storage.all_medici = []
+    Storage.original_all_medici = []
+    Storage.sedi = []
+    Storage.convenzionati_da_soddisfare = 0
+    Storage.incaricati_da_soddisfare = 0
+    Storage.tot_turni = 0
+    Storage.tot_turni_occ_a_priori = 0
+    Storage.turni_non_riempibili = 0
 
 
 class Storage:

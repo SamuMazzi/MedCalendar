@@ -1,22 +1,38 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useAppDispatch } from "../../logic/redux/store";
-import { getAllMedici, getGenericPassword } from '../../logic/server/firestore';
+//import { getAllMedici } from '../../logic/server/firestore';
 import { setAdmin, setUser } from '../../logic/redux/auth_slice';
-import { saveToStorage, getFromStorage, getAllLocalMedici } from '../../logic/local_storage';
+import { saveToStorage, getFromStorage, getAllLocalMedici } from '../../logic/local_utilities';
 import { SearchableDropdownMap } from '../form_dropdown';
-import TextField from "@mui/material/TextField";
 import Grid from "@mui/material/Grid";
-import Typography from "@mui/material/Typography";
 import CircularProgress from "@mui/material/CircularProgress";
-import Button from "@mui/material/Button";
+import { FormButtonSubmit, FormTextField } from "./form_components";
 
-export default function MedicoLogin() {
+const calculateHashText = async (text: string) => {
+    if(!window) return
+    const textAsBuffer = new TextEncoder().encode(text);
+    const hashBuffer = await window.crypto.subtle.digest('SHA-256', textAsBuffer);
+    const hashArray = Array.from(new Uint8Array(hashBuffer))
+    const digest = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    return digest
+}
+
+const checkPassword = async (pass: string, real_pass: string) => {
+    const hashPassword = await calculateHashText(pass)
+    return real_pass === hashPassword
+}
+
+interface PropsMedicoLogin {
+    server_psw: string
+}
+
+export default function MedicoLogin(props: PropsMedicoLogin) {
     const [allMedici, setAllMedici] = useState<Record<string, Record<any, any>>>({});
     const [medicoSelected, setMedico] = useState<string | null>();
     const [helperText, setHelperText] = useState("");
     const [helperPassword, setHelperPassword] = useState("")
-    const [loading, setLoading] = useState(false);
+    const [loadingMedici, setLoadingMedici] = useState(false);
     const [loadingLogin, setLoadingLogin] = useState(false);
     const [password, setPassword] = useState("")
     const router = useRouter()
@@ -33,9 +49,9 @@ export default function MedicoLogin() {
         }
         try {
             setLoadingLogin(true)
-            const serverPassw = await getGenericPassword()
-            if (password === serverPassw) {
-                if (returnUrl) {
+            if (await checkPassword(password, props.server_psw)) {
+                if (returnUrl && !returnUrl.includes('login')) {
+                    //TODO Salvare HASH in storage
                     dispatch(setUser({ uid: medicoSelected, data: allMedici[medicoSelected] }))
                     dispatch(setAdmin(false))
                     router.push(Array.isArray(returnUrl) ? returnUrl.at(0)! : returnUrl)
@@ -51,15 +67,14 @@ export default function MedicoLogin() {
     }
 
     const retrieveMedici = async () => {
-        setLoading(true)
+        setLoadingMedici(true)
         let docs = getFromStorage("all_medici")
-        if (docs !== undefined) { //! Se funziona cosi, togliere getFromStorage
+        if (docs !== undefined) { //* Si potrà poi togliere getFromStorage
             docs = getAllLocalMedici()//await getAllMedici()
             saveToStorage("all_medici", docs)
         }
-        console.log(docs);
         setAllMedici(docs)
-        setLoading(false)
+        setLoadingMedici(false)
     }
 
     useEffect(() => {
@@ -69,60 +84,40 @@ export default function MedicoLogin() {
     return (
         <>
         {
-            loading &&
+            loadingMedici &&
             <Grid item>
                 <CircularProgress />
             </Grid>
         }
         {
-            !loading &&
-            <SearchableDropdownMap
-                label="Seleziona il medico"
-                value={medicoSelected ? medicoSelected : null}
-                onChangeFn={(newMed) => setMedico(newMed)}
-                inputMap={allMedici}
-                helperText={helperText}
-                extraFieldMenuItem={'nome'}
-            />
-            /* <NewMapDropdown 
-                label="Seleziona il medico"
-                value={medicoSelected}
-                onChangeFn={(event) => setMedico(event.target.value)}
-                inputMap={allMedici}
-                helperText={helperText}
-                extraFieldMenuItem={'nome'}
-            />  */
-        }
-        {
-            !loading &&
-            <Grid item>
-                <TextField
-                    value={password}
-                    label=""
-                    placeholder="Inserisci la password"
-                    onChange={(event) => setPassword(event.target.value)}
-                    type="password"
-                    variant='outlined'
-                    helperText={helperPassword}
-                    error={helperPassword !== ""}
-                    sx={{ mb: 2 }}
-                    style={{ width: "230px" }}
-                />
-            </Grid>
+            !loadingMedici &&
+            <>
+                <Grid item sx={{pb: 1}}>
+                    <SearchableDropdownMap
+                        label="Seleziona il medico"
+                        value={medicoSelected ? medicoSelected : null}
+                        onChangeFn={(newMed) => setMedico(newMed)}
+                        inputMap={allMedici}
+                        helperText={helperText}
+                        extraFieldMenuItem={'nome'}
+                    />
+                </Grid>
+                <Grid item sx={{ mb: 2 }}>
+                    <FormTextField 
+                        value={password} 
+                        helperText={helperPassword} 
+                        onChangeFn={(newVal) => setPassword(newVal)} 
+                        placeholder="Inserisci la password" 
+                        password
+                    />
+                </Grid>
+            </>
         }
         <Grid item>
-            {
-                loadingLogin ? <CircularProgress /> :
-                    <Button
-                        onClick={handleSubmit}
-                        disabled={loading}
-                        variant="contained"
-                    >
-                        <Typography style={{ fontWeight: "bold", fontSize: 18 }}>
-                            Accedi
-                        </Typography>
-                    </Button>
-            }
+            <FormButtonSubmit 
+                loading={loadingMedici || loadingLogin}
+                onClick={handleSubmit}
+            />
         </Grid>
         </>
     )

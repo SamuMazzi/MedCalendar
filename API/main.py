@@ -8,16 +8,19 @@ from models.soluzione import Soluzione
 from models.storage import Storage
 from scheduler import start
 
-# TODO: Attenzione a conteggio medici a fronte di più richieste
-# functions-framework --target schedule_from_data --debug
 """
+DOCUMENTAZIONE:
+Javascript handle month starting from 0 to 11, Python goes from 1 to 12, so Python will have to adapt to JS
+"""
+
+"""
+functions-framework --target schedule_from_data --debug
 https://europe-west1-programmazione-turni-gm.cloudfunctions.net/schedule_from_data
-"""
-"""
 gcloud functions deploy schedule_from_data --region europe-west1 --allow-unauthenticated --memory 128MB --runtime python310 --timeout 90 --min-instances 0 --max-instances 1 --trigger-http 
 --service-account hello-world-function-sa@for-developers-343319.iam.gserviceaccount.com
 gcloud functions deploy schedule_from_data --runtime python310 --region europe-west1 --trigger-http --allow-unauthenticated
 """
+
 """
 Prossimi step:
  - 1. Sistema cambio turni (colore rosso nei festivi)
@@ -26,6 +29,20 @@ Prossimi step:
  - 4. Deploy API
 """
 
+
+def handle_options_request():
+    # Allows GET requests from any origin with the Content-Type
+    # header and caches preflight response for an 3600s
+    headers = {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST',
+        'Access-Control-Allow-Headers': 'Content-Type',
+        'Access-Control-Max-Age': '3600'
+    }
+    res = flask.make_response('', 204)
+    for key in headers:
+        res.headers[key] = headers[key]
+    return res
 
 @functions_framework.http
 def schedule_from_data(request: flask.request):
@@ -39,15 +56,7 @@ def schedule_from_data(request: flask.request):
     """
     # Set CORS headers for the preflight request
     if request.method == 'OPTIONS':
-        # Allows GET requests from any origin with the Content-Type
-        # header and caches preflight response for an 3600s
-        headers = {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Allow-Methods': 'POST',
-            'Access-Control-Allow-Headers': 'Content-Type',
-            'Access-Control-Max-Age': '3600'
-        }
-        return '', 204, headers
+        return handle_options_request()
     headers = {
         'Access-Control-Allow-Methods': 'POST',
         'Access-Control-Allow-Origin': '*'
@@ -55,34 +64,56 @@ def schedule_from_data(request: flask.request):
 
     try:
         response = execute_schedule(request)
-        return response[0], response[1], headers
+        res = flask.make_response(response[0], response[1])
+        for key in headers:
+            res.headers[key] = headers[key]
+        return res
     except Exception as error:
         print(error)
-        return {'message': 'Errore interno'}, 500, headers
+        res = flask.make_response({'message': 'Errore interno'}, 500)
+        for key in headers:
+            res.headers[key] = headers[key]
+        return res
 
 
-def execute_schedule(request: flask.request):
+DEBUG_MODE = True
+
+
+def check_request(request: flask.request):
     if request.method != 'POST':
         return "Method not allowed", 405
 
     if not request.is_json:
         return {'message': "No JSON attached"}, 400
-    if len(request.data) > 0:
-        input_data = request.json
-        if 'year' not in input_data or 'month' not in input_data or 'sedi' not in input_data or 'medici' not in input_data:
-            return {'message': "Dati male formattati"}, 400
-        for med in input_data['medici']:
-            if type(med['disponibilita']) != dict:
-                print(type(med['disponibilita']))
-                return {'message': "Dati male formattati"}, 400
-        # data['medici'] = read_dati('assets/gennaio23.xlsx')  # debug
-        sol = start(data)  # debug # request.json
-        if len(Storage.calendar_turni) == 0:
-            return {'message': 'Inserito dati sbagliati'}, 404
-        string_sol = create_soluzione_response(sol)
-        return string_sol, 200
-    else:
+
+    if len(request.json) <= 0:
         return {'message': "Inserisci dei dati"}, 404
+    real_data = request.json
+
+    if 'year' not in real_data or 'month' not in real_data or 'sedi' not in real_data or 'medici' not in real_data:
+        return {'message': "Dati male formattati"}, 400
+    for med in real_data['medici']:
+        if type(med['disponibilita']) != dict:
+            return {'message': "Dati male formattati"}, 400
+
+    return None
+
+
+def execute_schedule(request: flask.request):
+    if DEBUG_MODE:
+        real_data = data
+        data['medici'] = read_dati('assets/gennaio23.xlsx')
+    else:
+        real_data = request.json  # o request.json
+    res_check = check_request(request)
+    if res_check:
+        return res_check
+
+    sol = start(real_data)
+    if len(Storage.calendar_turni) == 0:
+        return {'message': 'Inserito dati sbagliati'}, 404
+    string_sol = create_soluzione_response(sol)
+    return string_sol, 200
 
 
 # Il client che chiama la funzione scarica dal database i dati di tutti i medici, li invia all'API
@@ -93,7 +124,7 @@ def execute_schedule(request: flask.request):
 
 def create_soluzione_response(sol: Soluzione):
     format_turno = "%dT%H:%M:%S"
-    data_out = {  # TODO: Ad un certo punto viene resettato calendar turni storage (forse tutto storage)
+    data_out = {
         'sedi': {},
         'medici': {},
         'turni_occ': sol.turni_occupati,
@@ -101,7 +132,7 @@ def create_soluzione_response(sol: Soluzione):
         'turni_non_riemp': Storage.turni_non_riempibili,
         'turni_posizionabili': Storage.tot_turni - Storage.tot_turni_occ_a_priori,
         'year': Storage.calendar_turni[0].year,
-        'month': Storage.calendar_turni[0].month
+        'month': Storage.calendar_turni[0].month - 1  # Per questioni di compatibilità con JS
     }
     data_out_sedi = data_out['sedi']
     sede: Sede
@@ -124,7 +155,7 @@ def create_soluzione_response(sol: Soluzione):
 
 data = {
     'year': 2023,
-    'month': 1,
+    'month': 0,
     'sedi': [
         {
             'nome': 'Formigine',
@@ -172,8 +203,7 @@ data = {
 }
 
 if __name__ == '__main__':
-    print('main called')
-    # data['medici'] = read_dati('assets/gennaio23.xlsx')
+    data['medici'] = read_dati('assets/gennaio23.xlsx')
     final_sol = start(data)
     a = create_soluzione_response(final_sol)
     print(a)

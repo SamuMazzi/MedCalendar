@@ -1,9 +1,8 @@
-// Import the functions you need from the SDKs you need
-import { firebaseApp } from "./firebase";
-import { getFirestore, doc, setDoc, collection, getDocs, getDoc, collectionGroup, query, where, arrayUnion, serverTimestamp } from 'firebase/firestore';
+import { AppFirebaseError, firebaseApp } from "./firebase";
+import { getFirestore, doc, setDoc, collection, getDocs, getDoc, collectionGroup, query, where, arrayUnion, serverTimestamp, FirestoreError } from 'firebase/firestore';
 import { StateTurno } from "../redux/turni_slice";
 import { SchedulerState } from "../redux/scheduler_slice";
-import { capitalizeFirstLetter } from "../local_storage";
+import { capitalizeFirstLetter, getLocalLastOreMaxSet, getNumOreMaxByRole } from "../local_utilities";
 
 const firestore = getFirestore(firebaseApp);
 
@@ -14,32 +13,75 @@ const infoSediKey = 'info_sedi'
 const listaMediciKey = 'list_medici' //TODO: Capire perchè serve questa voce, si potrebbe fare filter su users, ma forse diventa complicato/costoso
 const distrettiCollectionKey = 'distretti'
 const disponibilitaSedeKey = 'disponibilita'
+const configDefinitivaDistrettoKey = 'turni_mese'
 
+const nomeMedicoKey = 'nome'
+const ruoloMedicoKey = 'ruolo'
+const oreMaxMedicoKey = 'ore_max'
+const uidMedicoKey = 'uid'
+const sediMedicoKey = 'sedi'
 
+function handleFirebaseError(error: any) {
+    if ('name' in error && error.name === 'FirebaseError') {
+        throw new AppFirebaseError({ code: error.code, type: 'firestore' })
+    } else throw error
+}
+
+function getKeyMese(date: Date) {
+    const firestoreKeyMese = date.getFullYear() + "-" + date.getMonth()
+    return firestoreKeyMese
+}
+
+/**
+ * Per evitare troppe letture, finchè siamo sul distretto di Sassuolo teniamo la lettura specifica dei medici di quel distretto
+ * @returns 
+ */
 export const getAllMedici = async () => {
-    const collectionUsersRef = collection(firestore, usersKey);
-    const querySnapshot = await getDocs(collectionUsersRef);
-    const tmpMedici: Record<string, Record<any, any>> = {}
-    querySnapshot.forEach((doc) => {
-      const data = doc.data()!;
-      tmpMedici[doc.id] = {
-        nome: data.Nome + ' ' + data.Cognome,
-        ruolo: data.ruolo,
-        uid: data.uid,
-        sedi: data.sedi
-      }
-    });
-    return tmpMedici;
+    const tmpMedici: Record<string, Record<string, any>> = {}
+    try {
+        const docMediciSassuolo = doc(firestore, distrettiCollectionKey, 'Sassuolo', infoCollectionKey, infoMediciKey)
+        const res = await getDoc(docMediciSassuolo);
+        const dataMedici: any = res.data()
+        Object.keys(dataMedici).forEach((uid: string) => {
+            const singleMedico = dataMedici[uid];
+            tmpMedici[uid] = {
+                [nomeMedicoKey]: singleMedico.Nome + ' ' + singleMedico.Cognome,
+                [ruoloMedicoKey]: singleMedico.ruolo,
+                [uidMedicoKey]: singleMedico.uid,
+                [sediMedicoKey]: singleMedico.sedi
+            }
+        });
+        return tmpMedici;
+    /*    const collectionUsersRef = collection(firestore, usersKey);
+        const querySnapshot = await getDocs(collectionUsersRef);
+        const tmpMedici: Record<string, Record<string, any>> = {}
+        querySnapshot.forEach((doc) => {
+          const data = doc.data()!;
+          tmpMedici[doc.id] = {
+            [nomeMedicoKey]: data.Nome + ' ' + data.Cognome,
+            [ruoloMedicoKey]: data.ruolo,
+            [uidMedicoKey]: data.uid,
+            [sediMedicoKey]: data.sedi
+          }
+        });
+        return tmpMedici; */
+    } catch (error: unknown) {
+        handleFirebaseError(error)
+    }
 }
 
 export const setInfoMedico = async (distretto: string, id_medico: string, nome: string, ruolo: string) => {
-    await setDoc(doc(firestore, distrettiCollectionKey, distretto, infoCollectionKey, infoMediciKey), {
-        [id_medico]: {
-            nome: nome,
-            ore_max: -1,
-            ruolo: ruolo
-        }
-    }, { merge: true })
+    try {
+        await setDoc(doc(firestore, distrettiCollectionKey, distretto, infoCollectionKey, infoMediciKey), {
+            [id_medico]: {
+                [nomeMedicoKey]: nome,
+                [ruoloMedicoKey]: ruolo,
+                [oreMaxMedicoKey]: getNumOreMaxByRole(ruolo)
+            }
+        }, { merge: true })
+    } catch (error: unknown) {
+        handleFirebaseError(error)
+    }
 }
 
 /**
@@ -49,7 +91,7 @@ export const setInfoMedico = async (distretto: string, id_medico: string, nome: 
  * @param sedi Ancora da definire bene
  */
 export const setConfigurationDistrettoMese = async (mese: Date, distretto: string, sedi: any[]) => {
-    const firestoreKeyMese = mese.getFullYear().toString() + "-" + mese.getMonth().toString()
+    const firestoreKeyMese = getKeyMese(mese)
     const out: Record<any, any> = {}
     sedi.forEach(val => {
         out[val.nome] = {
@@ -57,81 +99,120 @@ export const setConfigurationDistrettoMese = async (mese: Date, distretto: strin
             turni: val.fasce_turno
         }
     })
-    await setDoc(doc(firestore, distrettiCollectionKey, distretto, infoCollectionKey, infoSediKey), {
-        [firestoreKeyMese]: out,
-    })
+    try {
+        await setDoc(doc(firestore, distrettiCollectionKey, distretto, infoCollectionKey, infoSediKey), {
+            [firestoreKeyMese]: out,
+        })
+    } catch (error: unknown) {
+        handleFirebaseError(error)
+    }
 }
 
-export const setMeseMedico = async (distretto: string, id: string, info: StateTurno) => {  
-    const key_mese = "2023-"+ (new Date(info.mese!).getMonth()+1).toString()
+export const setDisponibilitaMeseMedico = async (distretto: string, id: string, info: StateTurno) => {  
+    const key_mese = getKeyMese(new Date(info.timestamp_mese!))
     const data: Record<string, any> = {}
     Object.keys(info.disponibilita).forEach((turno) => {
         info.disponibilita[turno].forEach(giorno => data[giorno] = { [turno]: arrayUnion(id) })
     })
-    await setDoc(doc(firestore, distrettiCollectionKey, distretto, disponibilitaSedeKey, key_mese), data, { merge: true });
+    const futures = []
+    try {
+        futures.push(setDoc(doc(firestore, distrettiCollectionKey, distretto, disponibilitaSedeKey, key_mese), data, { merge: true }));
+        const lastOreMaxSet = getLocalLastOreMaxSet()
+        if (lastOreMaxSet === null || lastOreMaxSet !== info.oreMassime) {
+            futures.push(setDoc(doc(firestore, distrettiCollectionKey, distretto, infoCollectionKey, infoMediciKey), { [id]: {
+                [oreMaxMedicoKey]: info.oreMassime
+            } }, { merge: true }));
+        }
+        await Promise.all(futures)
+    } catch (error: unknown) {
+        handleFirebaseError(error)
+    }
 }
 
 export const uploadDefConfigurazione = async (distretto: string, info: SchedulerState) => {
-    const key_mese = "2023-" + info.month
+    const key_mese = getKeyMese(new Date(info.year, info.month, 3))
     const data: Record<string, any> = {
         'create_at': serverTimestamp(),
         'turni': info.turni,
         'medici': info.medici_mod
-    }    
-    
-    await setDoc(doc(firestore, distrettiCollectionKey, distretto, "turni_mese", key_mese), data);
-
+    }
+    try {
+        await setDoc(doc(firestore, distrettiCollectionKey, distretto, configDefinitivaDistrettoKey, key_mese), data);
+    } catch (error: unknown) {
+        //console.log(error)
+        handleFirebaseError(error)
+    }
 }
 
 // doc.data() is never undefined for query doc snapshots (official documentation)
 //TODO: Implementare last modified per evitare troppe letture
 
 export const getAllDistretti = async () => {
-    const collectionDistrettiRef = collection(firestore, distrettiCollectionKey);
-    const querySnapshot = await getDocs(collectionDistrettiRef);
-    const outList = querySnapshot.docs.map((doc) => doc.id)
-    return outList;
+    try {
+        const collectionDistrettiRef = collection(firestore, distrettiCollectionKey);
+        const querySnapshot = await getDocs(collectionDistrettiRef);
+        const outList = querySnapshot.docs.map((doc) => doc.id)
+        return outList;
+    } catch (error: unknown) {
+        handleFirebaseError(error)
+    }
 }
 
 export const getDistrettiForMedico = async (id: string) => {
-    const queryDistretti = query(collectionGroup(firestore, infoCollectionKey), where('list', "array-contains", id));
-    const querySnapshot = await getDocs(queryDistretti);
-    const outList = querySnapshot.docs.map((doc) => {
-        const firstSlash = doc.ref.path.indexOf("/", 1)
-        const secondSlash = doc.ref.path.indexOf("/", firstSlash+1)
-        const distretto = doc.ref.path.substring(firstSlash+1, secondSlash)
-        return distretto
-    })
-    return outList;
+    try {
+        const queryDistretti = query(collectionGroup(firestore, infoCollectionKey), where('list', "array-contains", id));
+        const querySnapshot = await getDocs(queryDistretti);
+        const outList = querySnapshot.docs.map((doc) => {
+            const firstSlash = doc.ref.path.indexOf("/", 1)
+            const secondSlash = doc.ref.path.indexOf("/", firstSlash+1)
+            const distretto = doc.ref.path.substring(firstSlash+1, secondSlash)
+            return distretto
+        })
+        return outList;
+    } catch (error: unknown) {
+        handleFirebaseError(error)
+    }
 }
 
 export const getDistrettiForAdmin = async (id: string) => {
-    const collectionDistrettiRef = collection(firestore, distrettiCollectionKey);
-    const q = query(collectionDistrettiRef, where("admins", "array-contains", id));
-    const querySnapshot = await getDocs(q);
-    const outList = querySnapshot.docs.map((doc) => doc.id)
-    return outList;
+    try {
+        const collectionDistrettiRef = collection(firestore, distrettiCollectionKey);
+        const q = query(collectionDistrettiRef, where("admins", "array-contains", id));
+        const querySnapshot = await getDocs(q);
+        const outList = querySnapshot.docs.map((doc) => doc.id)
+        return outList;
+    } catch (error: unknown) {
+        handleFirebaseError(error)
+    }
 }
 
 
 export const getInfoMediciDistretto = async (distretto: string) => {
-    const distrettoInfoRef = doc(firestore, distrettiCollectionKey, distretto, infoCollectionKey, infoMediciKey);
-    const snap = await getDoc(distrettoInfoRef);
-    return snap.data();
+    try {
+        const distrettoInfoRef = doc(firestore, distrettiCollectionKey, distretto, infoCollectionKey, infoMediciKey);
+        const snap = await getDoc(distrettoInfoRef);
+        return snap.data();
+    } catch (error: unknown) {
+        handleFirebaseError(error)
+    }
 }
 
 export const getInfoSediRef = (distretto: string) => {
     return doc(firestore, distrettiCollectionKey, distretto, infoCollectionKey, infoSediKey)
 }
 export const getInfoSediDistretto = async (distretto: string) => {
-    const snap = await getDoc(getInfoSediRef(distretto));
-
-    const data = snap.data()!
-    const out: RemoteSediInfo = {
-        sedi: data.sedi,
-        turni: data.turni
+    try {
+        const infoSediRef = getInfoSediRef(distretto)
+        const snap = await getDoc(infoSediRef);
+        const data = snap.data()!
+        const out: RemoteSediInfo = {
+            sedi: data.sedi,
+            turni: data.turni
+        }
+        return out
+    } catch (error: any) {
+        handleFirebaseError(error)
     }
-    return out
 }
 interface RemoteInfoSingleSede {
     medici_per_turno: number
@@ -150,24 +231,25 @@ export interface RemoteSediInfo {
  * @returns 
  */ 
 export const getDisponibilitaMeseDistretto = async (distretto: string, anno: number, mese: number) => {
-    const distrettoDispRef = doc(firestore, distrettiCollectionKey, distretto, 'disponibilita', anno.toString() + '-' + mese.toString().padStart(2, '0'));
-    const snap = await getDoc(distrettoDispRef);
-    return snap.data();
+    try {
+        const distrettoDispRef = doc(firestore, distrettiCollectionKey, distretto, disponibilitaSedeKey, getKeyMese(new Date(anno, mese, 3)));
+        const snap = await getDoc(distrettoDispRef);
+        return snap.data();
+    } catch (error: unknown) {
+        handleFirebaseError(error)
+    }
 }
 
 export const getDisponibiltiaOfSediOfAdminUser = async (mese: string, distretto: string) => {
-    const disponibilitaMediciQuery = query(collectionGroup(firestore, mese), where('distretti', 'array-contains', distretto)); //* Rivedere array-contains
-    const querySnapshot = await getDocs(disponibilitaMediciQuery);
-    querySnapshot.forEach((doc) => {
-        doc.ref.path //Possiamo risalire ad ID medico
-        console.log(doc.id, ' => ', doc.data());
-    });
-}
-
-export const getGenericPassword = async () => {
-    const secretsRef = doc(firestore, 'generic_info', 'secrets');
-    const secrets = await getDoc(secretsRef);
-    return secrets.get('password');
+    try {
+        const disponibilitaMediciQuery = query(collectionGroup(firestore, mese), where('distretti', 'array-contains', distretto)); //* Rivedere array-contains
+        const querySnapshot = await getDocs(disponibilitaMediciQuery);
+        querySnapshot.forEach((doc) => {
+            doc.ref.path //Possiamo risalire ad ID medico
+        });
+    } catch (error: unknown) {
+        handleFirebaseError(error)
+    }
 }
 
 /* async function clearCollection(path: string) {
@@ -179,23 +261,35 @@ export const getGenericPassword = async () => {
     })
 } */
 
+const createDataCsv = (row: string, headers: string[]) => {
+    const data = row.split(',');
+    const obj: Record<string, any> = {};
+    for (let j = 0; j < 3; j++) { //data.length
+        obj[headers[j]] = capitalizeFirstLetter(data[j].trim());
+    }
+    const tmpRuolo = data[5].trim().toLowerCase().startsWith('incar') ? 'INCARICATO' : data[5].trim()
+    obj['ruolo'] = capitalizeFirstLetter(tmpRuolo) + data[4].trim()
+    obj['sedi'] = data.slice(8).filter(el => el !== "")
+    obj['uid'] = obj[headers[0]]
+    return obj
+}
+
 export const setDataMedici = async (bufferString: string) => {
     const futures = []
     const arr = bufferString.split('\n'); 
-    var headers = arr[0].split(',').map(el => capitalizeFirstLetter(el.trim()));
-    
-    for (var i = 1; i < arr.length; i++) {
-        var data = arr[i].split(',');
-        var obj: any = {};
-        for (var j = 0; j < 3; j++) { //data.length
-            obj[headers[j]] = capitalizeFirstLetter(data[j].trim());
+    const headers = arr[0].split(',').map(el => capitalizeFirstLetter(el.trim()));
+    //TODO: Per questioni prestazionali togliere uid dai campi e lasciarlo solo come chiave dell'oggetto
+    try {
+        for (let i = 1; i < arr.length; i++) {
+            const obj: any = createDataCsv(arr[i], headers)
+            const uidMed = obj['uid']
+            futures.push(setDoc(doc(firestore, usersKey, uidMed), obj))
+            //! Hardcoded, cambiare quando si aggiungeranno più distretti
+            futures.push(setDoc(doc(firestore, distrettiCollectionKey, 'Sassuolo', infoCollectionKey, infoMediciKey), { [uidMed]: obj }, { merge: true }));
+            futures.push(setDoc(doc(firestore, distrettiCollectionKey, 'Sassuolo', infoCollectionKey, listaMediciKey), { 'list': arrayUnion(uidMed) }, {merge: true}));
         }
-        const tmpRuolo = data[5].trim().toLowerCase().startsWith('incar') ? 'INCARICATO' : data[5].trim()
-        obj['ruolo'] = capitalizeFirstLetter(tmpRuolo) + data[4].trim()
-        obj['sedi'] = data.slice(8).filter(el => el !== "")
-        obj['uid'] = obj[headers[0]]
-        futures.push(setDoc(doc(firestore, usersKey, obj['uid']), obj));
+        await Promise.all(futures)
+    } catch (error: unknown) {
+        handleFirebaseError(error)
     }
-    //JSON.stringify(jsonObj);
-    await Promise.all(futures)
 }

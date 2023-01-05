@@ -1,10 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-import { getFromStorage, saveToStorage } from '../local_storage';
+import { getFromStorage, saveToStorage } from '../local_utilities';
 
-//TODO: Dopo logout <andato male> (o cambio pagina?) FirebaseError: Expected first argument to collection() to be a CollectionReference, a DocumentReference or FirebaseFirestore
-//! Assolutamente da risolvere questo BUG qua sopra
-
-interface StateAuthType {
+interface StateAuth {
   admin: boolean,
   uid: string,
   distretti: string[],
@@ -18,10 +15,20 @@ export interface ParamSetUser {
   data: Record<string, any>
 }
 
+export const getGoodRuolo = (user: StateAuth) => {
+  const role = user.ruolo.toLowerCase()
+  if(role.startsWith('titolare')) {
+    return 'Titolare'
+  } else if (role.startsWith('incaricato')) {
+    return 'Incaricato Temporaneo'
+  } 
+  return user.ruolo
+}
+
 const initialUser = getFromStorage('user');
 const initialAdmin = getFromStorage('admin');
 
-const emptyState: StateAuthType = {
+const emptyState: StateAuth = {
   admin: false,
   uid: "",
   distretti: [],
@@ -30,7 +37,7 @@ const emptyState: StateAuthType = {
   ruolo: ""
 }
 
-const initialStateAuth: StateAuthType = {
+const initialStateAuth: StateAuth = {
   admin: initialAdmin !== undefined ? initialAdmin : false,
   uid: initialUser?.uid !== undefined ? initialUser.uid : "",
   distretti: initialUser?.distretti !== undefined ? initialUser.distretti : [],

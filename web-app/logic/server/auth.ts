@@ -1,6 +1,6 @@
-import { firebaseApp } from "./firebase";
-import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from 'firebase/auth'
-import { clearStorage } from "../local_storage";
+import { AppFirebaseError, firebaseApp } from "./firebase";
+import { getAuth, signInWithEmailAndPassword, signOut, AuthError } from 'firebase/auth'
+import { clearStorage } from "../local_utilities";
 
 export type TypeSignError = "email" | "password";
 
@@ -10,11 +10,15 @@ export class SignError extends Error {
     constructor(msg: string, type: TypeSignError) {
         super(msg);
         this.type = type;
-
-        // Set the prototype explicitly.
         Object.setPrototypeOf(this, SignError.prototype);
     }
 }
+
+function isInstanceOfAuthError(error: any): error is AuthError {
+    if('code' in error && 'customData' in error && 'message' in error && 'name' in error) return true
+    
+    return false
+} 
 
 const auth = getAuth(firebaseApp);
 
@@ -23,14 +27,24 @@ export const signInAdminWithEmail = async (email: string, password: string) => {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         return user;
-    } catch (error: any) {
-        const errorCode = error.code;
-        const errorMessage = error.message;
-        throw new SignError("C'è stato un errore " + errorMessage, "email")
+    } catch (error: unknown) {
+        if (isInstanceOfAuthError(error)) {
+            throw new AppFirebaseError({code: error.code})
+        } else {
+            throw new Error("C'è stato un errore, riprovare dopo")
+        }
     }
 }
 
 export const logoutFirebase = async () => {
-    await signOut(auth)
-    clearStorage();
+    try {
+        await signOut(auth)
+        clearStorage();
+    } catch (error: unknown) {
+        if (isInstanceOfAuthError(error)) {
+            throw new AppFirebaseError({ code: error.code })
+        } else {
+            throw new Error("C'è stato un errore, riprovare dopo")
+        }
+    }
 }

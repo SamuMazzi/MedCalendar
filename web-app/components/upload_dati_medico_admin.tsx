@@ -5,11 +5,15 @@ import { useState } from "react";
 import Button from "@mui/material/Button";
 import { ImportFileExcel } from "./excel_export";
 import { setDataMedici } from "../logic/server/firestore";
+import { useAppDispatch } from "../logic/redux/store";
+import { setMessageError } from "../logic/redux/settings_slice";
+import { AppFirebaseError } from "../logic/server/firebase";
 
 export default function UploadDatiMedico() {
     const [data, setData] = useState("")
     const [loading, setLoading] = useState(false)
     const [done, setDone] = useState(false)
+    const dispatch = useAppDispatch()
 
     const sendInfo = async () => {
         if (data.length === 0) return
@@ -18,6 +22,12 @@ export default function UploadDatiMedico() {
         try {
             await setDataMedici(data)
             setDone(true)
+        } catch(error: unknown) {
+            if (error instanceof AppFirebaseError) {
+                dispatch(setMessageError(error.message))
+            } else {
+                dispatch(setMessageError("Errore, riprovare!"))
+            }
         } finally {
             setLoading(false)
         }

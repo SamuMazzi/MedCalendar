@@ -17,8 +17,9 @@ import Button from '@mui/material/Button'
 import { useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../logic/redux/store'
 import { swapMediciInTurno } from '../logic/redux/scheduler_slice'
-import { getGiornoSettimana } from '../logic/local_storage'
+import { getGiornoSettimana } from '../logic/local_utilities'
 import ListItemIcon from '@mui/material/ListItemIcon'
+//import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 
 const getColorRole = (ruolo: string) => {
   return ruolo.startsWith("inc") ? "#ccff9b" : ruolo.startsWith("conven") ? "#b1f4ff" : "#ffd07d"
@@ -72,7 +73,7 @@ function TableCellMedici(props: PropsTableCellMedici) {
             key={props.sede + index}
             sx={{
               pl: 2, py: 0.8, mb: 0.5, '&& .MuiTouchRipple-rippleVisible': {
-                animationDuration: '500ms',
+                animationDuration: '600ms',
               },
             }}
             style={{
@@ -86,18 +87,22 @@ function TableCellMedici(props: PropsTableCellMedici) {
           >
             <div style={{
               display: 'flex',
-              alignItems: 'center',
-              //justifyContent: 'center',
-              //flexWrap: 'wrap',
+              alignItems: 'center'
             }}>
               {
                 medico ?
                   <>
                     <Typography style={{ whiteSpace: "pre-line" }} align="left">{getInfoTextMedico(medico)}</Typography>
                     <CircleIcon fontSize="small" sx={{ ml: 1 }} style={{ color: getColorRole(medico.ruolo) }} />
+                    {
+                      /**
+                        <WarningAmberRoundedIcon fontSize="small" sx={{ ml: 1 }} style={{ color: 'orange' }} />
+                        TODO:  Aggiungere segnale di warning di fianco al medico se uno fa modifiche che modifiche sbagliate
+                       */
+                    }
                   </> :
                   <Typography style={{ whiteSpace: "pre-line", color: '#ACACAC' }}>(Vuoto)</Typography>
-              }
+                }
             </div>
           </Button>
         )
@@ -108,6 +113,18 @@ function TableCellMedici(props: PropsTableCellMedici) {
   )
 }
 
+const styleModal = {
+    position: 'absolute' as 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: 'translate(-50%, -50%)',
+    width: 400,
+    bgcolor: 'background.paper',
+    borderRadius: 10,
+    boxShadow: 24,
+    p: 4,
+};
+
 export default function TableResult(props: PropsTableResult) {
     const formatted_data = useAppSelector(state => state.scheduler)
     const [ openModal, setOpenModal ] = useState(false)
@@ -117,19 +134,6 @@ export default function TableResult(props: PropsTableResult) {
     const [sedeSel, setSedeSel] = useState<string | undefined>("")
     const listTurni = getAllTurni(formatted_data)
     const dispatch = useAppDispatch()
-
-  
-    const styleModal = {
-        position: 'absolute' as 'absolute',
-        top: '50%',
-        left: '50%',
-        transform: 'translate(-50%, -50%)',
-        width: 400,
-        bgcolor: 'background.paper',
-        borderRadius: 10,
-        boxShadow: 24,
-        p: 4,
-    };
 
     const swapMeds = (med_in: string | undefined) => {
         dispatch(swapMediciInTurno({
@@ -195,9 +199,7 @@ export default function TableResult(props: PropsTableResult) {
                   key={turno}
                 >
                   <TableCell key={turno} 
-                    style={{
-                        // background: turno.split('T')[1].startsWith('08') ? "#fb5959" : "white"
-                      }}
+                    //#fb5959
                   >
                     {getTextTurno(turno)}
                   </TableCell>

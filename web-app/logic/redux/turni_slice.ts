@@ -2,13 +2,12 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import type { RootState } from './store'
 
 export type SediType = Record<string, Record<string, number[]>>;
-type LocalTimestamp = number;
 
 export interface StateTurno {
   sedi: string[],
   disponibilita: Record<string, number[]>,
   oreMassime: number
-  mese: LocalTimestamp | undefined
+  timestamp_mese: number | undefined
 }
 
 interface ParamDisponibilita {
@@ -22,7 +21,7 @@ const initialStateTurni: StateTurno = {
   sedi: [],
   disponibilita: <Record<string, number[]>>{},
   oreMassime: 0,
-  mese: (new Date(today.getFullYear(), today.getMonth()+1, today.getDate())).getTime()
+  timestamp_mese: (new Date(today.getFullYear(), today.getMonth()+1, today.getDate())).getTime()
 }
 
 export const turnoSlice = createSlice({
@@ -37,15 +36,12 @@ export const turnoSlice = createSlice({
    * }
    */
   reducers: {
-    clearState: (state) => {
-      state = initialStateTurni
-    },
+    clearState: () => initialStateTurni, //* Funziona
     setOreMassime: (state, action) => {
       state.oreMassime = action.payload
     },
     setMese: (state, action) => {
-      console.log('Slice: setting mese')
-      state.mese = action.payload
+      state.timestamp_mese = action.payload
     },
     handleDisponibilita: (state, action: PayloadAction<ParamDisponibilita>) => {
         //action.payload -> sedi, fasciaTurno, giorno
@@ -59,13 +55,6 @@ export const turnoSlice = createSlice({
         }
     },
     handleSede: (state: any, action: PayloadAction<string[]>) => {
-        /* if(Object.keys(state.sedi).includes(action.payload)) {
-          delete state.sedi[action.payload]
-        } else {
-          state.sedi = {
-            [action.payload]: <Record<string, number[]>>{}
-          }
-        } */
         state.sedi = action.payload
     }
   }

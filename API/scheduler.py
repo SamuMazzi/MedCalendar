@@ -148,6 +148,7 @@ def filter_by_role(list_medici: List[Medico], roles: list):
 
 
 def start(data):
+    data['month'] = data['month'] + 1  # Per questioni di compatibilità con JS
     init_storage(data)
     main_handler = MainHandler()
     main_handler.setup()

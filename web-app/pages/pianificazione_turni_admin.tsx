@@ -7,14 +7,16 @@ import TableResult from '../components/table_result';
 import CircleIcon from '@mui/icons-material/Circle';
 import Greetings from '../components/greetings';
 import { useAppDispatch, useAppSelector } from '../logic/redux/store';
-import { populateScheduler } from '../logic/redux/scheduler_slice';
-import { MenuAppBar } from '../components/app_bar'
+import { populateScheduler, setMeseAndAnno } from '../logic/redux/scheduler_slice';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router'
-import { mesi } from '../logic/local_storage';
 import { getDisponibilitaMeseDistretto, uploadDefConfigurazione } from '../logic/server/firestore'
+import { setMessageError } from '../logic/redux/settings_slice';
 import ExportExcel from '../components/excel_export'
 import Head from 'next/head'
+import Image from 'next/image'
+import { AppFirebaseError } from '../logic/server/firebase'
+import { SelectMeseCalendar } from '../components/calendar'
 
 const data_to_send = {
   'year': 2023,
@@ -138,8 +140,8 @@ function InfoTable(props: PropsInfoTable) {
 export default function PianificazioneTurniPage() {
   const monthData = useAppSelector(state => state.scheduler.month)
   const yearData = useAppSelector(state => state.scheduler.year)
+  const dateData = new Date(yearData, monthData, 3)
   const dataScheduler = useAppSelector(state => state.scheduler)
-  const [ messageError, setMessageError] = useState("")
   const [ loadingTurni, setLoadingTurni ] = useState(false)
   const [ dettagli, setDettagli] = useState(false)
   const [ turniUploaded, setTurniUploaded ] = useState(false)
@@ -147,23 +149,34 @@ export default function PianificazioneTurniPage() {
   const [ nMedici, setNMedici ] = useState(0)
   const dispatch = useAppDispatch()
   const router = useRouter()
-  const { distretto } = router.query
   const legendaRuoli: Record<string, string> = {
     'Incaricato': '#77BA84',
     'Sostituto': '#EDC272',
     'Titolare': '#729DED'
   }
+  const [ distretto, setDistretto ] = useState("")
 
-  //TODO: Risolvere perchè ricaricare la pagina annulla il distretto
+  useEffect(() => {
+    if (router.isReady) {
+      const defDistretto = router.query.distretto !== undefined ? (Array.isArray(router.query.distretto) ? router.query.distretto.at(0) : router.query.distretto)! : ""
+      setDistretto(defDistretto)
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [router.isReady, router.query]);
 
   const getTurniMedici = async () => {
-    const distr = distretto !== undefined ? (Array.isArray(distretto) ? distretto.at(0) : distretto)! : ""
-    const today = new Date()
-    const nextMonth = new Date(today.getFullYear(), today.getMonth()+1)
-    //TODO: decidere se lasciare cosi (cioè punta direttamente al mese prossimo)
-    const dataMedici: any = await getDisponibilitaMeseDistretto(distr, nextMonth.getFullYear(), nextMonth.getMonth())
-    const listMedici = getListMediciFromData(dataMedici)
-    setNMedici(listMedici ? listMedici.length : 0)
+    if(yearData === 0) return
+    try {
+      const dataMedici: any = await getDisponibilitaMeseDistretto(distretto, yearData, monthData)
+      const listMedici = getListMediciFromData(dataMedici)
+      setNMedici(listMedici ? listMedici.length : 0)
+    } catch (error: unknown) {
+      if(error instanceof AppFirebaseError) {
+        dispatch(setMessageError(error.message))
+      } else {
+        dispatch(setMessageError("Errore, riprovare!"))
+      }
+    }
   }
 
   const getListMediciFromData = (data: Record<string, Record<string, string[]>>) => {
@@ -180,14 +193,18 @@ export default function PianificazioneTurniPage() {
   const sendDataPianificazione = async () => {
     setLoadingTurni(true)
     try {
-      await uploadDefConfigurazione(distretto !== undefined ? (Array.isArray(distretto) ? distretto.at(0) : distretto)! : "", dataScheduler)
+      await uploadDefConfigurazione(distretto, dataScheduler)
       setDataSent(true)
+    } catch(error: unknown) {
+      if (error instanceof AppFirebaseError) {
+        dispatch(setMessageError(error.message))
+      } else {
+        dispatch(setMessageError("Errore, riprovare!"))
+      }
     } finally {
       setLoadingTurni(false)
     }
   }
-
-  //TODO: Sembra che non si pulisca lo store a fronte di più chiamate
 
   const callApi = async () => {
     const debugUrlApi = "http://127.0.0.1:8080"
@@ -205,11 +222,10 @@ export default function PianificazioneTurniPage() {
         })
         const jsonData = await res.json()
         if(res.status >= 200 && res.status < 215) {
-          setMessageError("")
           dispatch(populateScheduler(jsonData))
           setTurniUploaded(true)
         } else {
-          setMessageError('Errore: ' + jsonData['message'])
+          dispatch(setMessageError('Errore: ' + jsonData['message']))
         }
     } catch(e) {
       console.log(e)
@@ -218,19 +234,13 @@ export default function PianificazioneTurniPage() {
     }
   }
 
-  useEffect(() => {
-    getTurniMedici()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
   return (
     <>
     <Head>
       <title>Pianificazione turni</title>
     </Head>
-    <MenuAppBar />
     {dataSent ?
-      <Grid container direction="column" justifyContent="center" alignItems="center">
+      <Grid container direction="column" justifyContent="center" alignItems="center" minHeight="calc(100vh - 225px)">
         <Grid item>
           <Greetings />
         </Grid>
@@ -239,19 +249,33 @@ export default function PianificazioneTurniPage() {
         </Grid>
       </Grid>
       :
-    <Grid container sx={{ px: "11%", pt: "3%" }}
+    <Grid container sx={{ px: "11%", pt: 5 }}
         direction="column"
-        //alignItems="start"
-        style={{ minHeight: '100vh', minWidth: '100vh' }}
+        minHeight="calc(100vh - 225px)"
+        minWidth='100vh'
     >
       <Grid item>
         <Grid container direction="row" justifyContent="space-around">
           <Grid item>
             <TitleOfPage
               title="Pianifica i turni" 
-              distretto={distretto !== undefined ? (Array.isArray(distretto) ? distretto.at(0) : distretto)! : ""} 
-              description={turniUploaded ? mesi[monthData] + ' ' + yearData : "Per il prossimo mese hanno inserito le loro disponibilità " + nMedici + (nMedici !== 1 ? " medici" : " medico")}
+              distretto={distretto} 
+                  //* Dovrebbe dirti che c'è gente
+                  description={""
+                    /**!turniUploaded && yearData !== 0 ? "Per " + mesi[dateData.getMonth()+1] + " " + dateData.getFullYear() +  " hanno inserito le loro disponibilità " + nMedici + (nMedici !== 1 ? " medici" : " medico") : "" */}
             />
+            <Grid item sx={{pt: 3}}>
+              <Typography sx={{pb: 1}} style={{fontWeight: 'bold'}}>Seleziona il mese</Typography>
+              <SelectMeseCalendar timestamp_mese={yearData === 0 ? undefined : dateData.getTime()} onChange={(newVal) => {
+                if(newVal !== null && (newVal.month() !== monthData || newVal.year() !== yearData)) {
+                  dispatch(setMeseAndAnno({
+                    month: newVal.month(),
+                    year: newVal.year()
+                  }))
+                  getTurniMedici()
+                }
+              }}/>
+            </Grid>
             <Grid item sx={{pl: 2}}>
               <Grid container spacing={2} alignItems="center" sx={{mt: 4}}>
                 <Button
@@ -281,12 +305,6 @@ export default function PianificazioneTurniPage() {
           }
         </Grid>
       </Grid>
-      {
-        messageError &&
-        <Grid item sx={{py: 5}}>
-          <Typography align='center' variant="h4" component="h4">{messageError}</Typography>
-        </Grid>
-      }
       {
         turniUploaded && <TableResult dettagli={dettagli}/>
       }

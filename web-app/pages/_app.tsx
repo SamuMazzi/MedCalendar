@@ -8,7 +8,12 @@ import { Analytics } from '@vercel/analytics/react';
 import "@fontsource/public-sans"
 import "@fontsource/public-sans/900.css";
 import "@fontsource/public-sans/700.css";
+import "@fontsource/public-sans/400.css";
+import "@fontsource/public-sans/300.css";
 import Head from 'next/head'
+import Footer from '../components/footer'
+import AppSnackbar from '../components/snackbar/app_snackbar'
+import { MenuAppBar } from '../components/app_bar'
 
 //-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
 //Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans - serif;
@@ -47,6 +52,13 @@ const theme = createTheme({
         }
       }
     },
+    MuiFormHelperText: {
+      styleOverrides: {
+        root: {
+          backgroundColor: 'Background'
+        }
+      }
+    },
     MuiTextField: {
       styleOverrides: {
         root: {
@@ -64,6 +76,7 @@ const theme = createTheme({
 });
 
 export default function App({ Component, pageProps }: AppProps) {
+  
   return (
     <>
       <Head>
@@ -72,7 +85,10 @@ export default function App({ Component, pageProps }: AppProps) {
       <ThemeProvider theme={theme}>
         <Provider store={store}>
           <RouteGuard>
+            <MenuAppBar />
             <Component {...pageProps} />
+            <Footer/>
+            <AppSnackbar />
           </RouteGuard>
         </Provider>
       </ThemeProvider>

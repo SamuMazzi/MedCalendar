@@ -3,30 +3,37 @@ import Box from '@mui/material/Box'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import CircularProgress from '@mui/material/CircularProgress'
-import { PersonalCalendar } from '../components/calendar'
+import { PersonalCalendar, SelectMeseCalendar } from '../components/calendar'
 import { useAppDispatch, useAppSelector }  from '../logic/redux/store'
-import { setOreMassime, handleSede } from '../logic/redux/turni_slice'
+import { setOreMassime, handleSede, setMese } from '../logic/redux/turni_slice'
 import { getInfoSediDistretto, RemoteSediInfo } from '../logic/server/firestore';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { NewListDropdown } from './form_dropdown'
-import { capitalizeFirstLetter } from '../logic/local_storage'
+import { capitalizeFirstLetter } from '../logic/local_utilities'
+import { AppFirebaseError } from '../logic/server/firebase'
+import { setMessageError } from '../logic/redux/settings_slice'
 
 interface PropsGruppoTurni {
   distretto: string | undefined
 }
 
-type mockTurniType = Record<string, string>
-const mockSedi = ['Sassuolo', 'Formigine', 'Vignola']
-const mockTurni: mockTurniType = {"20:30-8": "1,2,3,4,5", "8-20": "6,7"}
+function compareTurni(a?: string, b?: string) {
+  if (!a && !b) return 0
+  if (!a) return -1
+  if (!b) return 1
+  const firstTurni = a!.split('-')
+  const secondTurni = b!.split('-')
+  const tmpRes = parseInt(firstTurni.at(0)!) - parseInt(secondTurni.at(0)!)
+  //TODO: Finisci, deve poter gestire anche i : (es. 20.30-21)
+  if(tmpRes !== 0) return tmpRes
+}
 
 export default function GruppoTurni(props: PropsGruppoTurni) {
   const stateTurni = useAppSelector((state) => state.turni)
   const predefinedSediUser = useAppSelector((state) => state.auth.sedi)
-  const authState = useAppSelector((state) => state.auth)
   const dispatch = useAppDispatch()
-  const [loading, setLoading] = useState(false)
-  const [messageError, setMessageError] = useState("")
+  const [loading, setLoading] = useState(true)
   const [infoSedi, setInfoSedi] = useState<RemoteSediInfo>()
   const router = useRouter()
 
@@ -37,20 +44,21 @@ export default function GruppoTurni(props: PropsGruppoTurni) {
       return
     }
     try {
-      const data: RemoteSediInfo = await getInfoSediDistretto(props.distretto)
+      const data: RemoteSediInfo = (await getInfoSediDistretto(props.distretto))!
       setInfoSedi(data)
-    } catch(e: any) {
-      setMessageError("C'è stato un errore, riprovare.\nErrore: " + e.toString())
+    } catch(error: unknown) {
+      if (error instanceof AppFirebaseError) {
+        dispatch(setMessageError(error.message))
+      } else {
+        dispatch(setMessageError("Errore, riprovare!"))
+      }
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    console.log(predefinedSediUser)
-    console.log(authState)
     if (predefinedSediUser.length > 0) {
-      console.log('set def')
       dispatch(handleSede(predefinedSediUser.map(el => capitalizeFirstLetter(el))))
     }
     getInfoSedi()
@@ -58,14 +66,18 @@ export default function GruppoTurni(props: PropsGruppoTurni) {
   }, [])
 
   return (
-    messageError ? <Grid container>
-      <Grid item sx={{py: 3}}>
-        <Typography style={{fontWeight: "bold", fontSize: 30}}>Errore</Typography>
-        <Typography style={{whiteSpace: "pre-line"}}>{messageError}</Typography>
-      </Grid>
-    </Grid> :
     <>
       <Grid container direction="column">
+        <Grid item sx={{py: 2}}>
+          <Typography fontWeight="fontWeightBold" variant="h6" component="h6" sx={{ py: 2 }}>
+            {"Scegli il mese"}
+          </Typography>
+          <SelectMeseCalendar timestamp_mese={stateTurni.timestamp_mese} onChange={(newValue) => {
+            if (newValue !== null) {
+              dispatch(setMese(newValue.toDate().getTime()))
+            }
+          }}/>
+        </Grid>
         <Grid item sx={{py: 2}}>
           <Typography fontWeight="fontWeightBold" variant="h6" component="h6" sx={{py: 2}}>
             {"Numero massimo di turni"}
@@ -100,12 +112,12 @@ export default function GruppoTurni(props: PropsGruppoTurni) {
           
       </Grid>
       <Typography fontWeight="fontWeightBold" variant="h6" component="h6" sx={{ py: 2 }}>
-        {"Seleziona le tue disponibilità per Gennaio 2023"}
+        {"Seleziona le tue disponibilità"}
       </Typography>
       { loading && <CircularProgress />}
       <Grid container sx={{pb: 3}} direction="row">
         { !loading && infoSedi &&
-          Object.keys(infoSedi.turni).map((turno: string, index: number) => 
+          Object.keys(infoSedi.turni).sort().map((turno: string, index: number) => 
             <Box key={index} sx={{ borderRadius: '16px', backgroundColor: '#EFEFEF', m: 2, py: 3 }}>
               <Grid container
                   display="flex"
@@ -115,7 +127,10 @@ export default function GruppoTurni(props: PropsGruppoTurni) {
                   sx={{minWidth: "200px"}}
                 >                    
                 <Grid item>
-                  <Typography fontWeight="fontWeightRegular" style={{display: 'inline-block'}}><strong>Turno: {turno}</strong></Typography>
+                  {
+                    //Color black è per mantenerlo nero anche nella modalità scura
+                  }
+                  <Typography fontWeight="fontWeightBold" style={{color: 'black', display: 'inline-block'}}>Turno: {turno}</Typography>
                 </Grid>
                 <Grid item>
                   <PersonalCalendar fasciaTurno={turno} selectableDays={infoSedi.turni[turno].split(',').map((day: string) => (parseInt(day) % 7))}/>

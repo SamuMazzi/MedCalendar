@@ -198,7 +198,7 @@ export function SearchableDropdown(props: PropsSearchableDropdown) {
           }}
           getOptionLabel={option => getValueFromOption(option)}
           value={props.value}
-          renderInput={(params) => <TextField {...params}/>}
+          renderInput={(params) => <TextField {...params} label="" placeholder={props.label}/>}
           sx={getSxDropdown(props.label)}
           style={{
             borderColor: props.helperText ? "red" : undefined
@@ -215,9 +215,7 @@ export function SearchableDropdown(props: PropsSearchableDropdown) {
             borderRadius: '20px',
           }} {...props} />}
         />
-        <FormHelperText error>
-          {props.helperText ? props.helperText : ""}
-        </FormHelperText>
+        <FormHelperText error>{props.helperText}</FormHelperText>
       </FormControl>
     </Grid>
   )

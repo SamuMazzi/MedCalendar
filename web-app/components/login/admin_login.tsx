@@ -4,9 +4,8 @@ import { useAppDispatch } from '../../logic/redux/store';
 import { signInAdminWithEmail, SignError } from '../../logic/server/auth';
 import { setAdmin, setUser } from '../../logic/redux/auth_slice';
 import Grid from '@mui/material/Grid';
-import Button from '@mui/material/Button';
-import Typography from '@mui/material/Typography';
-import TextField from '@mui/material/TextField';
+import { FormButtonSubmit, FormTextField } from './form_components';
+import { setMessageError } from '../../logic/redux/settings_slice';
 
 export default function AdminLogin() {
     const [email, setEmail] = useState("");
@@ -25,7 +24,7 @@ export default function AdminLogin() {
                 setHelperPassword(error.message);
             }
         } else {
-            console.log('Generic error: ' + error);
+            dispatch(setMessageError("Si è verificato un errore, riprovare"))
         }
     }
 
@@ -42,14 +41,14 @@ export default function AdminLogin() {
         if (password.length === 0) {
             setHelperPassword("Inserisci una password")
             setHelperMail("")
-        } else if (email.length) {
+        } else if (email.length === 0) {
             setHelperMail("Inserisci una mail")
             setHelperPassword("")
         } else {
             setLoading(true)
             try {
                 await signIn()
-                router.push('/admin_page')
+                router.push('/')
             } catch (error) {
                 handleSignError(error)
             } finally {
@@ -60,36 +59,28 @@ export default function AdminLogin() {
 
     return (
         <>
-            <Grid item>
-                <TextField
-                    helperText={helperMail}
-                    error={helperMail.length !== 0}
+            <Grid item sx={{ pb: 2 }}>
+                <FormTextField 
                     value={email}
-                    onChange={(event) => setEmail(event.target.value)}
-                    label="Email"
-                    style={{ width: "230px" }}
+                    helperText={helperMail}
+                    onChangeFn={(newVal) => setEmail(newVal)}
+                    placeholder='Email'
                 />
             </Grid>
-            <br />
-            <Grid item>
-                <TextField
-                    type="password"
-                    helperText={helperPassword}
-                    error={helperPassword.length !== 0}
+            <Grid item sx={{ mb: 2 }}>
+                <FormTextField
                     value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    label="Inserisci la password"
-                    sx={{ mb: 2 }}
-                    style={{ width: "230px" }}
+                    helperText={helperPassword}
+                    onChangeFn={(newVal) => setPassword(newVal)}
+                    placeholder="Inserisci la password"
+                    password
                 />
             </Grid>
             <Grid item>
-                <Button onClick={onSubmit} disabled={loading}
-                    variant="contained">
-                    <Typography style={{ fontWeight: "bold", fontSize: 18 }}>
-                        Accedi
-                    </Typography>
-                </Button>
+                <FormButtonSubmit
+                    loading={loading}
+                    onClick={onSubmit}
+                />
             </Grid>
         </>
     )

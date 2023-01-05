@@ -1,20 +1,20 @@
 import Users from "../privateAssets/users.json"
 
-export type MesiType = Record<number, string>
-export const mesi: MesiType = {
-    1: 'Gennaio',
-    2: 'Febbraio',
-    3: 'Marzo',
-    4: 'Aprile',
-    5: 'Maggio',
-    6: 'Giugno',
-    7: 'Luglio',
-    8: 'Agosto',
-    9: 'Settembre',
-    10: 'Ottobre',
-    11: 'Novembre',
-    12: 'Dicembre'
-}
+export type MesiType = string[] //Record<number, string>
+export const mesi: MesiType = [
+    'Gennaio',
+    'Febbraio',
+    'Marzo',
+    'Aprile',
+    'Maggio',
+    'Giugno',
+    'Luglio',
+    'Agosto',
+    'Settembre',
+    'Ottobre',
+    'Novembre',
+    'Dicembre'
+]
 
 const giorni_settimana = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato']
 export const getGiornoSettimana = (timestamp: number, day: number) => {
@@ -32,10 +32,28 @@ export const capitalizeFirstLetter = (inputString: string) => {
     return inputString.charAt(0).toUpperCase() + inputString.slice(1).toLowerCase();
 }
 
+export const getNumOreMaxByRole = (role: string) => {
+    const defRole = role.toLowerCase()
+    if(defRole.startsWith('sostituto')) {
+        return 8
+    } else if (defRole.startsWith('incaricato12')) {
+        return 4
+    } else if (defRole.startsWith('incaricato24')) {
+        return 8
+    } else if (defRole.startsWith('titolare')) {
+        return 8
+    }
+    throw new Error('Ruolo non trovato')
+}
 
-const scontrini_local_key = 'scontrini';
-const categories_local_key = 'categories';
-const info_local_key = 'info_local';
+export const setLocalLastOreMaxSet = (ore_max: number) => {
+    saveToStorage("last_ore_max", ore_max)
+}
+
+export const getLocalLastOreMaxSet = () => {
+    const out: number | null = getFromStorage("last_ore_max")
+    return out
+}
 
 export const saveToStorage = (key: string, value: any) => {
     if(typeof window !== 'undefined') {

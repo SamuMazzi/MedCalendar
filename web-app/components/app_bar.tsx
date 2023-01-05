@@ -11,7 +11,6 @@ import { clearUserAndAdmin } from '../logic/redux/auth_slice'
 import { logoutFirebase } from '../logic/server/auth';
 import Link from 'next/link'
 
-//TODO: Nuova logica admin da riparare 
 export function MenuAppBar() {
   const [ anchorEl, setAnchorEl ] = useState<null | HTMLElement>(null);
   const authState = useAppSelector(state => state.auth)
@@ -26,7 +25,6 @@ export function MenuAppBar() {
         await logoutFirebase()
     }
     dispatch(clearUserAndAdmin())
-    console.log(authState)
     handleClose()
   };
 
@@ -48,7 +46,7 @@ export function MenuAppBar() {
       </Grid>
       <Grid item>
           {authState.uid !== "" && (
-            <div>
+            <>
               <IconButton
                 size="large"
                 aria-label="account of current user"
@@ -91,7 +89,7 @@ export function MenuAppBar() {
                 }}
               >
               <Typography style={{ fontWeight: "bold", display: 'inline-block', whiteSpace: 'pre-line', fontSize: 20 }} sx={{px: 2, pt: 1}}>
-                  {"Ciao\n" + authState.nome + '!'}
+                {authState.nome !== "" ? authState.nome : (authState.admin ? 'Amministratore' : '')}
                 </Typography>
                 <MenuItem onClick={logout}>
                   <Typography style={{textDecoration: 'underline', color: 'black'}}>
@@ -99,7 +97,7 @@ export function MenuAppBar() {
                   </Typography>
                 </MenuItem>
               </Menu>
-            </div>
+            </>
           )}
       </Grid>
     </Grid>

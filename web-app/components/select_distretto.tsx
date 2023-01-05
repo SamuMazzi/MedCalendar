@@ -3,9 +3,9 @@ import CircularProgress from '@mui/material/CircularProgress'
 import Typography from '@mui/material/Typography'
 import { useEffect, useState } from 'react';
 import { useAppSelector } from '../logic/redux/store';
-import { getDistrettiForMedico } from '../logic/server/firestore'
-import { getLocalDistretti, saveToStorage } from '../logic/local_storage'
 import { NewListDropdown } from './form_dropdown';
+// import { getDistrettiForMedico } from '../logic/server/firestore'
+// import { getLocalDistretti, saveToStorage } from '../logic/local_storage'
 
 interface ParamSelectDistretto {
     distretto: string,
@@ -21,24 +21,24 @@ export default function SelectDistretto(props: ParamSelectDistretto) {
 
     const getDistretti = async () => {
         setLoading(true)
-        let distretti = getLocalDistretti()
-        let distretti_admin = getLocalDistretti(true)
-        if(!distretti || distretti.length === 0 || !distretti_admin || distretti_admin.length === 0) {
+        let distretti = ['Sassuolo'] //getLocalDistretti()
+        //let distretti_admin = ['Sassuolo'] //getLocalDistretti(true)
+        if(!distretti || distretti.length === 0) { //|| !distretti_admin || distretti_admin.length === 0) {
           if(!distretti || distretti.length === 0) {
-            distretti = ['Sassuolo', 'Modena']
+            //distretti = ['Sassuolo']
             //distretti = await getDistrettiForMedico(authState.id);
             //saveToStorage('distretti', distretti)
+            setDistrettiMedico(distretti) 
+            //setAllDistretti(distretti)
           }
-          if(authState.admin && (!distretti_admin || distretti_admin.length === 0)) {
-            distretti_admin = ['Sassuolo', 'Modena']
-            //distretti_admin = await getDistrettiForAdmin(authState.id)
-            //saveToStorage('distretti_admin', distretti_admin)
-          }
+            if(authState.admin) { //&& (!distretti_admin || distretti_admin.length === 0)) {
+                //distretti = ['Sassuolo']
+                //distretti_admin = await getDistrettiForAdmin(authState.id)
+                //saveToStorage('distretti_admin', distretti_admin)
+                setDistrettiAdmin(distretti)
+            }
         }
-        setDistrettiMedico(distretti) 
-        setDistrettiAdmin(distretti_admin)
-        const outAllDistretti = [...distretti, ...distretti_admin].map(val => distretti.includes(val) !== distretti_admin.includes(val) ? val : "").filter((v) => v !== "")
-        setAllDistretti(outAllDistretti)
+        setAllDistretti(distretti)
         setLoading(false)
     }
     
@@ -54,7 +54,6 @@ export default function SelectDistretto(props: ParamSelectDistretto) {
             <Typography>
               Nessun distretto associato a questo utente
             </Typography>)
-
         } 
         return (
             <NewListDropdown

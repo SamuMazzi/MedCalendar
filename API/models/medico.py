@@ -13,7 +13,7 @@ class Medico:
         self.disponibilita = disponibilita
         self.sedi = sedi
         self.n_turni_per_soddisfatto = n_turni_max if n_turni_max is not None else get_n_turni_per_ruolo(ruolo) # get_n_turni_per_ruolo(ruolo)  # supponiamo di avere un solo mese
-        # self.n_turni_max =
+        self.n_turni_max = n_turni_max if n_turni_max is not None else get_n_turni_per_ruolo(ruolo)
 
     def __str__(self):
         return 'Medico: ' + self.nome

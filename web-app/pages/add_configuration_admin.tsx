@@ -4,28 +4,30 @@ import Typography from '@mui/material/Typography'
 import CircularProgress from '@mui/material/CircularProgress'
 import AddIcon from '@mui/icons-material/Add';
 import SingleSede from '../components/single_sede_admin';
-import { MenuAppBar } from '../components/app_bar';
-import MessageSnackbar from '../components/message_snackbar';
+import MessageSnackbar from '../components/snackbar/message_snackbar';
 import Greetings from '../components/greetings';
 import { setConfigurationDistrettoMese } from '../logic/server/firestore'
 import { useState, useEffect } from 'react'
 import { useAppSelector, useAppDispatch } from '../logic/redux/store'
 import { addSede, Turno } from '../logic/redux/configuration_distretto_slice'
 import Head from 'next/head';
+import { AppFirebaseError } from '../logic/server/firebase';
+import { setMessageError } from '../logic/redux/settings_slice';
 
-export default function Raccolta() {
+export default function ConfigurationAdmin() {
   const configurationDistrState = useAppSelector(state => state.configurationDistr)
   const dispatch = useAppDispatch()
   const [ loading, setLoading ] = useState(false)
   const [ infoSent, setInfoSent ] = useState(false)
   const [ isOpenSnackbar, setIsOpenSnackbar ] = useState(false)
   const [ messageSnackbar, setMessageSnackbar ] = useState("")
+  //TODO: Aggiungere scelta del mese
   /**
    * 1. Admin inserisce una o più sedi (a cui da un nome), poi per ogni sede:
    * 1a. Numero di medici per turno
    * 1b. Definire turni
    * 1c. I giorni coperti da questi turni (per una settimana)
-   * 2. Bisogna poter fare modifiche puntuali a specifici giorni //!
+   * 2. TODO Bisogna poter fare modifiche puntuali a specifici giorni //!
    */
 
   const showError = (msg: string) => {
@@ -75,7 +77,11 @@ export default function Raccolta() {
         setInfoSent(true)
       }
     } catch (e: any) {
-      showError(e.toString())
+      if (e instanceof AppFirebaseError) {
+        dispatch(setMessageError(e.message))
+      } else {
+        showError(e.toString())
+      }
     } finally {
       setLoading(false)
     }
@@ -104,7 +110,6 @@ export default function Raccolta() {
       <Head>
         <title>Aggiungi turni</title>
       </Head>
-      <MenuAppBar />
       <Grid container
         display="flex"
         direction="column"

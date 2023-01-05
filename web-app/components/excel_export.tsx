@@ -4,7 +4,7 @@ import FileSaver from 'file-saver'
 import { write, utils, read } from 'xlsx' //Capire perchè non ti installa la 0.19.1
 import Tooltip from '@mui/material/Tooltip'
 import { SchedulerState } from '../logic/redux/scheduler_slice'
-import { getGiornoSettimana } from '../logic/local_storage'
+import { getGiornoSettimana } from '../logic/local_utilities'
 import Typography from '@mui/material/Typography'
 
 //* Da abbellire
@@ -19,14 +19,11 @@ export function ImportFileExcel() {
     const importExcel = async (excelFile: File) => {
         setLoading(true)
         const textFile = await excelFile.text()
-        console.log("ora inizio")
         const wb = read(textFile, {
             type: 'binary'
         })
-        console.log("Ho finito")
         const ws = wb.Sheets[wb.SheetNames[0]]
         const csv = utils.sheet_to_csv(ws)
-        console.log(csv)
         setLoading(false)
     }
 
@@ -124,7 +121,6 @@ const ExportExcel = (props: PropsExportExcel) => {
                 data.push(tmpTurno)
             }
         })
-        console.log(data)
         return data
     }
 

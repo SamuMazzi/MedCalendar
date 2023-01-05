@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { useAppSelector }  from '../logic/redux/store'
-import { getFromStorage } from './local_storage';
-export { RouteGuard };
+import { useAppSelector }  from './redux/store'
+import { getFromStorage } from './local_utilities';
 
-function RouteGuard({ children }) {    
+interface PropsRouteGuard {
+    children: any
+}
+
+export function RouteGuard(props: PropsRouteGuard) {    
     const authState = useAppSelector((state) => state.auth);
     const [authorized, setAuthorized] = useState(false);
     const router = useRouter();
@@ -29,14 +32,14 @@ function RouteGuard({ children }) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [authState]);
 
-    function authCheck(url) {
+    function authCheck(url: string) {
         const normal_user = authState.uid.length > 0
         const admin_user = authState.admin
         // redirect to login page if accessing a private page and not logged in 
         const publicPaths = ['/login'];
-        const adminPaths = ['/admin_page', '/add_configuration_admin', '/pianificazione_turni_admin'];
+        const adminPaths = ['/admin_page', '/add_configuration_admin', '/pianificazione_turni_admin', '/admintry_admin'];
         const path = url.split('?')[0];
-        const { distretto } = router.query;
+        //const { distretto } = router.query;
         /*
         const query = url.split('?')[1];
         */
@@ -56,5 +59,5 @@ function RouteGuard({ children }) {
         return;
     }
 
-    return (authorized && children);
+    return (authorized && props.children);
 }
