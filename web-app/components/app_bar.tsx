@@ -89,7 +89,7 @@ export function MenuAppBar() {
                 }}
               >
               <Typography style={{ fontWeight: "bold", display: 'inline-block', whiteSpace: 'pre-line', fontSize: 20 }} sx={{px: 2, pt: 1}}>
-                {authState.nome !== "" ? authState.nome : (authState.admin ? 'Amministratore' : '')}
+                {authState.nome ? authState.nome : (authState.admin ? 'Amministratore' : '')}
                 </Typography>
                 <MenuItem onClick={logout}>
                   <Typography style={{textDecoration: 'underline', color: 'black'}}>

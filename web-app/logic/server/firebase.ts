@@ -56,8 +56,20 @@ export class AppFirebaseError extends Error {
         message = "Credenziali già utilizzate"
         break;
       }
-      case (AuthErrorCodes.CREDENTIAL_MISMATCH || AuthErrorCodes.EMAIL_EXISTS || AuthErrorCodes.INVALID_PASSWORD): {
-        message = "Credenziali incorrette"
+      case (AuthErrorCodes.CREDENTIAL_MISMATCH): {
+        message = "Credenziali sbagliate"
+        break;
+      }
+      case (AuthErrorCodes.EMAIL_EXISTS): {
+        message = "Credenziali sbagliate"
+        break;
+      }
+      case (AuthErrorCodes.INVALID_PASSWORD): {
+        message = "Credenziali sbagliate"
+        break;
+      }
+      case (AuthErrorCodes.USER_DELETED): {
+        message = "Credenziali sbagliate"
         break;
       }
       case (AuthErrorCodes.INVALID_EMAIL): {
@@ -70,10 +82,6 @@ export class AppFirebaseError extends Error {
       }
       case (AuthErrorCodes.WEAK_PASSWORD): {
         message = "La password deve essere di almeno 6 caratteri"
-        break;
-      }
-      case (AuthErrorCodes.USER_DELETED): {
-        message = "Utente eliminato"
         break;
       }
       case (AuthErrorCodes.UNVERIFIED_EMAIL): {

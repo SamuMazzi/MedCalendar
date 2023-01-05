@@ -6,6 +6,7 @@ import { setAdmin, setUser } from '../../logic/redux/auth_slice';
 import Grid from '@mui/material/Grid';
 import { FormButtonSubmit, FormTextField } from './form_components';
 import { setMessageError } from '../../logic/redux/settings_slice';
+import { AppFirebaseError } from '../../logic/server/firebase';
 
 export default function AdminLogin() {
     const [email, setEmail] = useState("");
@@ -23,7 +24,10 @@ export default function AdminLogin() {
             } else if (error.type === 'password') {
                 setHelperPassword(error.message);
             }
+        } else if (error instanceof AppFirebaseError) {
+            dispatch(setMessageError(error.message))
         } else {
+            console.log(error)
             dispatch(setMessageError("Si è verificato un errore, riprovare"))
         }
     }
@@ -50,6 +54,7 @@ export default function AdminLogin() {
                 await signIn()
                 router.push('/')
             } catch (error) {
+                console.log(error)
                 handleSignError(error)
             } finally {
                 setLoading(false)
