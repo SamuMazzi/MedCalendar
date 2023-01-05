@@ -5,7 +5,7 @@ import Typography from '@mui/material/Typography'
 import CircularProgress from '@mui/material/CircularProgress'
 import { PersonalCalendar, SelectMeseCalendar } from '../components/calendar'
 import { useAppDispatch, useAppSelector }  from '../logic/redux/store'
-import { setOreMassime, handleSede, setMese } from '../logic/redux/turni_slice'
+import { setOreMassime, handleSede, setMese, clearDisponibilita } from '../logic/redux/turni_slice'
 import { getInfoSediDistretto, RemoteSediInfo } from '../logic/server/firestore';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
@@ -75,6 +75,7 @@ export default function GruppoTurni(props: PropsGruppoTurni) {
           <SelectMeseCalendar timestamp_mese={stateTurni.timestamp_mese} onChange={(newValue) => {
             if (newValue !== null) {
               dispatch(setMese(newValue.toDate().getTime()))
+              dispatch(clearDisponibilita())
             }
           }}/>
         </Grid>

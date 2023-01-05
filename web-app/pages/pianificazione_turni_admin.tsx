@@ -208,10 +208,12 @@ export default function PianificazioneTurniPage() {
 
   const callApi = async () => {
     const debugUrlApi = "http://127.0.0.1:8080"
-    const urlApi ="https://europe-west1-programmazione-turni-gm.cloudfunctions.net/schedule_from_data"
+    const urlProductionApi ="https://europe-west1-programmazione-turni-gm.cloudfunctions.net/schedule_from_data"
+    const urlApi = process.env.NODE_ENV === 'production' ? urlProductionApi : debugUrlApi
+    
     setLoadingTurni(true)
     try {
-      const res = await fetch(debugUrlApi,
+      const res = await fetch(urlApi,
         {
           method: "POST",
           headers: {

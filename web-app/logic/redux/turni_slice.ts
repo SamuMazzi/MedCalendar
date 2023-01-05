@@ -54,6 +54,11 @@ export const turnoSlice = createSlice({
             state.disponibilita[fasciaTurno] = [...oldDisponibilita, giorno]
         }
     },
+    clearDisponibilita: (state) => {
+      Object.keys(state.disponibilita).forEach((disp: string) => {
+        delete state.disponibilita[disp]
+      })
+    },
     handleSede: (state: any, action: PayloadAction<string[]>) => {
         state.sedi = action.payload
     }
@@ -61,7 +66,7 @@ export const turnoSlice = createSlice({
 })
 
 // Action creators are generated for each case reducer function
-export const { setOreMassime, handleDisponibilita, handleSede, setMese, clearState } = turnoSlice.actions
+export const { setOreMassime, handleDisponibilita, handleSede, setMese, clearState, clearDisponibilita } = turnoSlice.actions
 // Other code such as selectors can use the imported `RootState` type
 export const selectListSedi = (state: RootState) => Object.keys(state.turni.sedi)
 

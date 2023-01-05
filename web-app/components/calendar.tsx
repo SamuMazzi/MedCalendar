@@ -66,7 +66,7 @@ export function SelectMeseCalendar(props: PropsSelectMeseCalendar) {
         closeOnSelect={true}
         open={isOpen}
         onClose={() => setIsOpen(false)}
-      />
+        />
     </LocalizationProvider>
   );
 }
@@ -77,10 +77,18 @@ export function PersonalCalendar(props: PropsCalendar) {
   const dispatch = useAppDispatch()
   const [isOpen, setIsOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
+  const [selected, setSelected] = useState<any>(null);
+
+  const handleBugClick = async () => {
+    setSelected(dayjs(timestamp_mese!))
+    await new Promise(r => setTimeout(r, 1));
+    setSelected(null)
+  }
 
   const handleClick = (event: any) => {
     setIsOpen((isOpen) => !isOpen);
     setAnchorEl(event.currentTarget);
+    handleBugClick()
   }
 
   const handleDaySelected = (newDate: Dayjs) => {
@@ -94,7 +102,7 @@ export function PersonalCalendar(props: PropsCalendar) {
   return (
     <LocalizationProvider adapterLocale={'it'} dateAdapter={AdapterDayjs}>
       <DatePicker
-        value={dayjs(timestamp_mese)}
+        value={selected}        
         onChange={(newValue) => {
           if(newValue !== null) {
             handleDaySelected(newValue);
@@ -104,6 +112,7 @@ export function PersonalCalendar(props: PropsCalendar) {
           placement: "bottom-end",
           anchorEl: anchorEl
         }}
+        //TODO: Aggiungi ai test il fatto che si possa selezionare il giorno corrente, visto che c'era un bug a riguardo
         maxDate={timestamp_mese !== undefined ? dayjs(timestamp_mese).endOf('month') : undefined}
         minDate={timestamp_mese !== undefined ? dayjs(timestamp_mese).startOf('month') : undefined}
         closeOnSelect={false}
