@@ -37,7 +37,6 @@ export function RouteGuard(props: PropsRouteGuard) {
         const admin_user = authState.admin
         // redirect to login page if accessing a private page and not logged in 
         const publicPaths = ['/login'];
-        const adminPaths = ['/admin_page', '/add_configuration_admin', '/pianificazione_turni_admin', '/admintry_admin'];
         const path = url.split('?')[0];
         //const { distretto } = router.query;
         /*
@@ -50,7 +49,7 @@ export function RouteGuard(props: PropsRouteGuard) {
                 query: { returnUrl: router.asPath }
             })
             //* condizione sui distretti deve ancora essere testata
-        } else if (!admin_user && adminPaths.some(el => path.includes(el))) { //* (distretto && authState.distretti.includes(distretto)) 
+        } else if (!admin_user && path.includes('_admin')) { //* (distretto && authState.distretti.includes(distretto)) 
             setAuthorized(false);
             router.back()
         } else {

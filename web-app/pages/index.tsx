@@ -68,6 +68,7 @@ export default function Home() {
           <Grid container direction="row" justifyContent="center">
             <ChoiceButton label="Aggiungi turni per un mese" path='/add_configuration_admin' distretto={distretto} />
             <ChoiceButton label="Pianifica turni per mese" path='/pianificazione_turni_admin' distretto={distretto} />
+            <ChoiceButton label="Aggiungi medico al distretto" path='/upload_single_medico_admin' distretto={distretto} />
           </Grid>
         </Grid>
         //* Capire questione immagini Dropdown

@@ -291,3 +291,32 @@ export const setDataMedici = async (bufferString: string) => {
         handleFirebaseError(error)
     }
 }
+
+//Codice provvisorio --------------------------------
+
+export interface MedicoRemote {
+    Cognome: string,
+    Nome: string,
+    ruolo: string,
+    Sedi: string[],
+    Email: string
+}
+
+export const addSingleMedico = async (data: MedicoRemote, distretto: string) => {
+    const futures = []
+    const obj: Record<string, any> = {...data}
+    obj['uid'] = data.Email
+    const uidMed: string = obj['uid']
+    try {
+        futures.push(setDoc(doc(firestore, usersKey, uidMed), obj))
+        const docMedico = doc(firestore, distrettiCollectionKey, distretto, infoCollectionKey, infoMediciKey)
+        futures.push(setDoc(docMedico, { [uidMed]: obj }, { merge: true }));
+        futures.push(setDoc(doc(firestore, distrettiCollectionKey, distretto, infoCollectionKey, listaMediciKey), { 'list': arrayUnion(uidMed) }, { merge: true }));
+        
+        await Promise.all(futures)
+    } catch (error: unknown) {
+        console.log(error)
+        handleFirebaseError(error)
+    }
+}
+// -------------------------------------------------

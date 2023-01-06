@@ -37,6 +37,17 @@ export default function GruppoTurni(props: PropsGruppoTurni) {
   const [infoSedi, setInfoSedi] = useState<RemoteSediInfo>()
   const router = useRouter()
 
+  const setPredefinedSedi = (remoteSedi: string[]) => {
+    if (predefinedSediUser.length > 0) {
+      const normalizedSedi = remoteSedi.map(el => el.toLowerCase())
+      const normalizedPredefinedSedi = predefinedSediUser.map(el => el.toLowerCase())
+      const out = normalizedPredefinedSedi.filter(el => normalizedSedi.includes(el)).map(el => capitalizeFirstLetter(el))
+      if(out.length > 0) {
+        dispatch(handleSede(out))
+      }
+    } 
+  }
+
   const getInfoSedi = async () => {
     setLoading(true)
     if(props.distretto === undefined) {
@@ -46,6 +57,7 @@ export default function GruppoTurni(props: PropsGruppoTurni) {
     try {
       const data: RemoteSediInfo = (await getInfoSediDistretto(props.distretto))!
       setInfoSedi(data)
+      setPredefinedSedi(Object.keys(data.sedi))
     } catch(error: unknown) {
       if (error instanceof AppFirebaseError) {
         dispatch(setMessageError(error.message))
@@ -58,9 +70,9 @@ export default function GruppoTurni(props: PropsGruppoTurni) {
   }
 
   useEffect(() => {
-    if (predefinedSediUser.length > 0) {
+    /* if (predefinedSediUser.length > 0) { //TODO: Applicare filtro su queste sedi
       dispatch(handleSede(predefinedSediUser.map(el => capitalizeFirstLetter(el))))
-    }
+    } */
     getInfoSedi()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
