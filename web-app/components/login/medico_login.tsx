@@ -50,10 +50,10 @@ export default function MedicoLogin(props: PropsMedicoLogin) {
         try {
             setLoadingLogin(true)
             if (await checkPassword(password, props.server_psw)) {
-                if (returnUrl && !returnUrl.includes('login')) {
+                dispatch(setUser({ uid: medicoSelected, data: allMedici[medicoSelected] }))
+                dispatch(setAdmin(false))
+                if (returnUrl && !returnUrl.includes('login') && !returnUrl.includes('_admin')) {
                     //TODO Salvare HASH in storage
-                    dispatch(setUser({ uid: medicoSelected, data: allMedici[medicoSelected] }))
-                    dispatch(setAdmin(false))
                     router.push(Array.isArray(returnUrl) ? returnUrl.at(0)! : returnUrl)
                 } else {
                     router.push('/')

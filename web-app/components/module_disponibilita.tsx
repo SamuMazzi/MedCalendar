@@ -30,20 +30,28 @@ export default function ModuleDisponibilita(props: PropsDisponibilita) {
     return (
         <Grid container direction="column" alignItems="center" justifyContent="center" minHeight="calc(100vh - 225px)">
             <Grid item>
-                <Grid container spacing={2} sx={{ pt: 3}}
+                <Grid container spacing={2} sx={{ pt: 3 }}
                     direction="column"
-                    alignItems="start"
+                    alignItems={{ xs: "center", lg: "start"}}
+                    //alignItems="start"
                 >
-                    <Typography style={{ fontWeight: 900, fontSize: 52 }}>
-                        Raccolta disponibilità
-                    </Typography>
-                    <Typography variant="h6" component="h6">
-                        {"DISTRETTO: " + (props.distretto !== undefined ? props.distretto!.toUpperCase() : "")}
-                    </Typography>
-                    <GruppoTurni distretto={props.distretto} />
-                    <Button variant="contained" onClick={handleSubmit} style={{ width: '100px' }}>
-                        Invia
-                    </Button>
+                    <Grid item>
+                        <Typography style={{ fontWeight: 900, fontSize: 52 }} sx={{ textAlign: { xs: "center", lg: "left" } }}>
+                            Raccolta disponibilità
+                        </Typography>
+                        <Typography variant="h6" component="h6" sx={{ textAlign: { xs: "center", lg: "left" } }}>
+                            {"DISTRETTO: " + (props.distretto !== undefined ? props.distretto!.toUpperCase() : "")}
+                        </Typography>
+
+                    </Grid>
+                    <Grid item>
+                        <GruppoTurni distretto={props.distretto} />
+                    </Grid>
+                    <Grid item>
+                        <Button variant="contained" onClick={handleSubmit} style={{ width: '100px' }}>
+                            Invia
+                        </Button>
+                    </Grid>
                 </Grid>
                 {
                     /**

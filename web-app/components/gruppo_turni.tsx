@@ -128,7 +128,7 @@ export default function GruppoTurni(props: PropsGruppoTurni) {
         {"Seleziona le tue disponibilità"}
       </Typography>
       { loading && <CircularProgress />}
-      <Grid container sx={{pb: 3}} direction="row">
+      <Grid container sx={{pb: 3}} direction={{xs: "column", md: "row"}}>
         { !loading && infoSedi &&
           Object.keys(infoSedi.turni).sort().map((turno: string, index: number) => 
             <Box key={index} sx={{ borderRadius: '16px', backgroundColor: '#EFEFEF', m: 2, py: 3 }}>
