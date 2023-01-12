@@ -41,13 +41,14 @@ export function MenuAppBar() {
     >
       <Grid item>
         <Link href="/">
-          <Image priority alt="logo" src="/logo@2x.png" width="130" height="80"/>
+          <Image priority alt="logo" src="/logo@2x.png" width="130" height="80" data-cy="logo_image_appbar"/>
         </Link>
       </Grid>
       <Grid item>
           {authState.uid !== "" && (
             <>
               <IconButton
+                data-cy="profile_button"
                 size="large"
                 aria-label="account of current user"
                 aria-haspopup="true"

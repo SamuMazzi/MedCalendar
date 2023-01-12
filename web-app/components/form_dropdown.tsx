@@ -114,6 +114,7 @@ function GenericDropdown(props: PropsGenericDropdown) {
         //  <InputLabel>{props.label}</InputLabel> //! Non si sa perchè ma si bugga
         }
         <Select
+          data-cy="dropdown_cy"
           value={props.value}
           //label={props.label}
           placeholder={props.label}
@@ -188,6 +189,7 @@ export function SearchableDropdown(props: PropsSearchableDropdown) {
     <Grid item>
       <FormControl style={{ width: "230px" }}>
         <Autocomplete
+          data-cy="autocomplete_cy"
           ListboxProps={{style: {overflow: 'auto'}}}
           filterOptions={filterOptions}
           disablePortal

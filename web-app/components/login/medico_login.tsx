@@ -109,6 +109,7 @@ export default function MedicoLogin(props: PropsMedicoLogin) {
                         onChangeFn={(newVal) => setPassword(newVal)} 
                         placeholder="Inserisci la password" 
                         password
+                        data-cy="password_login_med"
                     />
                 </Grid>
             </>

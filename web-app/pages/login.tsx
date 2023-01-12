@@ -38,7 +38,7 @@ export default function FormLogin(props: any) {
           <title>Accedi</title>
         </Head>
         <Grid item 
-          sx={{ pl: { xs: 0, md: "25%" }, pt: { xs: 0, md: 15 } }}
+          sx={{ pl: { xs: 0, md: "23%", lg: "25%" }, pt: { xs: 0, md: 7, lg: 15 } }}
         >
               <Grid container direction='column'>
                 {
@@ -61,7 +61,7 @@ export default function FormLogin(props: any) {
                   "& .MuiTouchRipple-root span": {
                     backgroundColor: 'transparent',
                   },
-                }}>
+                }} data-cy="change_mod_login">
                   <Typography sx={{pt: 1}} style={{ textDecoration: 'underline', color: 'black', textTransform: 'none' }}>
                     {!adminMode ? "Sei un amministratore? Clicca qua" : "Sei un medico? Clicca qua"}
                   </Typography>

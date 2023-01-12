@@ -41,6 +41,7 @@ export function FormButtonSubmit(props: PropsFormButtonSubmit) {
             onClick={() => props.onClick()}
             disabled={props.loading}
             variant="contained"
+            data-cy="button_login"
         >
             <Typography style={{ fontWeight: "bold", fontSize: 16 }}>
                 Accedi
