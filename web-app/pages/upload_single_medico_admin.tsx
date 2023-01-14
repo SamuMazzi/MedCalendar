@@ -43,7 +43,7 @@ export default function FormUploadSingleMedico() {
             "Nome": nome,
             "Cognome": cognome,
             "ruolo": ruolo,
-            "Sedi": sedi,
+            "sedi": sedi,
             "Email": email
         }
         setLoading(true)
