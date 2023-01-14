@@ -10,13 +10,14 @@ import { useAppDispatch, useAppSelector } from '../logic/redux/store';
 import { populateScheduler, setMeseAndAnno } from '../logic/redux/scheduler_slice';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router'
-import { getDisponibilitaMeseDistretto, uploadDefConfigurazione } from '../logic/server/firestore'
+import { getDataToSendAPI, getDisponibilitaMeseDistretto, uploadDefConfigurazione } from '../logic/server/firestore'
 import { setMessageError } from '../logic/redux/settings_slice';
-import ExportExcel from '../components/excel_export'
+import ExportExcel, { debugWriteJson } from '../components/excel_export'
 import Head from 'next/head'
 import Image from 'next/image'
 import { AppFirebaseError } from '../logic/server/firebase'
 import { SelectMeseCalendar } from '../components/calendar'
+import { any } from 'cypress/types/bluebird'
 
 const data_to_send = {
   'year': 2023,
@@ -206,36 +207,45 @@ export default function PianificazioneTurniPage() {
     }
   }
 
-  const callApi = async () => {
-    const debugUrlApi = "http://127.0.0.1:8080"
-    const urlProductionApi ="https://europe-west1-programmazione-turni-gm.cloudfunctions.net/schedule_from_data"
-    const urlApi = process.env.NODE_ENV === 'production' ? urlProductionApi : debugUrlApi
-    
+  const pianificaTurni = async () => {
     setLoadingTurni(true)
     try {
-      const res = await fetch(urlApi,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "Application/JSON",
-            "Access-Control-Request-Method": "POST"
-          },
-          body: JSON.stringify(data_to_send)
-        })
-        const jsonData = await res.json()
-        if(res.status >= 200 && res.status < 215) {
-          dispatch(populateScheduler(jsonData))
-          setTurniUploaded(true)
-        } else {
-          dispatch(setMessageError('Errore: ' + jsonData['message']))
-        }
-    } catch(e) {
+      const data_disp = await getDataToSendAPI(distretto, yearData, monthData)
+      await callApi(data_disp)
+    } catch (e) {
       console.log(e)
     } finally {
       setLoadingTurni(false)
     }
   }
 
+  const fetchDataMedici = async () => {
+    return {}
+  }
+
+  const callApi = async (data_to_send: any) => {
+    const debugUrlApi = "http://127.0.0.1:8080"
+    const urlProductionApi ="https://europe-west1-programmazione-turni-gm.cloudfunctions.net/schedule_from_data"
+    const urlApi = process.env.NODE_ENV === 'production' ? urlProductionApi : debugUrlApi
+    
+    const res = await fetch(urlApi,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "Application/JSON",
+          "Access-Control-Request-Method": "POST"
+        },
+        body: JSON.stringify(data_to_send)
+      })
+      const jsonData = await res.json()
+      if(res.status >= 200 && res.status < 215) {
+        dispatch(populateScheduler(jsonData))
+        setTurniUploaded(true)
+      } else {
+        dispatch(setMessageError('Errore: ' + jsonData['message']))
+      }
+  }
+  //<button onClick={() => debugWriteJson({filename: "out.json", data: {}})}>Debug</button>
   return (
     <>
     <Head>
@@ -284,7 +294,7 @@ export default function PianificazioneTurniPage() {
                     variant="contained"
                     component="label"
                     disabled={loadingTurni}
-                    onClick={turniUploaded ? sendDataPianificazione : callApi} 
+                    onClick={turniUploaded ? sendDataPianificazione : pianificaTurni} 
                   >
                     {
                       turniUploaded ? "Conferma i turni" : "Pianifica i turni"

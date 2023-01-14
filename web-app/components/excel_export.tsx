@@ -8,6 +8,20 @@ import { getGiornoSettimana } from '../logic/local_utilities'
 import Typography from '@mui/material/Typography'
 
 //* Da abbellire
+interface PropsWriteJson {
+    filename: string,
+    data: any
+}
+
+export function debugWriteJson(props: PropsWriteJson) {
+    const fileData = JSON.stringify(props.data);
+    const blob = new Blob([fileData], { type: "text/plain" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = props.filename;
+    link.href = url;
+    link.click();
+}
 
 export function ImportFileExcel() {
     const [loading, setLoading] = useState(false)

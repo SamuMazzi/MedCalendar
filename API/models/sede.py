@@ -22,14 +22,19 @@ def create_calendar_turni(year: int, month: int):
     return real_list
 
 
-# Idea di turno -> 2022-04-13 12:14:11
-# 12 -> ora inizio
-# 14 -> ora fine
-# 11 -> ogni 1 o 0 ti dice se l'ora d'inizio/fine ha la mezz'ora -> 12.30-14.30
-
-
 def parse_turno(day: datetime.date, fascia):
-    inizio_ora = fascia.split('-')[0]  # Per ora si possono usare solo ore senza mezz'ore
+    """
+    Per ora si possono usare solo ore senza mezz'ore
+
+    Idea di turno -> 2022-04-13 12:14:11
+    12 -> ora inizio
+    14 -> ora fine
+    11 -> ogni 1 o 0 ti dice se l'ora d'inizio/fine ha la mezz'ora -> 12.30-14.30
+    :param day:
+    :param fascia:
+    :return:
+    """
+    inizio_ora = fascia.split('-')[0]
     inizio = inizio_ora.split(':')
     inizio_ora = inizio[0]
     inizio_minuti = inizio[1] if len(inizio) >= 2 else '0'
@@ -97,7 +102,7 @@ class Sede:
         for med in medici:
             # supponiamo che le disponibilità siano tutte e solo di quel mese
             # set serve solo per generazione dinamica di medici, togliere poi
-            if self.nome.lower() in med.sedi:
+            if self.nome.lower() in [sede.lower() for sede in med.sedi]:
                 for disp in set(med.disponibilita):
                     if disp in self.month_calendar:
                         self.month_calendar[disp].medici_disponibili.append(med)

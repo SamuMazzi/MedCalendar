@@ -115,14 +115,18 @@ export const setDisponibilitaMeseMedico = async (distretto: string, id: string, 
         info.disponibilita[turno].forEach(giorno => data[giorno] = { [turno]: arrayUnion(id) })
     })
     const futures = []
+
     try {
         futures.push(setDoc(doc(firestore, distrettiCollectionKey, distretto, disponibilitaSedeKey, key_mese), data, { merge: true }));
         const lastOreMaxSet = getLocalLastOreMaxSet()
-        if (lastOreMaxSet === null || lastOreMaxSet !== info.oreMassime) {
-            futures.push(setDoc(doc(firestore, distrettiCollectionKey, distretto, infoCollectionKey, infoMediciKey), { [id]: {
-                [oreMaxMedicoKey]: info.oreMassime
-            } }, { merge: true }));
-        }
+        //if (lastOreMaxSet === null || lastOreMaxSet !== info.oreMassime) { //TODO: Aggiungi logica di cache anche per sedi
+            futures.push(setDoc(doc(firestore, distrettiCollectionKey, distretto, infoCollectionKey, infoMediciKey), { 
+                [id]: {
+                    [oreMaxMedicoKey]: info.oreMassime,
+                    [sediMedicoKey]: info.sedi
+                } 
+            }, { merge: true }));
+        //}
         await Promise.all(futures)
     } catch (error: unknown) {
         handleFirebaseError(error)
@@ -185,7 +189,69 @@ export const getDistrettiForAdmin = async (id: string) => {
         handleFirebaseError(error)
     }
 }
-
+/**
+ * @param distretto 
+ * @param anno 
+ * @param mese Numero compreso tra 0 e 11
+ * @returns 
+ */ 
+export const getDataToSendAPI = async (distretto: string, anno: number, mese: number) => {
+    try {
+        const infoMedici = await getInfoMediciDistretto(distretto)
+        const infoSedi = (await getInfoSediDistretto(distretto))!
+        const disponibilitaDoctors = await getDisponibilitaMeseDistretto(distretto, anno, mese)
+        const mod_infoSedi = []
+        for (let sede of Object.keys(infoSedi.sedi)) {
+            const out: Record<string, any> = {}
+            out['nome'] = sede
+            out['medici_per_turno'] = infoSedi.sedi[sede].medici_per_turno
+            out['fasce_turno'] = infoSedi.turni
+            mod_infoSedi.push(out)
+        }
+        const docs = []
+        console.log(infoMedici)
+        for (let doctor of Object.keys(infoMedici!)) {
+            const outDoc: Record<string, any> = {}
+            const infoDoc = infoMedici![doctor]
+            outDoc['id'] = infoDoc['uid']
+            outDoc['sedi'] = infoDoc['sedi']
+            if(!infoDoc['sedi']) {
+                console.log('No sedi!')
+                console.log(infoDoc)
+            }
+            outDoc['ruolo'] = infoDoc['ruolo']
+            outDoc['nome'] = infoDoc['Nome'] + ' ' + infoDoc['Cognome']
+            outDoc['ore_max'] = infoDoc['ore_max']
+            const dispDoc: Record<string, number[]> = {}
+            for (const disp_giorno of Object.keys(disponibilitaDoctors!)) {
+                const turni_docs: Record<string, string[]> = disponibilitaDoctors![disp_giorno]
+                for (const turno of Object.keys(turni_docs)) {
+                    if (turni_docs[turno].includes(outDoc['id'])) {
+                        if(!dispDoc[turno]) {
+                            dispDoc[turno] = [parseInt(disp_giorno)]
+                        } else {
+                            dispDoc[turno].push(parseInt(disp_giorno))
+                        }
+                        continue
+                    }
+                }
+            }
+            outDoc['disponibilita'] = dispDoc
+            docs.push(outDoc)
+        }
+        const final_out = {
+            'year': anno,
+            'month': mese,
+            'sedi': mod_infoSedi,
+            'medici': docs
+        }
+        console.log(final_out)
+        return final_out
+    } catch (error: unknown) {
+        console.log('ops')
+        handleFirebaseError(error)
+    }
+}
 
 export const getInfoMediciDistretto = async (distretto: string) => {
     try {
@@ -250,15 +316,6 @@ export const getDisponibiltiaOfSediOfAdminUser = async (mese: string, distretto:
     }
 }
 
-/* async function clearCollection(path: string) {
-    const ref = collection(firestore, path)
-    onSnapshot(ref, (snapshot) => {
-        snapshot.docs.forEach(async (doc) => {
-            await deleteDoc(doc.ref)
-        })
-    })
-} */
-
 const createDataCsv = (row: string, headers: string[]) => {
     const data = row.split(',');
     const obj: Record<string, any> = {};
@@ -298,7 +355,7 @@ export interface MedicoRemote {
     Cognome: string,
     Nome: string,
     ruolo: string,
-    Sedi: string[],
+    sedi: string[],
     Email: string
 }
 

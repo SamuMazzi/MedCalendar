@@ -22,7 +22,8 @@ import ListItemIcon from '@mui/material/ListItemIcon'
 //import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 
 const getColorRole = (ruolo: string) => {
-  return ruolo.startsWith("inc") ? "#ccff9b" : ruolo.startsWith("conven") ? "#b1f4ff" : "#ffd07d"
+  const lower_ruolo = ruolo.toLowerCase()
+  return lower_ruolo.startsWith("inc") ? "#ccff9b" : (lower_ruolo.startsWith("conven") || lower_ruolo.startsWith("titol")) ? "#b1f4ff" : "#ffd07d"
 }
 
 const getAllTurni = (formatted_data: any) => {
@@ -170,10 +171,13 @@ export default function TableResult(props: PropsTableResult) {
 
     const getTextTurno = (turno: string) => {
       const numberDay = parseInt(turno.split('T')[0])
+      const ore_e_minuti = turno.split('T')[1].substring(0, 5).split(':')
+      const inizioTurno = ore_e_minuti[0]
+      const fineTurno = ore_e_minuti[1]
       let out = ""
       out += getGiornoSettimana((new Date(formatted_data.year, formatted_data.month)).getTime(), numberDay)
       out += ' ' + numberDay.toString()
-      out += ', ' + turno.split('T')[1].substring(0, 5)
+      out += ', ' + inizioTurno + '-' + fineTurno
       return out
     }
 

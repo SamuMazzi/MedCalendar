@@ -123,7 +123,6 @@ def read_dati(filename: str):
     ws = wb.active
 
     medici = []
-    # 18, 19, 23, 26, 28
     for i in range(2, 1000):  # iterate over medici
         nome = ws.cell(row=i, column=2).value
         if nome is None:

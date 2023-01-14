@@ -144,15 +144,14 @@ def handle_new_round(main_handler, best_sol, medici):
 
 
 def filter_by_role(list_medici: List[Medico], roles: list):
-    return [med for med in list_medici if med.ruolo in roles]
+    return [med for med in list_medici if med.ruolo.lower() in roles]
 
-
+# TODO: Testa con dati Febbraio
 def start(data):
-    data['month'] = data['month'] + 1  # Per questioni di compatibilità con JS
     init_storage(data)
     main_handler = MainHandler()
     main_handler.setup()
-    medici_conv = filter_by_role(Storage.all_medici, [Roles.conv24])
+    medici_conv = filter_by_role(Storage.all_medici, [Roles.conv24, "titolare24", "titolare36"])  # Attenzione al case sensitive
     medici_inc = filter_by_role(Storage.all_medici, [Roles.inc24, Roles.inc12])
     medici_sost = filter_by_role(Storage.all_medici, [Roles.sost])
     best_sol = main_handler.find_sol.sol

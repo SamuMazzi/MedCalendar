@@ -1,9 +1,12 @@
+import datetime
+
 import flask
 import jsonpickle
 import functions_framework
 
 from excel_handler import write_soluzione, read_dati
-from models.sede import Sede
+from models.medico import get_n_turni_per_ruolo, Medico
+from models.sede import Sede, parse_turno
 from models.soluzione import Soluzione
 from models.storage import Storage
 from scheduler import start
@@ -76,7 +79,7 @@ def schedule_from_data(request: flask.request):
         return res
 
 
-DEBUG_MODE = True
+DEBUG_MODE = False
 
 
 def check_request(request: flask.request):
@@ -99,12 +102,39 @@ def check_request(request: flask.request):
     return None
 
 
+def parse_medici_from_response(data_medici: list, year: int, month: int):
+    medici = []  # TODO: In initSetup c'è una funzione che fa praticamente la stessa cosa
+    for medico in data_medici:  # iterate over medici
+        try:
+            nome = medico['nome']
+            ruolo = medico['ruolo']
+            turni_max = medico.get('ore_max') if medico.get('ore_max') is not None else get_n_turni_per_ruolo(ruolo)
+            sedi_disp = medico['sedi']
+
+            med: Medico = Medico(medico['id'], nome, ruolo, [], sedi_disp, n_turni_max=turni_max)
+            all_disp = []
+            for turno, giorni in medico['disponibilita'].items():
+                for day in giorni:
+                    parsed_turno = parse_turno(datetime.date(year, month, day), turno)
+                    all_disp.append(parsed_turno)
+            med.disponibilita = all_disp
+            medici.append(med)
+        except Exception as e:
+            print(e)
+            print(medico)
+            raise e
+    return medici
+
+
 def execute_schedule(request: flask.request):
     if DEBUG_MODE:
         real_data = data
-        data['medici'] = read_dati('assets/gennaio23.xlsx')
+        real_data['month'] += 1  # compatibilità con JS
+        real_data['medici'] = parse_medici_from_response(real_data['medici'], real_data['year'], real_data['month'])
+        # data['medici'] = read_dati('assets/gennaio23.xlsx')
     else:
         real_data = request.json  # o request.json
+        real_data['month'] += 1  # compatibilità con JS
     res_check = check_request(request)
     if res_check:
         return res_check
@@ -153,7 +183,7 @@ def create_soluzione_response(sol: Soluzione):
     return jsonpickle.encode(data_out, unpicklable=False)
 
 
-data = {
+data2 = {
     'year': 2023,
     'month': 0,
     'sedi': [
@@ -201,13 +231,1176 @@ data = {
         }
     ]
 }
+data = {
+    "year": 2023,
+    "month": 1,
+    "sedi": [
+        {
+            "nome": "Formigine",
+            "medici_per_turno": 2,
+            "fasce_turno": {
+                "8-15": "6,7",
+                "15-20": "6,7",
+                "20-8": "1,2,3,4,5,6,7"
+            }
+        },
+        {
+            "nome": "Sassuolo",
+            "medici_per_turno": 2,
+            "fasce_turno": {
+                "8-15": "6,7",
+                "15-20": "6,7",
+                "20-8": "1,2,3,4,5,6,7"
+            }
+        }
+    ],
+    "medici": [
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "FORMIGINE",
+                "SASSUOLO"
+            ],
+            "ruolo": "Incaricato12",
+            "nome": "Medico Demo",
+            "ore_max": 6,
+            "disponibilita": {
+                "8-15": [
+                    4
+                ],
+                "20-8": [
+                    6,
+                    9,
+                    16,
+                    20,
+                    23,
+                    27
+                ],
+                "15-20": [
+                    11,
+                    18
+                ]
+            }
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "SASSUOLO",
+                "FORMIGINE"
+            ],
+            "ruolo": "Incaricato24",
+            "nome": "Medico Demo",
+            "ore_max": 10,
+            "disponibilita": {
+                "20-8": [
+                    2,
+                    7,
+                    9,
+                    15,
+                    16,
+                    21,
+                    23,
+                    28
+                ],
+                "8-15": [
+                    11,
+                    18
+                ]
+            }
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "SASSUOLO",
+                "FORMIGINE"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "ore_max": 5,
+            "disponibilita": {
+                "20-8": [
+                    3,
+                    4,
+                    24,
+                    25
+                ],
+                "15-20": [
+                    5
+                ]
+            }
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "FORMIGINE",
+                "SASSUOLO"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "disponibilita": {}
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "SASSUOLO",
+                "FORMIGINE"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "disponibilita": {}
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "FORMIGINE"
+            ],
+            "ruolo": "Incaricato24",
+            "nome": "Medico Demo",
+            "ore_max": 8,
+            "disponibilita": {
+                "20-8": [
+                    2,
+                    7,
+                    9,
+                    14,
+                    16,
+                    21,
+                    23,
+                    28
+                ],
+                "15-20": [
+                    5
+                ]
+            }
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "MONTEFIORINO",
+                "PALAGANO",
+                "FRASSINORO",
+                "PRIGNANO"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "disponibilita": {}
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "FORMIGINE",
+                "SASSUOLO"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "ore_max": 3,
+            "disponibilita": {
+                "20-8": [
+                    24
+                ],
+                "15-20": [
+                    25
+                ],
+                "8-15": [
+                    26
+                ]
+            }
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "FRASSINORO",
+                "PALAGANO",
+                "PRIGNANO",
+                "MONTEFIORINO"
+            ],
+            "ruolo": "Titolare24",
+            "nome": "Medico Demo",
+            "disponibilita": {}
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "FORMIGINE",
+                "SASSUOLO"
+            ],
+            "ruolo": "Incaricato24",
+            "nome": "Medico Demo",
+            "ore_max": 10,
+            "disponibilita": {
+                "20-8": [
+                    1,
+                    2,
+                    3,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    13,
+                    14,
+                    15,
+                    16,
+                    17,
+                    20,
+                    21,
+                    22,
+                    23,
+                    24,
+                    27,
+                    28
+                ],
+                "8-15": [
+                    11,
+                    12,
+                    18,
+                    19,
+                    25,
+                    26
+                ]
+            }
+        },
+        {
+            "id": "Vitonicola.lospalluto@medici.progetto-sole.it",
+            "sedi": [
+                "MONTEFIORINO",
+                "FRASSINORO",
+                "PALAGANO",
+                "PRIGNANO"
+            ],
+            "ruolo": "Titolare24",
+            "nome": "Medico Demo",
+            "disponibilita": {}
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "FORMIGINE",
+                "SASSUOLO"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "disponibilita": {}
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "FRASSINORO",
+                "PALAGANO",
+                "PRIGNANO",
+                "MONTEFIORINO"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "disponibilita": {}
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "FORMIGINE",
+                "SASSUOLO"
+            ],
+            "ruolo": "Incaricato12",
+            "nome": "Medico Demo",
+            "disponibilita": {}
+        },
+        {
+            "id": "Mar.vandelli@ausl.mo.it",
+            "sedi": [
+                "FORMIGINE"
+            ],
+            "ruolo": "Incaricato24",
+            "nome": "Medico Demo",
+            "ore_max": 8,
+            "disponibilita": {
+                "20-8": [
+                    3,
+                    4,
+                    8,
+                    10,
+                    11,
+                    15,
+                    17,
+                    18,
+                    22,
+                    24,
+                    25,
+                    28
+                ]
+            }
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "FORMIGINE",
+                "SASSUOLO"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "ore_max": 4,
+            "disponibilita": {
+                "20-8": [
+                    1,
+                    2,
+                    3,
+                    8,
+                    9,
+                    22,
+                    23
+                ],
+                "8-15": [
+                    11,
+                    18
+                ]
+            }
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "SASSUOLO",
+                "FORMIGINE"
+            ],
+            "ruolo": "Incaricato12",
+            "nome": "Medico Demo",
+            "disponibilita": {}
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "Sassuolo",
+                "Formigine"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "ore_max": 2,
+            "disponibilita": {
+                "20-8": [
+                    18,
+                    24,
+                    25
+                ],
+                "15-20": [
+                    19,
+                    26
+                ]
+            }
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "FRASSINORO",
+                "MONTEFIORINO"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "disponibilita": {}
+        },
+        {
+            "id": "m.arletti@ausl.mo.it",
+            "sedi": [
+                "Sassuolo",
+                "Formigine"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "disponibilita": {}
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "SASSUOLO"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "ore_max": 2,
+            "disponibilita": {
+                "15-20": [
+                    11,
+                    18,
+                    25
+                ]
+            }
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "FORMIGINE",
+                "SASSUOLO"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "ore_max": 4,
+            "disponibilita": {
+                "20-8": [
+                    3,
+                    6,
+                    7,
+                    16,
+                    28
+                ],
+                "8-15": [
+                    5
+                ]
+            }
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "FORMIGINE",
+                "SASSUOLO"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "disponibilita": {}
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "MONTEFIORINO",
+                "PRIGNANO",
+                "PALAGANO",
+                "FRASSINORO"
+            ],
+            "ruolo": "Incaricato24",
+            "nome": "Medico Demo",
+            "disponibilita": {}
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "FORMIGINE",
+                "PALAGNO",
+                "PRIGNANO"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "ore_max": 5,
+            "disponibilita": {
+                "20-8": [
+                    1,
+                    2,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9,
+                    12,
+                    13,
+                    14,
+                    15,
+                    16,
+                    19,
+                    20,
+                    21,
+                    22,
+                    23,
+                    26,
+                    27,
+                    28
+                ]
+            }
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "MONTEFIORINO",
+                "PALAGANO",
+                "PRIGNANO",
+                "FRASSINORO"
+            ],
+            "ruolo": "Titolare36",
+            "nome": "Medico Demo",
+            "disponibilita": {}
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "FORMIGINE",
+                "SASSUOLO"
+            ],
+            "ruolo": "Incaricato24",
+            "nome": "Medico Demo",
+            "disponibilita": {}
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "FORMIGINE",
+                "FRASSINORO",
+                "MONTEFIORINO"
+            ],
+            "ruolo": "Incaricato24",
+            "nome": "Medico Demo",
+            "ore_max": 9,
+            "disponibilita": {
+                "20-8": [
+                    2,
+                    5,
+                    9,
+                    12,
+                    17,
+                    19,
+                    21,
+                    23,
+                    28
+                ]
+            }
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "FORMIGINE",
+                "SASSUOLO"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "ore_max": 4,
+            "disponibilita": {
+                "15-20": [
+                    5,
+                    12,
+                    19,
+                    26
+                ]
+            }
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "FRASSINORO",
+                "MONTEFIORINO"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "disponibilita": {}
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "MONTEFIORIO",
+                "PALAGANO",
+                "PRIGNANO",
+                "FRASSINORO"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "disponibilita": {}
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "PRIGNANO",
+                "PALAGANO",
+                "FRASSINORO",
+                "MONTEFIORINO"
+            ],
+            "ruolo": "Incaricato24",
+            "nome": "Medico Demo",
+            "disponibilita": {}
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "FORMIGINE",
+                "SASSUOLO"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "ore_max": 4,
+            "disponibilita": {
+                "20-8": [
+                    3,
+                    4,
+                    18,
+                    25
+                ]
+            }
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "FORMIGINE",
+                "SASSUOLO"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "disponibilita": {}
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "FORMIGINE",
+                "SASSUOLO"
+            ],
+            "ruolo": "Incaricato24",
+            "nome": "Medico Demo",
+            "ore_max": 8,
+            "disponibilita": {
+                "20-8": [
+                    2,
+                    6,
+                    7,
+                    9,
+                    13,
+                    14,
+                    16,
+                    20,
+                    21,
+                    23,
+                    27,
+                    28
+                ],
+                "8-15": [
+                    4,
+                    11,
+                    18
+                ]
+            }
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "FORMIGINE",
+                "SASSUOLO"
+            ],
+            "ruolo": "Titolare24",
+            "nome": "Medico Demo",
+            "ore_max": 8,
+            "disponibilita": {
+                "20-8": [
+                    2,
+                    5,
+                    9,
+                    12,
+                    17,
+                    19,
+                    21,
+                    23,
+                    28
+                ]
+            }
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "FORMIGINE",
+                "SASSUOLO",
+                "MONTEFIORINO",
+                "FRASSINORO"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "disponibilita": {}
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "SASSUOLO",
+                "FORMIGINE"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "ore_max": 4,
+            "disponibilita": {
+                "20-8": [
+                    2,
+                    3,
+                    5,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    12,
+                    13,
+                    14,
+                    15,
+                    16,
+                    20,
+                    21,
+                    23,
+                    24,
+                    27,
+                    28
+                ],
+                "8-15": [
+                    4
+                ]
+            }
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "SASSUOLO"
+            ],
+            "ruolo": "Incaricato24",
+            "nome": "Medico Demo",
+            "ore_max": 6,
+            "disponibilita": {
+                "20-8": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    6,
+                    7,
+                    8,
+                    9,
+                    10,
+                    11,
+                    13,
+                    14,
+                    15,
+                    16,
+                    17,
+                    20,
+                    21,
+                    22,
+                    23,
+                    24,
+                    27,
+                    28
+                ],
+                "8-15": [
+                    5,
+                    12,
+                    18,
+                    19,
+                    25,
+                    26
+                ]
+            }
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "MONTEFIORINO",
+                "PALAGANO",
+                "PRIGNANO",
+                "FRASSINORO"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "disponibilita": {}
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "FRASSINORO",
+                "PALAGANO ",
+                "PRIGNANO",
+                "MONTEFIORINO"
+            ],
+            "ruolo": "Incaricato24",
+            "nome": "Medico Demo",
+            "disponibilita": {}
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "PRIGNANO",
+                "PALAGANO",
+                "FRASSINORO",
+                "MONTEFIORINO"
+            ],
+            "ruolo": "Incaricato24",
+            "nome": "Medico Demo",
+            "disponibilita": {}
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "FORMIGINE",
+                "SASSUOLO"
+            ],
+            "ruolo": "Incaricato24",
+            "nome": "Medico Demo",
+            "disponibilita": {}
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "FRASSINORO",
+                "MONTEFIORINO",
+                "PALAGANO",
+                "PRIGNANO"
+            ],
+            "ruolo": "Titolare24",
+            "nome": "Medico Demo",
+            "disponibilita": {}
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "PALAGANO",
+                "PRIGNANO"
+            ],
+            "ruolo": "Titolare24",
+            "nome": "Medico Demo",
+            "disponibilita": {}
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "FORMIGINE",
+                "SASSUOLO"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "disponibilita": {}
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "MONTEFIORINO",
+                "PALAGANO"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "disponibilita": {}
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "FORMIGINE",
+                "SASSUOLO"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "ore_max": 5,
+            "disponibilita": {
+                "20-8": [
+                    1,
+                    7,
+                    15,
+                    21
+                ],
+                "8-15": [
+                    11
+                ]
+            }
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "SASSUOLO",
+                "FORMIGINE"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "disponibilita": {}
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "Sassuolo",
+                "Formigine"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "ore_max": 3,
+            "disponibilita": {
+                "20-8": [
+                    10,
+                    16,
+                    21
+                ],
+                "15-20": [
+                    18
+                ]
+            }
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "FORMIGINE",
+                "SASSUOLO"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "ore_max": 3,
+            "disponibilita": {
+                "15-20": [
+                    5,
+                    12,
+                    19
+                ],
+                "20-8": [
+                    18
+                ]
+            }
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "SASSUOLO",
+                "FORMIGINE"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "ore_max": 4,
+            "disponibilita": {
+                "20-8": [
+                    1,
+                    6,
+                    7,
+                    8,
+                    9,
+                    12,
+                    13,
+                    14,
+                    15,
+                    16,
+                    22,
+                    23,
+                    26,
+                    27,
+                    28
+                ]
+            }
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "FORMIGINE",
+                "SASSUOLO",
+                "PALAGANO",
+                "PRIGNANO"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "disponibilita": {}
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "FORMIGINE"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "ore_max": 9,
+            "disponibilita": {
+                "20-8": [
+                    1,
+                    2,
+                    3,
+                    4,
+                    5,
+                    6,
+                    7,
+                    8,
+                    14,
+                    15,
+                    16,
+                    17,
+                    18,
+                    19,
+                    20,
+                    21,
+                    22,
+                    23,
+                    24,
+                    25,
+                    26,
+                    27,
+                    28
+                ]
+            }
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "FORMIGINE",
+                "SASSUOLO"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "ore_max": 3,
+            "disponibilita": {
+                "20-8": [
+                    12,
+                    15,
+                    24
+                ]
+            }
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "PRIGNANO",
+                "PALAGANO"
+            ],
+            "ruolo": "Titolare24",
+            "nome": "Medico Demo",
+            "disponibilita": {}
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "FORMIGINE",
+                "SASSUOLO"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "ore_max": 8,
+            "disponibilita": {
+                "8-15": [
+                    4,
+                    5,
+                    18,
+                    19
+                ]
+            }
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "MONTEFIORINO",
+                "PALAGANO",
+                "PALAGANO",
+                "PRIGNANO"
+            ],
+            "ruolo": "Titolare24",
+            "nome": "Medico Demo",
+            "disponibilita": {}
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "Sassuolo",
+                "Formigine"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "ore_max": 5,
+            "disponibilita": {
+                "20-8": [
+                    3,
+                    4,
+                    17,
+                    18,
+                    24,
+                    25
+                ],
+                "15-20": [
+                    5,
+                    19,
+                    26
+                ]
+            }
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "FRASSINORO",
+                "MONTEFIORINO"
+            ],
+            "ruolo": "Sostituto",
+            "nome": "Medico Demo",
+            "disponibilita": {}
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "FORMIGINE",
+                "SASSUOLO"
+            ],
+            "ruolo": "Incaricato24",
+            "nome": "Medico Demo",
+            "ore_max": 11,
+            "disponibilita": {
+                "20-8": [
+                    1,
+                    2,
+                    3,
+                    6,
+                    9,
+                    13,
+                    16,
+                    20,
+                    22,
+                    23,
+                    24,
+                    27
+                ],
+                "15-20": [
+                    4,
+                    11,
+                    18,
+                    25
+                ]
+            }
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "SASSUOLO",
+                "PRIGNANO",
+                "FRASSINORO"
+            ],
+            "ruolo": "Incaricato24",
+            "nome": "Medico Demo",
+            "ore_max": 10,
+            "disponibilita": {
+                "20-8": [
+                    2,
+                    7,
+                    9,
+                    12,
+                    15,
+                    21,
+                    28
+                ],
+                "15-20": [
+                    11
+                ]
+            }
+        },
+        {
+            "id": "redacted@example.com",
+            "sedi": [
+                "SASSUOLO",
+                "FORMIGINE",
+                "PRIGNANO",
+                "FRASSINORO"
+            ],
+            "ruolo": "Incaricato24",
+            "nome": "Medico Demo",
+            "ore_max": 10,
+            "disponibilita": {
+                "20-8": [
+                    7,
+                    8,
+                    9,
+                    15,
+                    16,
+                    20,
+                    21,
+                    22,
+                    23,
+                    27,
+                    28
+                ],
+                "8-15": [
+                    11,
+                    12,
+                    18,
+                    19,
+                    25,
+                    26
+                ]
+            }
+        }
+    ]
+}
 
 if __name__ == '__main__':
-    data['medici'] = read_dati('assets/gennaio23.xlsx')
+    # data['medici'] = read_dati('assets/gennaio23.xlsx')
+    data['month'] += 1
     final_sol = start(data)
     a = create_soluzione_response(final_sol)
     print(a)
-    write_soluzione(final_sol, "programmazione_gen_23")
+    write_soluzione(final_sol, "programmazione_feb_23")
     exit(0)
 
 """
