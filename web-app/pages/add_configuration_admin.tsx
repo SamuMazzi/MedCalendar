@@ -13,6 +13,7 @@ import { addSede, Turno } from '../logic/redux/configuration_distretto_slice'
 import Head from 'next/head';
 import { AppFirebaseError } from '../logic/server/firebase';
 import { setMessageError } from '../logic/redux/settings_slice';
+import { SelectMeseCalendar } from '../components/calendar';
 
 export default function ConfigurationAdmin() {
   const configurationDistrState = useAppSelector(state => state.configurationDistr)
@@ -20,7 +21,8 @@ export default function ConfigurationAdmin() {
   const [ loading, setLoading ] = useState(false)
   const [ infoSent, setInfoSent ] = useState(false)
   const [ isOpenSnackbar, setIsOpenSnackbar ] = useState(false)
-  const [ messageSnackbar, setMessageSnackbar ] = useState("")
+  const [messageSnackbar, setMessageSnackbar] = useState("")
+  const [timestampMese, setTimestampMese] = useState(Date.now())
   //TODO: Aggiungere scelta del mese
   /**
    * 1. Admin inserisce una o più sedi (a cui da un nome), poi per ogni sede:
@@ -116,9 +118,17 @@ export default function ConfigurationAdmin() {
         alignItems="center"
         justifyContent="center"
         sx = {{ pb: 5 }}
-        //sx={{minWidth: "200px"}}
       >
-        <Typography variant="h3" component="h3" sx={{py: 5}}>Pagina admin!</Typography>
+        <Grid item sx={{ py: 2 }}>
+          <Typography fontWeight="fontWeightBold" variant="h6" component="h6" sx={{ py: 2 }}>
+            Scegli il mese
+          </Typography>
+          <SelectMeseCalendar timestamp_mese={timestampMese} onChange={(newValue) => {
+            if (newValue !== null) {
+              setTimestampMese(newValue.toDate().getTime())
+            }
+          }} />
+        </Grid>
         <Grid container
           display="flex"
           direction="row"

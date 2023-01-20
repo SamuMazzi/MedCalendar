@@ -44,13 +44,17 @@ def are_there_duplicates(combination):
     return out
 
 
-def is_nuovo_medico_e_gia_soddisfatto(combination, info):
+def med_non_puo_fare_piu_turni(med: Medico | None):
+    return med is not None and med.n_turni_per_soddisfatto == 0
+
+
+def is_nuovo_medico_e_non_puo_fare_turni(combination, info):
     for i in range(len(combination)):
         med = combination[i]
-        if med is not None and med.n_turni_per_soddisfatto == 0 and info.nuovo[i] is True:
+        if med_non_puo_fare_piu_turni(med) and info.nuovo[i] is True:
             return True
     return False
 
 
 def check_if_skip(combination: List[Medico], info: InfoCombinationTurno, turno: datetime.datetime):
-    return is_nuovo_medico_e_gia_soddisfatto(combination, info) or is_medico_in_24_ore_prec_o_succ(combination, turno)
+    return is_nuovo_medico_e_non_puo_fare_turni(combination, info) or is_medico_in_24_ore_prec_o_succ(combination, turno)

@@ -47,6 +47,7 @@ def get_n_turni_per_ruolo(ruolo: str):
 
 
 def real_update_sodd(med: Medico, mode: str, list_sodd: List[int]):
+    """[conv, inc, doc]"""
     if mode == 'sub':
         med.n_turni_per_soddisfatto += 1
     elif mode == 'add':

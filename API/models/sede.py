@@ -4,46 +4,7 @@ from typing import List, Dict
 from collections import OrderedDict
 
 from models.medico import Medico
-from models.turno import Turno
-
-
-def create_calendar_turni(year: int, month: int):
-    first_day = datetime.date(year, month, 1)
-    list_days = list(calendar.Calendar().itermonthdates(first_day.year, first_day.month))
-    real_list = []
-    for day in list_days:
-        weekday = calendar.weekday(day.year, day.month, day.day)
-        if day.month == first_day.month:
-            if weekday is calendar.SUNDAY or weekday is calendar.SATURDAY:  # or è un giorno di festa segnato da qualche altra parte
-                real_list.append(datetime.datetime(day.year, day.month, day.day, 8))
-                real_list.append(datetime.datetime(day.year, day.month, day.day, 20))
-            else:
-                real_list.append(datetime.datetime(day.year, day.month, day.day, 20))
-    return real_list
-
-
-def parse_turno(day: datetime.date, fascia):
-    """
-    Per ora si possono usare solo ore senza mezz'ore
-
-    Idea di turno -> 2022-04-13 12:14:11
-    12 -> ora inizio
-    14 -> ora fine
-    11 -> ogni 1 o 0 ti dice se l'ora d'inizio/fine ha la mezz'ora -> 12.30-14.30
-    :param day:
-    :param fascia:
-    :return:
-    """
-    inizio_ora = fascia.split('-')[0]
-    inizio = inizio_ora.split(':')
-    inizio_ora = inizio[0]
-    inizio_minuti = inizio[1] if len(inizio) >= 2 else '0'
-    fine_ora = fascia.split('-')[1]
-    fine = fine_ora.split(':')
-    fine_ora = fine[0]
-    fine_minuti = fine[1] if len(fine) >= 2 else '0'
-    final_minuti = int(inizio_minuti + fine_minuti)
-    return datetime.datetime(day.year, day.month, day.day, int(inizio_ora), int(fine_ora), final_minuti)
+from models.turno import Turno, parse_turno
 
 
 def create_calendar_turni_from_data(year, month, fasce):
@@ -53,11 +14,10 @@ def create_calendar_turni_from_data(year, month, fasce):
     for fascia in fasce.keys():
         giorni = fasce.get(fascia)
         list_giorni = [int(giorno) for giorno in giorni.split(',')]
-        for day in list_days:
-            if day.month == first_day.month:
-                weekday = calendar.weekday(day.year, day.month, day.day)
-                if weekday in list_giorni:  # Tanto le ore verranno scelte da un dropdown con solo ore intere o mezze
-                    real_list.append(parse_turno(day, fascia))
+        days_of_month = [day_month for day_month in list_days if day_month.month == first_day.month]
+        for day in days_of_month:
+            if day.isoweekday() in list_giorni:  # Tanto le ore verranno scelte da un dropdown con solo ore intere o mezze
+                real_list.append(parse_turno(day, fascia))
 
     return real_list
 
@@ -100,8 +60,6 @@ class Sede:
 
     def set_medici_disponibili_per_mese_curr(self, medici: List[Medico]):
         for med in medici:
-            # supponiamo che le disponibilità siano tutte e solo di quel mese
-            # set serve solo per generazione dinamica di medici, togliere poi
             if self.nome.lower() in [sede.lower() for sede in med.sedi]:
                 for disp in set(med.disponibilita):
                     if disp in self.month_calendar:

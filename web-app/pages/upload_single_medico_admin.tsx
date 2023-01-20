@@ -59,7 +59,7 @@ export default function FormUploadSingleMedico() {
 
     return (
         <>
-        <Grid container spacing={2} alignItems="center" direction="column">
+            <Grid container spacing={2} alignItems="center" direction="column" sx={{ minHeight: "calc(100vh - 225px)" }}>
             <Grid item>
                 <Typography variant="h3" component="h3">Aggiungi un medico</Typography>
             </Grid>

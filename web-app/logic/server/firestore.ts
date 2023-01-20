@@ -209,16 +209,11 @@ export const getDataToSendAPI = async (distretto: string, anno: number, mese: nu
             mod_infoSedi.push(out)
         }
         const docs = []
-        console.log(infoMedici)
         for (let doctor of Object.keys(infoMedici!)) {
             const outDoc: Record<string, any> = {}
             const infoDoc = infoMedici![doctor]
             outDoc['id'] = infoDoc['uid']
             outDoc['sedi'] = infoDoc['sedi']
-            if(!infoDoc['sedi']) {
-                console.log('No sedi!')
-                console.log(infoDoc)
-            }
             outDoc['ruolo'] = infoDoc['ruolo']
             outDoc['nome'] = infoDoc['Nome'] + ' ' + infoDoc['Cognome']
             outDoc['ore_max'] = infoDoc['ore_max']
@@ -245,10 +240,9 @@ export const getDataToSendAPI = async (distretto: string, anno: number, mese: nu
             'sedi': mod_infoSedi,
             'medici': docs
         }
-        console.log(final_out)
+        console.log(docs)
         return final_out
     } catch (error: unknown) {
-        console.log('ops')
         handleFirebaseError(error)
     }
 }
@@ -372,7 +366,6 @@ export const addSingleMedico = async (data: MedicoRemote, distretto: string) => 
         
         await Promise.all(futures)
     } catch (error: unknown) {
-        console.log(error)
         handleFirebaseError(error)
     }
 }

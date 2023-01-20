@@ -92,3 +92,43 @@ def set_combinazione_turno(turno: datetime.datetime, combination: List[Medico], 
             real_update_sodd(med, mode, out)
 
     return out
+
+
+def parse_turno(day: datetime.date, fascia):
+    """
+    Per ora si possono usare solo ore senza mezz'ore
+
+    Idea di turno -> 2022-04-13 12:14:11
+    12 -> ora inizio
+    14 -> ora fine
+    11 -> ogni 1 o 0 ti dice se l'ora d'inizio/fine ha la mezz'ora -> 12.30-14.30
+    :param day:
+    :param fascia:
+    :return:
+    """
+    inizio_ora = fascia.split('-')[0]
+    inizio = inizio_ora.split(':')
+    inizio_ora = inizio[0]
+    inizio_minuti = inizio[1] if len(inizio) >= 2 else '0'
+    fine_ora = fascia.split('-')[1]
+    fine = fine_ora.split(':')
+    fine_ora = fine[0]
+    fine_minuti = fine[1] if len(fine) >= 2 else '0'
+    final_minuti = int(inizio_minuti + fine_minuti)
+    return datetime.datetime(day.year, day.month, day.day, int(inizio_ora), int(fine_ora), final_minuti)
+
+
+def delete_turni_vuoti(storage_sedi: list, storage_calendar_turni: List[datetime.datetime]):
+    turni_vuoti = {}
+    for sede in storage_sedi:
+        delete_list = []
+        for turno in sede.month_calendar.keys():
+            if len(sede.get_medici_disp_per_turno(turno)) == 0:
+                delete_list.append(turno)
+                turni_vuoti[turno] = 1 if turni_vuoti.get(turno) is None else turni_vuoti.get(turno) + 1
+        for key in delete_list:
+            del sede.month_calendar[key]
+
+    for turno, count in turni_vuoti.items():
+        if count == len(storage_sedi):
+            storage_calendar_turni.remove(turno)

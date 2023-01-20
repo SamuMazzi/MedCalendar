@@ -46,7 +46,6 @@ export default function RiepilogoDisponibilita(props: PropsDisponibilita) {
     const generalState = useAppSelector((state) => state.turni)
     const [loading, setLoading] = useState(false)
     const dispatch = useAppDispatch()
-    //TODO: Sistema visualizzazione mobile
     //TODO: L'ordine (in senso crescente) dei giorni da ancora dei problemi
     const onConfirm = async () => {
         setLoading(true)

@@ -12,12 +12,11 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router'
 import { getDataToSendAPI, getDisponibilitaMeseDistretto, uploadDefConfigurazione } from '../logic/server/firestore'
 import { setMessageError } from '../logic/redux/settings_slice';
-import ExportExcel, { debugWriteJson } from '../components/excel_export'
+import ExportExcel from '../components/excel_export'
 import Head from 'next/head'
 import Image from 'next/image'
 import { AppFirebaseError } from '../logic/server/firebase'
 import { SelectMeseCalendar } from '../components/calendar'
-import { any } from 'cypress/types/bluebird'
 
 const data_to_send = {
   'year': 2023,
@@ -217,10 +216,6 @@ export default function PianificazioneTurniPage() {
     } finally {
       setLoadingTurni(false)
     }
-  }
-
-  const fetchDataMedici = async () => {
-    return {}
   }
 
   const callApi = async (data_to_send: any) => {

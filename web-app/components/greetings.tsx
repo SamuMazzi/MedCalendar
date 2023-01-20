@@ -4,7 +4,6 @@ import Alert from '@mui/material/Alert';
 import AlertTitle from '@mui/material/AlertTitle';
 import Link from 'next/link';
 
-//TODO: Fai record screen cambio turni per Matteo
 export default function Greetings() {
     return (
         <>

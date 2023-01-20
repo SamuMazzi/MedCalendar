@@ -16,10 +16,11 @@ import CircleIcon from '@mui/icons-material/Circle';
 import Button from '@mui/material/Button'
 import { useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../logic/redux/store'
-import { swapMediciInTurno } from '../logic/redux/scheduler_slice'
+import { InfoMedico, SchedulerState, swapMediciInTurno } from '../logic/redux/scheduler_slice'
 import { getGiornoSettimana } from '../logic/local_utilities'
 import ListItemIcon from '@mui/material/ListItemIcon'
-//import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
+import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
+import Tooltip from '@mui/material/Tooltip'
 
 const getColorRole = (ruolo: string) => {
   const lower_ruolo = ruolo.toLowerCase()
@@ -40,7 +41,7 @@ interface PropsTableResult {
 }
 
 interface PropsTableCellMedici {
-  formatted_data: any,
+  formatted_data: SchedulerState,
   sede: string,
   turno: string,
   dettagli: boolean,
@@ -62,7 +63,7 @@ function TableCellMedici(props: PropsTableCellMedici) {
       <Grid container direction="column" sx={{maxWidth: 250}}>
       {Array.from(Array(props.formatted_data['med_per_turno'][props.sede])).map((x, index) => {
         const medici_in_turno: string[] = props.formatted_data['turni'][props.sede][props.turno] !== undefined ? props.formatted_data['turni'][props.sede][props.turno] : []
-        let medico: any = undefined
+        let medico: InfoMedico | undefined = undefined
         let id_medico: string | undefined
         if (index < medici_in_turno.length) {
           id_medico = medici_in_turno[index]
@@ -96,10 +97,10 @@ function TableCellMedici(props: PropsTableCellMedici) {
                     <Typography style={{ whiteSpace: "pre-line" }} align="left">{getInfoTextMedico(medico)}</Typography>
                     <CircleIcon fontSize="small" sx={{ ml: 1 }} style={{ color: getColorRole(medico.ruolo) }} />
                     {
-                      /**
-                        <WarningAmberRoundedIcon fontSize="small" sx={{ ml: 1 }} style={{ color: 'orange' }} />
-                        TODO:  Aggiungere segnale di warning di fianco al medico se uno fa modifiche che modifiche sbagliate
-                       */
+                      medico.n_turni_per_soddisfatto < 0 && //TODO: Estendere warning ad altri casi
+                      <Tooltip title="Questo medico non soddisfa tutte le regole">
+                        <WarningAmberRoundedIcon fontSize="small" sx={{ ml: 1 }} style={{ color: 'orange' }} />         
+                      </Tooltip>
                     }
                   </> :
                   <Typography style={{ whiteSpace: "pre-line", color: '#ACACAC' }}>(Vuoto)</Typography>

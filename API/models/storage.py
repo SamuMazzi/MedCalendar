@@ -4,7 +4,7 @@ from typing import List
 
 from models.enums import Roles
 from models.medico import Medico
-from models.sede import Sede, create_calendar_turni_from_data, parse_turno, create_calendar_turni
+from models.sede import Sede, create_calendar_turni_from_data, parse_turno
 
 
 def print_statistics_pre_start():
@@ -69,10 +69,7 @@ def init_storage(data):
     sedi = []
     total_calendar_turni = []
     for sede in data['sedi']:
-        if 'fasce_turno' in sede:
-            calendar_sede = create_calendar_turni_from_data(data['year'], data['month'], sede['fasce_turno'])
-        else:
-            calendar_sede = create_calendar_turni(data['year'], data['month'])
+        calendar_sede = create_calendar_turni_from_data(data['year'], data['month'], sede['fasce_turno'])
         s = Sede(sede['nome'], sede['medici_per_turno'], calendar_sede)
         sedi.append(s)
         total_calendar_turni.extend([turno for turno in calendar_sede if turno not in total_calendar_turni])
@@ -81,6 +78,7 @@ def init_storage(data):
     else:
         all_medici = [Medico(info['id'], info['nome'], info['ruolo'], translate_turni(info['disponibilita'], data['year'], data['month']), info['sedi']) for info in data['medici']]
     Storage.calendar_turni = list(set(list(total_calendar_turni)))  # Lista con tutti i turni, ripetuti solo una volta
+    Storage.calendar_turni.sort()
     Storage.all_medici = all_medici
     Storage.original_all_medici = copy.deepcopy(all_medici)
     Storage.sedi = sedi

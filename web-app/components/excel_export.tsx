@@ -7,22 +7,6 @@ import { SchedulerState } from '../logic/redux/scheduler_slice'
 import { getGiornoSettimana } from '../logic/local_utilities'
 import Typography from '@mui/material/Typography'
 
-//* Da abbellire
-interface PropsWriteJson {
-    filename: string,
-    data: any
-}
-
-export function debugWriteJson(props: PropsWriteJson) {
-    const fileData = JSON.stringify(props.data);
-    const blob = new Blob([fileData], { type: "text/plain" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.download = props.filename;
-    link.href = url;
-    link.click();
-}
-
 export function ImportFileExcel() {
     const [loading, setLoading] = useState(false)
     const [file, setFile] = useState<File | null>(null)
@@ -110,9 +94,9 @@ const ExportExcel = (props: PropsExportExcel) => {
         return out
     }
 
-    const formatData = () => {
+    const formatDataProgrammazione = () => {
         const sedi = Object.keys(props.excelData.turni)
-        let maxMedPerTurno = getMaxMedPerTurno();
+        const maxMedPerTurno = getMaxMedPerTurno();
         const listTurni = getTurni()
         const data: Record<string, string>[] = []
         listTurni.forEach(turno => {
@@ -138,12 +122,32 @@ const ExportExcel = (props: PropsExportExcel) => {
         return data
     }
 
+    const formatDataDisponibilita = () => {
+        const out = []
+        out.push(['Nome', 'Ruolo', 'N° turni', 'Disponibilità'])
+        for (const id_med of Object.keys(props.excelData.medici_orig)) {
+            const med = props.excelData.medici_orig[id_med]
+            if (med.disponibilita.length === 0) {
+                continue
+            }
+            const tmp = []
+            tmp.push(med.nome)
+            tmp.push(med.ruolo)
+            tmp.push(med.n_turni_per_soddisfatto)
+            tmp.push(med.disponibilita.map(disp => disp.replace('T', ' Turno ').replace(':00', '').replace(':', '-')).join(', '))
+            out.push(tmp)
+        }
+        return out
+    }
+
     const fileType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8'
     const fileExtension = '.xlsx'
     
     const exportToExcel = async () => {
-        const datas = formatData()
-        const ws = utils.json_to_sheet(datas)
+        const data_programmazione = formatDataProgrammazione()
+        const data_disponibilita = formatDataDisponibilita()
+        const ws_program = utils.json_to_sheet(data_programmazione)
+        const ws_disponibilita = utils.aoa_to_sheet(data_disponibilita)
         /**
          * const merge = [
                 { s: { r: 1, c: 0 }, e: { r: 2, c: 0 } },{ s: { r: 3, c: 0 }, e: { r: 4, c: 0 } },
@@ -151,7 +155,13 @@ const ExportExcel = (props: PropsExportExcel) => {
                 ws["!merges"] = merge;
             Per fare merge delle righe o colonne
          */
-        const wb = { Sheets: { 'Programmazione': ws }, SheetNames: ['Programmazione']}
+        const wb = { 
+            Sheets: { 
+                'Programmazione': ws_program, 
+                'Disponibilità': ws_disponibilita 
+            }, 
+            SheetNames: ['Programmazione', 'Disponibilità']
+        }
         const excelBuffer = write(wb, {bookType: 'xlsx', type: 'array'})
         const data = new Blob([excelBuffer], { type: fileType })
         FileSaver.saveAs(data, props.filename + fileExtension)

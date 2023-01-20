@@ -39,14 +39,15 @@ const insertMedicoInTurno = (state: SchedulerState, sede: string, turno: string,
 }
 
 const clearState = (state: SchedulerState) => {
-    state = {...initialState} //* Per un po' tienilo cosi, se va bene togli
-    /* state.year = initialState.year
+    //state = {...initialState} //* Per un po' tienilo cosi, se va bene togli
+    //TODO: Da risolvere sta cosa: non si può dover aggiornare questo metodo per ogni cambiamento al codice
+    state.year = initialState.year
     state.month = initialState.month
     state.head = initialState.head
     state.turni = initialState.turni
     state.med_per_turno = initialState.med_per_turno
     state.medici_mod = initialState.medici_mod
-    state.medici_orig = initialState.medici_orig */
+    state.medici_orig = initialState.medici_orig
 }
 
 const updateNumTurniDisponibiliMedico = (state: SchedulerState, id_med: string | undefined, n: number) => {

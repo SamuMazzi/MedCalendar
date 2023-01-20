@@ -4,12 +4,13 @@ import flask
 import jsonpickle
 import functions_framework
 
-from excel_handler import write_soluzione, read_dati
+from excel_handler import write_soluzione
 from models.medico import get_n_turni_per_ruolo, Medico
-from models.sede import Sede, parse_turno
+from models.sede import Sede
 from models.soluzione import Soluzione
 from models.storage import Storage
 from scheduler import start
+from models.turno import parse_turno
 
 """
 DOCUMENTAZIONE:
@@ -21,7 +22,7 @@ functions-framework --target schedule_from_data --debug
 https://europe-west1-programmazione-turni-gm.cloudfunctions.net/schedule_from_data
 gcloud functions deploy schedule_from_data --region europe-west1 --allow-unauthenticated --memory 128MB --runtime python310 --timeout 90 --min-instances 0 --max-instances 1 --trigger-http 
 --service-account hello-world-function-sa@for-developers-343319.iam.gserviceaccount.com
-gcloud functions deploy schedule_from_data --runtime python310 --region europe-west1 --trigger-http --allow-unauthenticated
+gcloud functions deploy schedule_from_data --runtime python310 --region europe-west1 --trigger-http --allow-unauthenticated --memory 128MB
 """
 
 """
@@ -47,6 +48,7 @@ def handle_options_request():
         res.headers[key] = headers[key]
     return res
 
+
 @functions_framework.http
 def schedule_from_data(request: flask.request):
     """Responds to any HTTP request.
@@ -66,7 +68,10 @@ def schedule_from_data(request: flask.request):
     }
 
     try:
-        response = execute_schedule(request)
+        res_check = check_request(request)
+        if res_check:
+            return res_check
+        response = execute_schedule(request.json)
         res = flask.make_response(response[0], response[1])
         for key in headers:
             res.headers[key] = headers[key]
@@ -79,9 +84,6 @@ def schedule_from_data(request: flask.request):
         return res
 
 
-DEBUG_MODE = False
-
-
 def check_request(request: flask.request):
     if request.method != 'POST':
         return "Method not allowed", 405
@@ -91,64 +93,56 @@ def check_request(request: flask.request):
 
     if len(request.json) <= 0:
         return {'message': "Inserisci dei dati"}, 404
-    real_data = request.json
 
+    return None
+
+
+def check_data(real_data: dict):
     if 'year' not in real_data or 'month' not in real_data or 'sedi' not in real_data or 'medici' not in real_data:
         return {'message': "Dati male formattati"}, 400
     for med in real_data['medici']:
         if type(med['disponibilita']) != dict:
             return {'message': "Dati male formattati"}, 400
-
     return None
 
 
-def parse_medici_from_response(data_medici: list, year: int, month: int):
-    medici = []  # TODO: In initSetup c'è una funzione che fa praticamente la stessa cosa
-    for medico in data_medici:  # iterate over medici
-        try:
-            nome = medico['nome']
-            ruolo = medico['ruolo']
-            turni_max = medico.get('ore_max') if medico.get('ore_max') is not None else get_n_turni_per_ruolo(ruolo)
-            sedi_disp = medico['sedi']
+def parse_single_medico(medico: dict, year: int, month: int):
+    nome = medico['nome']
+    ruolo = medico['ruolo']
+    turni_max = medico.get('ore_max') if medico.get('ore_max') is not None else get_n_turni_per_ruolo(ruolo)
+    sedi_disp = medico['sedi']
 
-            med: Medico = Medico(medico['id'], nome, ruolo, [], sedi_disp, n_turni_max=turni_max)
-            all_disp = []
-            for turno, giorni in medico['disponibilita'].items():
-                for day in giorni:
-                    parsed_turno = parse_turno(datetime.date(year, month, day), turno)
-                    all_disp.append(parsed_turno)
-            med.disponibilita = all_disp
-            medici.append(med)
-        except Exception as e:
-            print(e)
-            print(medico)
-            raise e
+    med: Medico = Medico(medico['id'], nome, ruolo, [], sedi_disp, n_turni_max=turni_max)
+    all_disp = []
+    for turno, giorni in medico['disponibilita'].items():
+        for day in giorni:
+            parsed_turno = parse_turno(datetime.date(year, month, day), turno)
+            all_disp.append(parsed_turno)
+    med.disponibilita = all_disp
+    return med
+
+
+def parse_medici_from_request(data_medici: list, year: int, month: int):
+    medici = [parse_single_medico(medico, year, month) for medico in data_medici]
     return medici
 
 
-def execute_schedule(request: flask.request):
-    if DEBUG_MODE:
-        real_data = data
-        real_data['month'] += 1  # compatibilità con JS
-        real_data['medici'] = parse_medici_from_response(real_data['medici'], real_data['year'], real_data['month'])
-        # data['medici'] = read_dati('assets/gennaio23.xlsx')
-    else:
-        real_data = request.json  # o request.json
-        real_data['month'] += 1  # compatibilità con JS
-    res_check = check_request(request)
+def execute_schedule(real_data: dict):
+    res_check = check_data(real_data)
+    real_data['month'] += 1  # compatibilità con JS
+    real_data['medici'] = parse_medici_from_request(real_data['medici'], real_data['year'], real_data['month'])
     if res_check:
-        return res_check
+        return res_check, None
 
     sol = start(real_data)
     if len(Storage.calendar_turni) == 0:
-        return {'message': 'Inserito dati sbagliati'}, 404
+        return {'message': 'Inserito dati sbagliati'}, 404, None
     string_sol = create_soluzione_response(sol)
-    return string_sol, 200
+    return string_sol, 200, sol  # L'ultimo parametro è per scopi di test
 
 
 # Il client che chiama la funzione scarica dal database i dati di tutti i medici, li invia all'API
 # Poi sempre con quei dati può fare sostituzioni, cosi si evita un doppio download dei dati
-
 # TODO Valutare di togliere medici per turno e data dall'oggetto Turno, sono ridondanti (magari si può aggiungere un riferimento alla classe Sede appartenente)
 
 

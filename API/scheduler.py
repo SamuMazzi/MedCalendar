@@ -10,23 +10,7 @@ from models.turno import Turno
 
 # TODO calcolo a priori se può esistere una soluzione ottimale
 # TODO Implementare seconda passata che riempe i buchi vuoti anche sforando il numero di turni per medico
-from utilities import is_medico_in_24_ore_prec_o_succ
-
-
-def delete_turni_vuoti():
-    turni_vuoti = {}
-    for sede in Storage.sedi:
-        delete_list = []
-        for turno in sede.month_calendar.keys():
-            if len(sede.get_medici_disp_per_turno(turno)) == 0:
-                delete_list.append(turno)
-                turni_vuoti[turno] = 1 if turni_vuoti.get(turno) is None else turni_vuoti.get(turno) + 1
-        for key in delete_list:
-            del sede.month_calendar[key]
-
-    for turno, count in turni_vuoti.items():
-        if count == len(Storage.sedi):
-            Storage.calendar_turni.remove(turno)
+from utilities import is_medico_in_24_ore_prec_o_succ, med_non_puo_fare_piu_turni
 
 
 def set_medici_disponibili():
@@ -35,7 +19,7 @@ def set_medici_disponibili():
         sede.set_medici_disponibili_per_mese_curr(Storage.all_medici)
 
 
-def set_default_medici():  # TODO: Aggiungere controllo massimo numero (turni?) per persona (?)
+def set_default_medici():
     turni_posizionati_a_prescindere = 0
     sodd = [0, 0, 0]
     for turno in Storage.calendar_turni:
@@ -43,22 +27,23 @@ def set_default_medici():  # TODO: Aggiungere controllo massimo numero (turni?) 
         medici_gia_occupati_per_turno = []
         for i in range(len(Storage.sedi)):
             for sede in Storage.sedi:
-                medici_disp = list(
-                    filter(lambda med: med not in medici_gia_occupati_per_turno, sede.get_medici_disp_per_turno(turno)))
-                medici_disp = list(filter(lambda med: not is_medico_in_24_ore_prec_o_succ([med], turno), medici_disp))
+                medici_disp = [med for med in sede.get_medici_disp_per_turno(turno) if med not in medici_gia_occupati_per_turno]
+                medici_match_rules = [med for med in medici_disp if not is_medico_in_24_ore_prec_o_succ([med], turno) and not med_non_puo_fare_piu_turni(med)]
 
                 # Setta medici obbligati
-                if 0 < len(medici_disp) <= sede.medici_per_turno:
-                    for med in medici_disp:
+                if 0 < len(medici_match_rules) <= sede.medici_per_turno:
+                    for med in medici_match_rules:
                         turni_posizionati_a_prescindere += setta_single_default_medico(med, sede, turno, sodd)
-                    medici_gia_occupati_per_turno.extend(medici_disp)
+                    medici_gia_occupati_per_turno.extend(medici_match_rules)
                     sedi_turni_liberi_per_turno[sede.nome] = []
                 else:
-                    sedi_turni_liberi_per_turno[sede.nome] = medici_disp
-        # Setta medici se il numero complessivo di questi è == fra tutte le sedi
-        # e <= al numero di turni totale per quel giorno, fra le sedi
-        # Se, in quel giorno, tutti possono in tutte le sedi
-        # non verranno settati con l'algoritmo di prima, ma con questo si
+                    sedi_turni_liberi_per_turno[sede.nome] = medici_match_rules
+        """
+        Setta medici se il numero complessivo di questi è == fra tutte le sedi
+        e <= al numero di turni totale per quel giorno, fra le sedi
+        Se, in quel giorno, tutti possono in tutte le sedi
+        non verranno settati con l'algoritmo di prima, ma con questo si
+        """
         if len(sedi_turni_liberi_per_turno.keys()) == len(Storage.sedi) and sedi_hanno_stessi_medici_liberi_per_turno(
                 sedi_turni_liberi_per_turno):
             turni_posizionati_a_prescindere += setta_default_medici_in_un_turno_fra_le_sedi(sedi_turni_liberi_per_turno,
@@ -105,13 +90,12 @@ def sedi_hanno_stessi_medici_liberi_per_turno(medici_per_turno_per_sede: dict):
 class MainHandler:
     def setup(self):
         set_medici_disponibili()
-        delete_turni_vuoti()
         # TODO: tot_turni non tiene conto delle festività "speciali" di ogni particolare sede
-        sodd, turni_posizionati_a_prescindere = set_default_medici()
+        # sodd, turni_posizionati_a_prescindere = set_default_medici()
         Storage.tot_turni = get_turni_effettivi()
-        tmp_sol = Soluzione(inc_sodd=sodd[1], conv_sodd=sodd[0], doc_sodd=sodd[2],
-                            turni_occupati=turni_posizionati_a_prescindere)
-        self.find_sol = FindSolution(Storage.all_medici, sol=tmp_sol)
+        #tmp_sol = Soluzione(inc_sodd=sodd[1], conv_sodd=sodd[0], doc_sodd=sodd[2],
+        #                    turni_occupati=turni_posizionati_a_prescindere)
+        self.find_sol = FindSolution(Storage.all_medici)
         return self.find_sol
 
     def update_with_new_docs(self, list_docs: List[Medico]):
@@ -146,7 +130,7 @@ def handle_new_round(main_handler, best_sol, medici):
 def filter_by_role(list_medici: List[Medico], roles: list):
     return [med for med in list_medici if med.ruolo.lower() in roles]
 
-# TODO: Testa con dati Febbraio
+
 def start(data):
     init_storage(data)
     main_handler = MainHandler()
@@ -160,9 +144,10 @@ def start(data):
     for i in range(len(type_medici)):
         handle_new_round(main_handler, best_sol, type_medici[i])
         if len(type_medici[i]) != 0:
-            main_handler.find_sol.recursive_fn(0, mode_medici[i], best_sol.turni_occupati,
-                                               doc_sodd=best_sol.medici_soddisfatti,
-                                               conv_sodd=best_sol.convenzionati_soddisfatti,
-                                               inc_sodd=best_sol.incaricati_soddisfatti)
+            sodd, turni_posizionati_a_prescindere = set_default_medici()
+            main_handler.find_sol.recursive_fn(0, mode_medici[i], best_sol.turni_occupati + turni_posizionati_a_prescindere,
+                                               doc_sodd=best_sol.medici_soddisfatti + sodd[2],
+                                               conv_sodd=best_sol.convenzionati_soddisfatti + sodd[0],
+                                               inc_sodd=best_sol.incaricati_soddisfatti + + sodd[1])
 
     return best_sol

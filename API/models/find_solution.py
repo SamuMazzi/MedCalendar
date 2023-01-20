@@ -44,9 +44,9 @@ class FindSolution:
         seen = set()
         seen_add = seen.add
         # adds all elements it doesn't know yet to seen and all other to seen_twice
-        seen_twice = set( x for x in seq if x in seen or seen_add(x) )
+        seen_twice = set(x for x in seq if x in seen or seen_add(x))
         # turn the set into a list (as requested)
-        return list( seen_twice )
+        return list(seen_twice)
 
     def recursive_fn(self, s, mode, turni_occupati, conv_sodd, inc_sodd, doc_sodd):
         if s == len(Storage.calendar_turni):

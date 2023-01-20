@@ -41,7 +41,7 @@ export function SelectMeseCalendar(props: PropsSelectMeseCalendar) {
         maxDate={maxDate}
         renderInput={(params) => !props.timestamp_mese ? <IconButton onClick={handleClick}>
           <EventIcon/>
-        </IconButton> : <TextField {...params}  //TODO: Vorremmo avere il placeholder quando non c'è un valore
+        </IconButton> : <TextField {...params}
           onClick={handleClick}
           label="" 
           placeholder='Mese' 

@@ -27,7 +27,7 @@ export default function AdminLogin() {
         } else if (error instanceof AppFirebaseError) {
             dispatch(setMessageError(error.message))
         } else {
-            console.log(error)
+            //console.log(error)
             dispatch(setMessageError("Si è verificato un errore, riprovare"))
         }
     }
