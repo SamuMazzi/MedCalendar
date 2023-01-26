@@ -16,5 +16,10 @@
     "incremental": true
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules", "cypress", "__test__"]
+  "exclude": ["node_modules", "cypress", "__test__"],
+  "typeAcquisition": {
+    "include": [
+      "jest"
+    ]
+  }
 }

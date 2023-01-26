@@ -16,7 +16,7 @@ import CircleIcon from '@mui/icons-material/Circle';
 import Button from '@mui/material/Button'
 import { useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../logic/redux/store'
-import { InfoMedico, SchedulerState, swapMediciInTurno } from '../logic/redux/scheduler_slice'
+import { getAllTurni, InfoMedico, SchedulerState, swapMediciInTurno } from '../logic/redux/scheduler_slice'
 import { getGiornoSettimana } from '../logic/local_utilities'
 import ListItemIcon from '@mui/material/ListItemIcon'
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
@@ -25,15 +25,6 @@ import Tooltip from '@mui/material/Tooltip'
 const getColorRole = (ruolo: string) => {
   const lower_ruolo = ruolo.toLowerCase()
   return lower_ruolo.startsWith("inc") ? "#ccff9b" : (lower_ruolo.startsWith("conven") || lower_ruolo.startsWith("titol")) ? "#b1f4ff" : "#ffd07d"
-}
-
-const getAllTurni = (formatted_data: any) => {
-  const list_turni: string[] = []
-  Object.keys(formatted_data['turni']).forEach((sede: string) => {
-    Object.keys(formatted_data['turni'][sede]).forEach(turno => !list_turni.includes(turno) ? list_turni.push(turno) : null)
-  })
-  list_turni.sort()
-  return list_turni
 }
 
 interface PropsTableResult {

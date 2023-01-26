@@ -194,7 +194,7 @@ export function SearchableDropdown(props: PropsSearchableDropdown) {
           filterOptions={filterOptions}
           disablePortal
           id="combo-box"
-          options={props.inputList}
+          options={props.map ? props.inputList.sort((a,b) => getValueFromOption(a) === getValueFromOption(b) ? 0 : getValueFromOption(a) < getValueFromOption(b) ? -1 : 1 ) : props.inputList}
           onChange={(event: any, newValue: string | null) => {
             props.onChangeFn(newValue)
           }}

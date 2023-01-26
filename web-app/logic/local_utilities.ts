@@ -1,4 +1,4 @@
-import Users from "../privateAssets/users.json"
+import { getAllMedici, shouldLoadOnlineMedici } from "./server/firestore"
 
 export type MesiType = string[] //Record<number, string>
 export const mesi: MesiType = [
@@ -16,16 +16,13 @@ export const mesi: MesiType = [
     'Dicembre'
 ]
 
+export const keyLocalMedici = 'medici'
+
 const giorni_settimana = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato']
 export const getGiornoSettimana = (timestamp: number, day: number) => {
     const mese = new Date(timestamp)
     mese.setDate(day)
     return giorni_settimana[mese.getDay()]
-}
-
-export const getAllLocalMedici = () => {
-    const out: Record<string, Record<string, any>> = Users
-    return out;
 }
 
 export const capitalizeFirstLetter = (inputString: string) => {
@@ -63,6 +60,7 @@ export const saveToStorage = (key: string, value: any) => {
 
 export const getFromStorage = (key: string) => {
     if (typeof window !== 'undefined') {
+        window.localStorage.removeItem('all_medici'); //legacy
         const res = window.localStorage.getItem(key);
         if (res !== null) {
             return JSON.parse(res);
@@ -81,6 +79,21 @@ export const getLocalDistretti = (admin = false) => {
             return out
         }
         return out
+    }
+    return out
+}
+
+export const getMedici = async () => {
+    let out;
+    const localMedici: Record<string, Record<string, any>> = getFromStorage(keyLocalMedici);
+    const shouldLoadOnlineDoctors = await shouldLoadOnlineMedici()
+    if (localMedici === null || shouldLoadOnlineDoctors) {
+        const onlineMedici: Record<string, Record<string, any>> = await getAllMedici();
+        saveToStorage(keyLocalMedici, onlineMedici)
+        saveToStorage('lastTimeModifyDoctors', Date.now())
+        out = onlineMedici
+    } else {
+        out = localMedici
     }
     return out
 }

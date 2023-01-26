@@ -61,6 +61,7 @@ export default function SelectDistretto(props: ParamSelectDistretto) {
                 onChangeFn={(event) => props.setDistretto(event.target.value)}
                 value={props.distretto}
                 inputList={allDistretti}
+                data-cy="select_distretto"
             />
         )
     }

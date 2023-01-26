@@ -3,7 +3,7 @@ import Button from '@mui/material/Button'
 import FileSaver from 'file-saver'
 import { write, utils, read } from 'xlsx' //Capire perchè non ti installa la 0.19.1
 import Tooltip from '@mui/material/Tooltip'
-import { SchedulerState } from '../logic/redux/scheduler_slice'
+import { getAllTurni, SchedulerState } from '../logic/redux/scheduler_slice'
 import { getGiornoSettimana } from '../logic/local_utilities'
 import Typography from '@mui/material/Typography'
 
@@ -122,19 +122,35 @@ const ExportExcel = (props: PropsExportExcel) => {
         return data
     }
 
+    const getHeader = () => {
+        const allTurni = getAllTurni(props.excelData)
+        const head = ['Nome', 'Ruolo', 'N° turni', 'Disponibilità', ...allTurni]
+        return head
+    }
+
     const formatDataDisponibilita = () => {
+        const offset = 5
         const out = []
-        out.push(['Nome', 'Ruolo', 'N° turni', 'Disponibilità'])
+        const header = getHeader();
+        out.push(header)
+        const allTurni = header.slice(offset)
         for (const id_med of Object.keys(props.excelData.medici_orig)) {
             const med = props.excelData.medici_orig[id_med]
             if (med.disponibilita.length === 0) {
                 continue
             }
-            const tmp = []
-            tmp.push(med.nome)
-            tmp.push(med.ruolo)
-            tmp.push(med.n_turni_per_soddisfatto)
-            tmp.push(med.disponibilita.map(disp => disp.replace('T', ' Turno ').replace(':00', '').replace(':', '-')).join(', '))
+            let tmp: (string | number | null)[] = [med.nome, med.ruolo, med.n_turni_per_soddisfatto]
+            tmp = [...tmp, null, ...(new Array(allTurni.length).fill(null))]
+            //tmp.push(med.disponibilita.map(disp => disp.replace('T', ' Turno ').replace(':00', '').replace(':', '-')).join(', '))
+            allTurni.forEach((turno, index) => {
+                for (const sede of Object.keys(props.excelData.turni)) {
+                    const tt = props.excelData.turni[sede][turno]
+                    if (tt !== undefined && tt.includes(med.uid)) {
+                        tmp.splice(offset+index, 1, 'x')
+                    }
+                }
+            //TODO: Testare questa nuova visualizzazione
+            })
             out.push(tmp)
         }
         return out

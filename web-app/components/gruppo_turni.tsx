@@ -18,15 +18,25 @@ interface PropsGruppoTurni {
   distretto: string | undefined
 }
 
+function getFormattedHour(hour: string) {
+  const prefix = '9/19/2022 '
+  if(!hour.includes(':')) {
+    return prefix + hour + ':00'
+  }
+  return prefix + hour
+}
+
 function compareTurni(a?: string, b?: string) {
   if (!a && !b) return 0
   if (!a) return -1
   if (!b) return 1
   const firstTurni = a!.split('-')
   const secondTurni = b!.split('-')
-  const tmpRes = parseInt(firstTurni.at(0)!) - parseInt(secondTurni.at(0)!)
-  //TODO: Finisci, deve poter gestire anche i : (es. 20.30-21)
-  if(tmpRes !== 0) return tmpRes
+  const dateFirstBegin = Date.parse(getFormattedHour(firstTurni[0]));
+  const dateSecondBegin = Date.parse(getFormattedHour(secondTurni[0]));
+  const dateFirstEnd = Date.parse(getFormattedHour(firstTurni[1]));
+  const dateSecondEnd = Date.parse(getFormattedHour(secondTurni[1]));
+  return dateFirstBegin - dateSecondBegin === 0 ? dateFirstEnd - dateSecondEnd : dateFirstBegin - dateSecondBegin
 }
 
 export default function GruppoTurni(props: PropsGruppoTurni) {
@@ -130,7 +140,7 @@ export default function GruppoTurni(props: PropsGruppoTurni) {
       { loading && <CircularProgress />}
       <Grid container sx={{pb: 3}} direction={{xs: "column", md: "row"}}>
         { !loading && infoSedi &&
-          Object.keys(infoSedi.turni).sort().map((turno: string, index: number) => 
+          Object.keys(infoSedi.turni).sort(compareTurni).map((turno: string, index: number) => 
             <Box key={index} sx={{ borderRadius: '16px', backgroundColor: '#EFEFEF', m: 2, py: 3 }}>
               <Grid container
                   display="flex"

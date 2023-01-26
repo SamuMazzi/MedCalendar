@@ -29,10 +29,19 @@ export interface InfoMedico {
     n_turni_per_soddisfatto: number
 }
 
+export const getAllTurni = (formatted_data: SchedulerState) => {
+    const list_turni: string[] = []
+    Object.keys(formatted_data.turni).forEach((sede: string) => {
+        Object.keys(formatted_data.turni[sede]).forEach(turno => !list_turni.includes(turno) ? list_turni.push(turno) : null)
+    })
+    list_turni.sort()
+    return list_turni
+}
+
 const insertMedicoInTurno = (state: SchedulerState, sede: string, turno: string, id_med: string) => {
-    let medici_in_turno = state['turni'][sede][turno]
+    let medici_in_turno = state.turni[sede][turno]
     if (medici_in_turno === undefined) {
-        state['turni'][sede][turno] = [id_med] //Testare se si può sostituire con variabile
+        state.turni[sede][turno] = [id_med] //Testare se si può sostituire con variabile
     } else {
         medici_in_turno.push(id_med)
     }

@@ -2,6 +2,8 @@
 
 // https://on.cypress.io/introduction-to-cypress
 
+import { getFromStorage, keyLocalMedici } from '../../../logic/local_utilities'
+
 function selectMedicoLogin(nome_med: string) {
   cy.get('[placeholder="Seleziona il medico"]').as('med_automplete')
   cy.get('@med_automplete').type(nome_med)
@@ -12,6 +14,13 @@ describe('Med scheduler', () => {
   const nome_med = 'Medico Demo'
   beforeEach(() => {
     cy.visit("/")
+  })
+
+  it('Cache doctors should be filled', () => {
+    const cachedDoctors = getFromStorage(keyLocalMedici)
+    const lastTimeModify = getFromStorage('lastTimeModifyDoctors')
+    assert(cachedDoctors !== null && cachedDoctors.length > 20)
+    assert(lastTimeModify !== null && new Date().setTime(lastTimeModify) > Date.UTC(2023, 0, 20))
   })
 
   context('Classic login', () => {

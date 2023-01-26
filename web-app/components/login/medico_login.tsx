@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useAppDispatch } from "../../logic/redux/store";
-//import { getAllMedici } from '../../logic/server/firestore';
 import { setAdmin, setUser } from '../../logic/redux/auth_slice';
-import { saveToStorage, getFromStorage, getAllLocalMedici } from '../../logic/local_utilities';
 import { SearchableDropdownMap } from '../form_dropdown';
 import Grid from "@mui/material/Grid";
 import CircularProgress from "@mui/material/CircularProgress";
 import { FormButtonSubmit, FormTextField } from "./form_components";
+import { getMedici } from "../../logic/local_utilities";
 
 const calculateHashText = async (text: string) => {
     if(!window) return
@@ -68,13 +67,12 @@ export default function MedicoLogin(props: PropsMedicoLogin) {
 
     const retrieveMedici = async () => {
         setLoadingMedici(true)
-        let docs = getFromStorage("all_medici")
-        if (docs !== undefined) { //* Si potrà poi togliere getFromStorage
-            docs = getAllLocalMedici()//await getAllMedici()
-            saveToStorage("all_medici", docs)
+        try {
+            const medici = await getMedici()
+            setAllMedici(medici)
+        } finally {
+            setLoadingMedici(false)
         }
-        setAllMedici(docs)
-        setLoadingMedici(false)
     }
 
     useEffect(() => {

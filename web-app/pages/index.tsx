@@ -54,7 +54,7 @@ export default function Home() {
         !adminState &&
         <Grid item>
           <Grid container direction="row" justifyContent="center">
-            <ChoiceButton label="Raccolta disponibilità" path='/raccolta_disponibilita' distretto={distretto} />
+            <ChoiceButton label="Raccolta disponibilità" path='/raccolta_disponibilita' distretto={distretto} data-cy="racc_disp_index" />
             {
               //<ChoiceButton label="Cambio turno" path='/cambio_turno' distretto={distretto} />
             }
