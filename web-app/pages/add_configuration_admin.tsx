@@ -3,9 +3,9 @@ import Button from '@mui/material/Button'
 import Typography from '@mui/material/Typography'
 import CircularProgress from '@mui/material/CircularProgress'
 import AddIcon from '@mui/icons-material/Add';
-import SingleSede from '../components/single_sede_admin';
+import SingleSede from '../components/admin_pages/single_sede';
 import MessageSnackbar from '../components/snackbar/message_snackbar';
-import Greetings from '../components/greetings';
+import Greetings from '../components/general/greetings';
 import { setConfigurationDistrettoMese } from '../logic/server/firestore'
 import { useState, useEffect } from 'react'
 import { useAppSelector, useAppDispatch } from '../logic/redux/store'
