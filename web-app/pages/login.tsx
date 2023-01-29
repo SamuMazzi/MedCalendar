@@ -5,8 +5,7 @@ import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Head from 'next/head';
-//import { Slide, Box } from '@mui/material'
-import DecorationImage from '../components/decoration_image';
+import DecorationImage from '../components/general/decoration_image';
 /**
  *  TODO: Implementa Slide
       <Slide direction="left" in={modeConferma} mountOnEnter unmountOnExit>
@@ -24,7 +23,6 @@ export async function getStaticProps() {
 
 export default function FormLogin(props: any) {
     const [ adminMode, setAdminMode ] = useState(false);
-    //TODO: Mettere limite di 3 tentativi con le password, ricordarsi di fare per session (?)
 
     return (
     <Grid 
@@ -38,7 +36,7 @@ export default function FormLogin(props: any) {
           <title>Accedi</title>
         </Head>
         <Grid item 
-          sx={{ pl: { xs: 0, md: "23%", lg: "25%" }, pt: { xs: 0, md: 7, lg: 15 } }}
+          sx={{ pl: { xs: 0, md: "23%", lg: "25%" }, pt: { xs: 0, md: 7, lg: 8 } }}
         >
               <Grid container direction='column'>
                 {

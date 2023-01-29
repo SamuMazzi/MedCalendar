@@ -4,6 +4,7 @@ import authReducer from './auth_slice'
 import configurationDistrettoReducer from './configuration_distretto_slice'
 import schedulerReducer from './scheduler_slice'
 import settingsReducer from './settings_slice'
+import mediciAdminReducer from './medici_admin'
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux'
 
 export const store = configureStore({
@@ -12,7 +13,8 @@ export const store = configureStore({
     auth: authReducer,
     configurationDistr: configurationDistrettoReducer,
     scheduler: schedulerReducer,
-    settings: settingsReducer
+    settings: settingsReducer,
+    mediciAdmin: mediciAdminReducer
   }
 })
 

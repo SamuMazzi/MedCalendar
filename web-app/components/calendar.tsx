@@ -11,21 +11,20 @@ import { handleDisponibilita } from '../logic/redux/turni_slice'
 import 'dayjs/locale/it';
 import TextField from '@mui/material/TextField';
 
-export interface PropsCalendar {
-  fasciaTurno: string,
-  selectableDays: number[]
-}
-
 interface PropsSelectMeseCalendar {
   timestamp_mese: number | undefined,
   onChange: (arg0: dayjs.Dayjs | null) => void
+  /**
+   * Numero di mesi di scarto che ci possono essere. Es: 2 -> posso scegliere questo mese e i 2 dopo al max
+   */
+  maxDate?: number
 }
 
 export function SelectMeseCalendar(props: PropsSelectMeseCalendar) {
   const [isOpen, setIsOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
-  const maxDate = dayjs(new Date()).add(3, 'M')
-  const views: any[] = maxDate.year() === dayjs(props.timestamp_mese).year() ? ['month'] : ['year', 'month']
+  const maxDate = props.maxDate ? dayjs(new Date()).add(props.maxDate, 'M') : undefined
+  const views: any[] = maxDate?.year() === dayjs(props.timestamp_mese).year() ? ['month'] : ['year', 'month']
   
   const handleClick = (event: any) => {
     setIsOpen((isOpen) => !isOpen);
@@ -71,6 +70,11 @@ export function SelectMeseCalendar(props: PropsSelectMeseCalendar) {
   );
 }
 
+export interface PropsCalendar {
+  fasciaTurno: string,
+  selectableDays: number[]
+}
+
 export function PersonalCalendar(props: PropsCalendar) {
   const giorniSelezionati = useAppSelector((state) => state.turni.disponibilita[props.fasciaTurno])
   const timestamp_mese = useAppSelector((state) => state.turni.timestamp_mese)
@@ -112,7 +116,6 @@ export function PersonalCalendar(props: PropsCalendar) {
           placement: "bottom-end",
           anchorEl: anchorEl
         }}
-        //TODO: Aggiungi ai test il fatto che si possa selezionare il giorno corrente, visto che c'era un bug a riguardo
         maxDate={timestamp_mese !== undefined ? dayjs(timestamp_mese).endOf('month') : undefined}
         minDate={timestamp_mese !== undefined ? dayjs(timestamp_mese).startOf('month') : undefined}
         closeOnSelect={false}
@@ -141,7 +144,7 @@ export function PersonalCalendar(props: PropsCalendar) {
           </div>)}
         renderDay={(day, _value, DayComponentProps) => {
           const isSelected = !DayComponentProps.outsideCurrentMonth && (giorniSelezionati !== undefined && giorniSelezionati.includes(day.date()));
-          //TODO: Fai colore select un po' sfumato (opacità?)
+          //*: Fai colore select un po' sfumato (opacità?)
           return <PickersDay {...DayComponentProps} selected={isSelected}/>;
         }}
       />

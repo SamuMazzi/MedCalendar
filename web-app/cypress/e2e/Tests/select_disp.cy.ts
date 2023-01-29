@@ -3,6 +3,7 @@
 // https://on.cypress.io/introduction-to-cypress
 
 import { getFromStorage, keyLocalMedici } from '../../../logic/local_utilities'
+//TODO: Aggiungi ai test il fatto che si possa selezionare il giorno corrente nel calendario, visto che c'era un bug a riguardo
 
 function selectMedicoLogin(nome_med: string) {
   cy.get('[placeholder="Seleziona il medico"]').as('med_automplete')

@@ -6,9 +6,9 @@ import Typography from '@mui/material/Typography'
 import Person from '@mui/icons-material/Person'
 import Image from 'next/image';
 import { useState } from 'react';
-import { useAppDispatch, useAppSelector }  from '../logic/redux/store'
-import { clearUserAndAdmin } from '../logic/redux/auth_slice'
-import { logoutFirebase } from '../logic/server/auth';
+import { useAppDispatch, useAppSelector }  from '../../logic/redux/store'
+import { clearUserAndAdmin } from '../../logic/redux/auth_slice'
+import { logoutFirebase } from '../../logic/server/auth';
 import Link from 'next/link'
 
 export function MenuAppBar() {

@@ -15,9 +15,9 @@ import Typography from '@mui/material/Typography'
 import CircleIcon from '@mui/icons-material/Circle';
 import Button from '@mui/material/Button'
 import { useState } from 'react'
-import { useAppDispatch, useAppSelector } from '../logic/redux/store'
-import { getAllTurni, InfoMedico, SchedulerState, swapMediciInTurno } from '../logic/redux/scheduler_slice'
-import { getGiornoSettimana } from '../logic/local_utilities'
+import { useAppDispatch, useAppSelector } from '../../logic/redux/store'
+import { getAllTurni, InfoMedico, SchedulerState, swapMediciInTurno } from '../../logic/redux/scheduler_slice'
+import { getGiornoSettimana } from '../../logic/local_utilities'
 import ListItemIcon from '@mui/material/ListItemIcon'
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import Tooltip from '@mui/material/Tooltip'

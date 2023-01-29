@@ -3,16 +3,16 @@ import Box from '@mui/material/Box'
 import TextField from '@mui/material/TextField'
 import Typography from '@mui/material/Typography'
 import CircularProgress from '@mui/material/CircularProgress'
-import { PersonalCalendar, SelectMeseCalendar } from '../components/calendar'
-import { useAppDispatch, useAppSelector }  from '../logic/redux/store'
-import { setOreMassime, handleSede, setMese, clearDisponibilita } from '../logic/redux/turni_slice'
-import { getInfoSediDistretto, RemoteSediInfo } from '../logic/server/firestore';
+import { PersonalCalendar, SelectMeseCalendar } from '../calendar'
+import { useAppDispatch, useAppSelector }  from '../../logic/redux/store'
+import { setOreMassime, handleSede, setMese, clearDisponibilita } from '../../logic/redux/turni_slice'
+import { getInfoSediDistretto, RemoteSediInfo } from '../../logic/server/firestore';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
-import { NewListDropdown } from './form_dropdown'
-import { capitalizeFirstLetter } from '../logic/local_utilities'
-import { AppFirebaseError } from '../logic/server/firebase'
-import { setMessageError } from '../logic/redux/settings_slice'
+import { NewListDropdown } from '../general/form_dropdown'
+import { capitalizeFirstLetter } from '../../logic/local_utilities'
+import { AppFirebaseError } from '../../logic/server/firebase'
+import { setMessageError } from '../../logic/redux/settings_slice'
 
 interface PropsGruppoTurni {
   distretto: string | undefined
@@ -80,7 +80,7 @@ export default function GruppoTurni(props: PropsGruppoTurni) {
   }
 
   useEffect(() => {
-    /* if (predefinedSediUser.length > 0) { //TODO: Applicare filtro su queste sedi
+    /* if (predefinedSediUser.length > 0) { //!: Applicare filtro su queste sedi
       dispatch(handleSede(predefinedSediUser.map(el => capitalizeFirstLetter(el))))
     } */
     getInfoSedi()
@@ -94,7 +94,7 @@ export default function GruppoTurni(props: PropsGruppoTurni) {
           <Typography fontWeight="fontWeightBold" variant="h6" component="h6" sx={{ py: 2 }}>
             {"Scegli il mese"}
           </Typography>
-          <SelectMeseCalendar timestamp_mese={stateTurni.timestamp_mese} onChange={(newValue) => {
+          <SelectMeseCalendar maxDate={3} timestamp_mese={stateTurni.timestamp_mese} onChange={(newValue) => {
             if (newValue !== null) {
               dispatch(setMese(newValue.toDate().getTime()))
               dispatch(clearDisponibilita())

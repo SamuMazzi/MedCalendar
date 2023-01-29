@@ -2,11 +2,12 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 import { useAppDispatch } from "../../logic/redux/store";
 import { setAdmin, setUser } from '../../logic/redux/auth_slice';
-import { SearchableDropdownMap } from '../form_dropdown';
+import { SearchableDropdownMap } from '../general/form_dropdown';
 import Grid from "@mui/material/Grid";
 import CircularProgress from "@mui/material/CircularProgress";
 import { FormButtonSubmit, FormTextField } from "./form_components";
 import { getMedici } from "../../logic/local_utilities";
+import { MedicoImported } from "../../logic/server/firestore";
 
 const calculateHashText = async (text: string) => {
     if(!window) return
@@ -27,7 +28,7 @@ interface PropsMedicoLogin {
 }
 
 export default function MedicoLogin(props: PropsMedicoLogin) {
-    const [allMedici, setAllMedici] = useState<Record<string, Record<any, any>>>({});
+    const [allMedici, setAllMedici] = useState<Record<string, MedicoImported>>({});
     const [medicoSelected, setMedico] = useState<string | null>();
     const [helperText, setHelperText] = useState("");
     const [helperPassword, setHelperPassword] = useState("")

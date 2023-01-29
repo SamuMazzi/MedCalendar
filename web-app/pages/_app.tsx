@@ -11,9 +11,9 @@ import "@fontsource/public-sans/700.css";
 import "@fontsource/public-sans/400.css";
 import "@fontsource/public-sans/300.css";
 import Head from 'next/head'
-import Footer from '../components/footer'
+import Footer from '../components/general/footer'
 import AppSnackbar from '../components/snackbar/app_snackbar'
-import { MenuAppBar } from '../components/app_bar'
+import { MenuAppBar } from '../components/general/app_bar'
 
 //-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
 //Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans - serif;

@@ -1,4 +1,4 @@
-import { getAllMedici, shouldLoadOnlineMedici } from "./server/firestore"
+import { getAllMediciServer, MedicoImported, MedicoRemote, shouldLoadOnlineMedici } from "./server/firestore"
 
 export type MesiType = string[] //Record<number, string>
 export const mesi: MesiType = [
@@ -85,10 +85,10 @@ export const getLocalDistretti = (admin = false) => {
 
 export const getMedici = async () => {
     let out;
-    const localMedici: Record<string, Record<string, any>> = getFromStorage(keyLocalMedici);
+    const localMedici: Record<string, MedicoImported> = getFromStorage(keyLocalMedici);
     const shouldLoadOnlineDoctors = await shouldLoadOnlineMedici()
     if (localMedici === null || shouldLoadOnlineDoctors) {
-        const onlineMedici: Record<string, Record<string, any>> = await getAllMedici();
+        const onlineMedici: Record<string, MedicoImported> = await getAllMediciServer();
         saveToStorage(keyLocalMedici, onlineMedici)
         saveToStorage('lastTimeModifyDoctors', Date.now())
         out = onlineMedici

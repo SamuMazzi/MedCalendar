@@ -5,17 +5,17 @@ import Divider from '@mui/material/Divider'
 import IconButton from '@mui/material/IconButton'
 import Box from '@mui/material/Box'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { useAppSelector, useAppDispatch } from '../logic/redux/store'
-import { clearState } from '../logic/redux/turni_slice';
-import { getGiornoSettimana, mesi } from '../logic/local_utilities'
+import { useAppSelector, useAppDispatch } from '../../logic/redux/store'
+import { clearState } from '../../logic/redux/turni_slice';
+import { getGiornoSettimana, mesi } from '../../logic/local_utilities'
 import { PropsDisponibilita } from './module_disponibilita'
 import { useState } from 'react'
-import { setDisponibilitaMeseMedico } from '../logic/server/firestore';
-import Greetings from './greetings';
+import { setDisponibilitaMeseMedico } from '../../logic/server/firestore';
+import Greetings from '../general/greetings';
 import CircularProgress from '@mui/material/CircularProgress'
-import { AppFirebaseError } from '../logic/server/firebase'
-import { setMessageError } from '../logic/redux/settings_slice'
-import { getGoodRuolo } from '../logic/redux/auth_slice'
+import { AppFirebaseError } from '../../logic/server/firebase'
+import { setMessageError } from '../../logic/redux/settings_slice'
+import { getGoodRuolo } from '../../logic/redux/auth_slice'
 
 interface PropsTitleAndDescription {
     title: string,

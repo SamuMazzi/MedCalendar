@@ -10,10 +10,10 @@ import TextField from '@mui/material/TextField'
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import { useEffect } from "react";
-import { useAppSelector, useAppDispatch } from '../logic/redux/store'
-import { changeFasceTurnoSede, changeNumMediciPerTurnoSede, changeNomeSede } from '../logic/redux/configuration_distretto_slice'
+import { useAppSelector, useAppDispatch } from '../../logic/redux/store'
+import { changeFasceTurnoSede, changeNumMediciPerTurnoSede, changeNomeSede } from '../../logic/redux/configuration_distretto_slice'
 import DeleteIcon from '@mui/icons-material/Delete';
-import { NewListDropdown } from "./form_dropdown";
+import { NewListDropdown } from "../general/form_dropdown";
 
 interface SingleSedeProps {
     index: number

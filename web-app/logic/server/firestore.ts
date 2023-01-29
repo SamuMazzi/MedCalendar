@@ -1,5 +1,5 @@
 import { AppFirebaseError, firebaseApp } from "./firebase";
-import { getFirestore, doc, setDoc, collection, getDocs, getDoc, collectionGroup, query, where, arrayUnion, serverTimestamp, Timestamp } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, collection, getDocs, getDoc, collectionGroup, query, where, arrayUnion, serverTimestamp, Timestamp, deleteDoc, deleteField, arrayRemove } from 'firebase/firestore';
 import { StateTurno } from "../redux/turni_slice";
 import { SchedulerState } from "../redux/scheduler_slice";
 import { capitalizeFirstLetter, getFromStorage, getLocalLastOreMaxSet, getNumOreMaxByRole } from "../local_utilities";
@@ -48,19 +48,19 @@ export const shouldLoadOnlineMedici = async () => {
  * Per evitare troppe letture, finchè siamo sul distretto di Sassuolo teniamo la lettura specifica dei medici di quel distretto
  * @returns 
  */
-export const getAllMedici = async () => {
-    const tmpMedici: Record<string, Record<string, any>> = {}
+export const getAllMediciServer = async () => {
+    const tmpMedici: Record<string, MedicoImported> = {}
     try {
         const docMediciSassuolo = doc(firestore, distrettiCollectionKey, 'Sassuolo', infoCollectionKey, infoMediciKey)
         const res = await getDoc(docMediciSassuolo);
         const dataMedici: any = res.data()
         Object.keys(dataMedici).forEach((uid: string) => {
-            const singleMedico = dataMedici[uid];
+            const singleMedico: MedicoRemote = dataMedici[uid];
             tmpMedici[uid] = {
-                [nomeMedicoKey]: singleMedico.Nome + ' ' + singleMedico.Cognome,
-                [ruoloMedicoKey]: singleMedico.ruolo,
-                [uidMedicoKey]: singleMedico.uid,
-                [sediMedicoKey]: singleMedico.sedi
+                nome: singleMedico.Nome + ' ' + singleMedico.Cognome,
+                ruolo: singleMedico.ruolo,
+                email: singleMedico.Email,
+                sedi: singleMedico.sedi
             }
         });
     } catch (error: unknown) {
@@ -238,7 +238,6 @@ export const getDataToSendAPI = async (distretto: string, anno: number, mese: nu
             'sedi': mod_infoSedi,
             'medici': docs
         }
-        console.log(docs)
         return final_out
     } catch (error: unknown) {
         handleFirebaseError(error)
@@ -323,7 +322,7 @@ const createDataCsv = (row: string, headers: string[]) => {
 
 const updateLastModifyDoctors = async (distretto: string) => {
     await setDoc(doc(firestore, distrettiCollectionKey, distretto), {
-        lastTimeModifyInfoDoctorsKey: Timestamp.now()
+        [lastTimeModifyInfoDoctorsKey]: Timestamp.now()
     }, { merge: true })
 }
 
@@ -349,6 +348,12 @@ export const setDataMedici = async (bufferString: string) => {
 }
 
 //Codice provvisorio --------------------------------
+export interface MedicoImported {
+    nome: string,
+    ruolo: string,
+    sedi: string[],
+    email: string
+}
 
 export interface MedicoRemote {
     Cognome: string,
@@ -358,20 +363,54 @@ export interface MedicoRemote {
     Email: string
 }
 
-export const addSingleMedico = async (data: MedicoRemote, distretto: string) => {
+export const fromRemoteToImportedMedico = (med: MedicoRemote): MedicoImported => {
+    return {
+        nome: (med.Nome + ' ' + med.Cognome).trim(),
+        ruolo: med.ruolo,
+        sedi: med.sedi,
+        email: med.Email
+    }
+}
+
+export const deleteSingleMedicoServer = async (id_med: string, distretto: string) => {
     const futures = []
-    const obj: Record<string, any> = {...data}
-    obj['uid'] = data.Email
-    const uidMed: string = obj['uid']
+    const docMedico = doc(firestore, distrettiCollectionKey, distretto, infoCollectionKey, infoMediciKey)
     try {
-        futures.push(setDoc(doc(firestore, usersKey, uidMed), obj))
-        const docMedico = doc(firestore, distrettiCollectionKey, distretto, infoCollectionKey, infoMediciKey)
-        futures.push(setDoc(docMedico, { [uidMed]: obj }, { merge: true }));
-        futures.push(setDoc(doc(firestore, distrettiCollectionKey, distretto, infoCollectionKey, listaMediciKey), { 'list': arrayUnion(uidMed) }, { merge: true }));
-        futures.push(updateLastModifyDoctors('Sassuolo'))
+        futures.push(deleteDoc(doc(firestore, usersKey, id_med)))
+        futures.push(setDoc(docMedico, { [id_med]: deleteField() }, { merge: true }));
+        futures.push(setDoc(doc(firestore, distrettiCollectionKey, distretto, infoCollectionKey, listaMediciKey), { 'list': arrayRemove(id_med) }, { merge: true }));
+        futures.push(updateLastModifyDoctors(distretto))
         await Promise.all(futures)
     } catch (error: unknown) {
         handleFirebaseError(error)
     }
 }
+
+export const addSingleMedico = async (data: MedicoRemote, distretto: string) => {
+    await _setSingleMedico(data, distretto, "add")
+}
+
+export const updateSingleMedico = async (data: MedicoRemote, distretto: string) => {
+    await _setSingleMedico(data, distretto, "update")
+}
+
+const _setSingleMedico = async (data: MedicoRemote, distretto: string, mode: "add" | "update") => {
+    const futures = []
+    const obj: Record<string, any> = {...data}
+    obj['uid'] = data.Email
+    const uidMed: string = obj['uid']
+    const docMedico = doc(firestore, distrettiCollectionKey, distretto, infoCollectionKey, infoMediciKey)
+    try {
+        futures.push(setDoc(doc(firestore, usersKey, uidMed), obj))
+        futures.push(setDoc(docMedico, { [uidMed]: obj }, { merge: true }));
+        if (mode === "add") {
+            futures.push(setDoc(doc(firestore, distrettiCollectionKey, distretto, infoCollectionKey, listaMediciKey), { 'list': arrayUnion(uidMed) }, { merge: true }));
+        }
+        futures.push(updateLastModifyDoctors(distretto))
+        await Promise.all(futures)
+    } catch (error: unknown) {
+        handleFirebaseError(error)
+    }
+}
+
 // -------------------------------------------------

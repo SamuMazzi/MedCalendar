@@ -5,7 +5,7 @@ import Typography from '@mui/material/Typography'
 import SelectDistretto from '../components/select_distretto'
 import Link from 'next/link'
 import { useAppSelector } from '../logic/redux/store'
-import DecorationImage from '../components/decoration_image'
+import DecorationImage from '../components/general/decoration_image'
 
 interface ChoiceParams {
   distretto: string,
@@ -40,7 +40,7 @@ export default function Home() {
     <Grid container 
       direction="column"
       alignItems="center"
-      minHeight="calc(100vh - 225px)"
+      minHeight="calc(100vh - 207px)" //* Così è perfetto su Mac
     >
       <Typography style={{fontWeight: "bold", fontSize: 30 }} sx={{py: 5, pl: 5}}>
         Per continuare seleziona un distretto
@@ -68,7 +68,7 @@ export default function Home() {
           <Grid container direction="row" justifyContent="center">
             <ChoiceButton label="Aggiungi turni per un mese" path='/add_configuration_admin' distretto={distretto} />
             <ChoiceButton label="Pianifica turni per mese" path='/pianificazione_turni_admin' distretto={distretto} />
-            <ChoiceButton label="Aggiungi medico al distretto" path='/upload_single_medico_admin' distretto={distretto} />
+            <ChoiceButton label="Modifica medici distretto" path='/modify_doctors_admin' distretto={distretto} />
           </Grid>
         </Grid>
         //* Capire questione immagini Dropdown

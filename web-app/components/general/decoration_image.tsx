@@ -13,7 +13,7 @@ export default function DecorationImage(props: PropsDecorationImage) {
         <Box
         //alignItems={props.position === "center" ? "center" : undefined}
         sx={{
-                width: { sm: props.width / 2, md: props.width/1.8, lg: props.width / 1.2, xl: props.width },
+                width: { sm: props.width / 2, md: props.width/1.8, lg: props.width / 1.3, xl: props.width },
                 height: 'auto',
                 pb: "50px"
         }}

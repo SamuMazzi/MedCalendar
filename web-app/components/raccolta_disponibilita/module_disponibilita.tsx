@@ -2,9 +2,9 @@ import { useState } from 'react'
 import Grid from '@mui/material/Grid'
 import Button from '@mui/material/Button'
 import Typography from '@mui/material/Typography'
-import GruppoTurni from '../components/gruppo_turni';
-import { useAppSelector } from '../logic/redux/store'
-import MessageSnackbar from './snackbar/message_snackbar'
+import GruppoTurni from './gruppo_turni';
+import { useAppSelector } from '../../logic/redux/store'
+import MessageSnackbar from '../snackbar/message_snackbar'
 
 export interface PropsDisponibilita {
     distretto: string | undefined,
@@ -36,7 +36,7 @@ export default function ModuleDisponibilita(props: PropsDisponibilita) {
                     //alignItems="start"
                 >
                     <Grid item>
-                        <Typography style={{ fontWeight: 900, fontSize: 52 }} sx={{ textAlign: { xs: "center", lg: "left" } }}>
+                        <Typography variant="h3" component="h3" style={{ fontWeight: 900 }} sx={{ textAlign: { xs: "center", lg: "left" } }}>
                             Raccolta disponibilità
                         </Typography>
                         <Typography variant="h6" component="h6" sx={{ textAlign: { xs: "center", lg: "left" } }}>

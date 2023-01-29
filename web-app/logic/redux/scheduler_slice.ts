@@ -22,17 +22,21 @@ const initialState: SchedulerState = {
 }
 
 export interface InfoMedico {
-    uid: string,
     nome: string,
     ruolo: string,
     disponibilita: string[],
-    n_turni_per_soddisfatto: number
+    n_turni_per_soddisfatto: number,
+    n_turni_max: number
 }
 
 export const getAllTurni = (formatted_data: SchedulerState) => {
     const list_turni: string[] = []
     Object.keys(formatted_data.turni).forEach((sede: string) => {
-        Object.keys(formatted_data.turni[sede]).forEach(turno => !list_turni.includes(turno) ? list_turni.push(turno) : null)
+        Object.keys(formatted_data.turni[sede]).forEach(turno => {
+            if(!list_turni.includes(turno)) {
+                list_turni.push(turno)
+            }
+        })
     })
     list_turni.sort()
     return list_turni

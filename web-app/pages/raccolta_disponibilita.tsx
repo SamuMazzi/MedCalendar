@@ -2,8 +2,8 @@ import Head from 'next/head'
 import { useRouter } from 'next/router'
 import { useEffect, useState } from 'react'
 //import { Slide, Box } from '@mui/material'
-import RiepilogoDisponibilita from '../components/riepilogo_disponibilita'
-import ModuleDisponibilita from '../components/module_disponibilita';
+import RiepilogoDisponibilita from '../components/raccolta_disponibilita/riepilogo_disponibilita';
+import ModuleDisponibilita from '../components/raccolta_disponibilita/module_disponibilita';
 import { CircularProgress } from '@mui/material';
 //import DecorationImage from '../components/decoration_image';
 /**

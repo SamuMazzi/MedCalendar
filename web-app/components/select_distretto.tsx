@@ -3,7 +3,7 @@ import CircularProgress from '@mui/material/CircularProgress'
 import Typography from '@mui/material/Typography'
 import { useEffect, useState } from 'react';
 import { useAppSelector } from '../logic/redux/store';
-import { NewListDropdown } from './form_dropdown';
+import { NewListDropdown } from './general/form_dropdown';
 // import { getDistrettiForMedico } from '../logic/server/firestore'
 // import { getLocalDistretti, saveToStorage } from '../logic/local_storage'
 
