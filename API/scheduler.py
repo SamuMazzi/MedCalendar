@@ -4,7 +4,6 @@ from models.enums import *
 from models.find_solution import FindSolution
 from models.medico import Medico, real_update_sodd
 from models.sede import Sede
-from models.soluzione import Soluzione
 from models.storage import Storage, init_storage, get_turni_effettivi
 from models.turno import Turno
 
@@ -44,8 +43,7 @@ def set_default_medici():
         Se, in quel giorno, tutti possono in tutte le sedi
         non verranno settati con l'algoritmo di prima, ma con questo si
         """
-        if len(sedi_turni_liberi_per_turno.keys()) == len(Storage.sedi) and sedi_hanno_stessi_medici_liberi_per_turno(
-                sedi_turni_liberi_per_turno):
+        if len(sedi_turni_liberi_per_turno.keys()) == len(Storage.sedi) and sedi_hanno_stessi_medici_liberi_per_turno(sedi_turni_liberi_per_turno):
             turni_posizionati_a_prescindere += setta_default_medici_in_un_turno_fra_le_sedi(sedi_turni_liberi_per_turno,
                                                                                             turno, sodd)
     return sodd, turni_posizionati_a_prescindere
@@ -73,12 +71,14 @@ def setta_default_medici_in_un_turno_fra_le_sedi(sedi_turni_liberi_per_turno, tu
 
 def sedi_hanno_stessi_medici_liberi_per_turno(medici_per_turno_per_sede: dict):
     """Per ora controlla solo che il numero di medici totale liberi per quel turno sia minore o uguale al numero
-    massimo, nel caso li posiziona, in futuro si può pensare di ampliarlo per fare in modo che possa prenderne
+    massimo, nel caso li posiziona.
+    In futuro si può pensare di ampliarlo per fare in modo che possa prenderne
     solo una sotto-porzione"""
-    num_medici_disp_in_sede = [len(x) for x in medici_per_turno_per_sede.values()]
+    num_medici_disp_in_sede = [len(list_medici) for list_medici in medici_per_turno_per_sede.values()]
     if len(num_medici_disp_in_sede) == 0 or max(num_medici_disp_in_sede) > Sede.tot_medici_per_turno:
         return False
     for medici_per_turno in medici_per_turno_per_sede.values():
+        # TODO: Non sono sicuro che questo abbia senso
         for medici_per_turno2 in medici_per_turno_per_sede.values():
             medici_per_turno.sort()
             medici_per_turno2.sort()
@@ -90,7 +90,6 @@ def sedi_hanno_stessi_medici_liberi_per_turno(medici_per_turno_per_sede: dict):
 class MainHandler:
     def setup(self):
         set_medici_disponibili()
-        # TODO: tot_turni non tiene conto delle festività "speciali" di ogni particolare sede
         # sodd, turni_posizionati_a_prescindere = set_default_medici()
         Storage.tot_turni = get_turni_effettivi()
         #tmp_sol = Soluzione(inc_sodd=sodd[1], conv_sodd=sodd[0], doc_sodd=sodd[2],

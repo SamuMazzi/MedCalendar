@@ -7,7 +7,7 @@ from models.medico import Medico
 from models.turno import Turno, parse_turno
 
 
-def create_calendar_turni_from_data(year, month, fasce):
+def create_calendar_turni_from_data(year: int, month: int, fasce: dict):
     first_day = datetime.date(year, month, 1)
     list_days = list(calendar.Calendar().itermonthdates(first_day.year, first_day.month))
     real_list = []
@@ -28,7 +28,7 @@ class Sede:
     def __init__(self, nome: str,
                  medici_per_turno: int,
                  calendar_turni: List[datetime.datetime],
-                 special_days: Dict[datetime.datetime, Turno] = {}):
+                 special_days: List[datetime.datetime] = []):
         self.nome = nome
         # iter_days = calendar.Calendar().itermonthdates(datetime.date.today().year, datetime.date.today().month)
         self.month_calendar = OrderedDict()
@@ -37,8 +37,9 @@ class Sede:
         self.special_days = special_days
         for turno_date in calendar_turni:
             self.month_calendar[turno_date] = Turno(turno_date, medici_per_turno)
-        for turno_date in special_days:
-            self.month_calendar[turno_date] = Turno(turno_date, medici_per_turno)
+        """Aggiungi giorni speciali"""
+        for special_turno in special_days:
+            self.month_calendar[special_turno] = Turno(special_turno, medici_per_turno)
 
     def __str__(self):
         out = "Sede " + self.nome + "\n"

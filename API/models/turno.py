@@ -15,10 +15,10 @@ class InfoCombinationTurno:
         self.combinations.append(combination)
         self.nuovo.append(nuovo)
 
-    def add_new_combination(self, sede, combination: []):
+    def add_new_combination(self, sede, combination: list):
         self._update_combinations(sede, combination, True)
 
-    def add_old_doc(self, sede, doc: []):
+    def add_old_doc(self, sede, doc: list):
         self._update_combinations(sede, doc, False)
 
 
@@ -93,8 +93,18 @@ def set_combinazione_turno(turno: datetime.datetime, combination: List[Medico], 
 
     return out
 
+def parse_datetime_to_turno(turno: datetime.datetime):
+    start = str(turno.hour) + ':' + '30' if str(turno.second).split('')[0] == 1 else '00'
+    end = str(turno.hour) + ':' + '30' if str(turno.second).split('')[1] == 1 else '00'
+    return datetime.date(turno.year, turno.month, turno.day), start + '-' + end
 
-def parse_turno(day: datetime.date, fascia):
+def parse_single_piece_turno(piece: str):
+    h_and_m = piece.split(':')
+    hours = h_and_m[0]
+    minutes = '1' if (len(h_and_m) >= 2 and int(h_and_m[1]) != 0) else '0'
+    return hours, minutes
+
+def parse_turno_to_datetime(day: datetime.date, fascia: str):
     """
     Per ora si possono usare solo ore senza mezz'ore
 
@@ -106,14 +116,8 @@ def parse_turno(day: datetime.date, fascia):
     :param fascia:
     :return:
     """
-    inizio_ora = fascia.split('-')[0]
-    inizio = inizio_ora.split(':')
-    inizio_ora = inizio[0]
-    inizio_minuti = inizio[1] if len(inizio) >= 2 else '0'
-    fine_ora = fascia.split('-')[1]
-    fine = fine_ora.split(':')
-    fine_ora = fine[0]
-    fine_minuti = fine[1] if len(fine) >= 2 else '0'
+    inizio_ora, inizio_minuti = parse_single_piece_turno(fascia.split('-')[0])
+    fine_ora, fine_minuti = parse_single_piece_turno(fascia.split('-')[1])
     final_minuti = int(inizio_minuti + fine_minuti)
     return datetime.datetime(day.year, day.month, day.day, int(inizio_ora), int(fine_ora), final_minuti)
 

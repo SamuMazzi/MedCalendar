@@ -25,14 +25,6 @@ gcloud functions deploy schedule_from_data --region europe-west1 --allow-unauthe
 gcloud functions deploy schedule_from_data --runtime python310 --region europe-west1 --trigger-http --allow-unauthenticated --memory 128MB
 """
 
-"""
-Prossimi step:
- - 1. Sistema cambio turni (colore rosso nei festivi)
-2. Creazione turni a partire da Excel (React)
- () 3. Sistemare Python per fargli provare qualche combinazione in più
- - 4. Deploy API
-"""
-
 
 def handle_options_request():
     # Allows GET requests from any origin with the Content-Type
@@ -232,6 +224,7 @@ data = {
         {
             "nome": "Formigine",
             "medici_per_turno": 2,
+            "special_days": ["timestamp"],
             "fasce_turno": {
                 "8-15": "6,7",
                 "15-20": "6,7",
