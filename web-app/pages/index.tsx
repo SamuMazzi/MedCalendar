@@ -66,7 +66,7 @@ export default function Home() {
         adminState &&
         <Grid item>
           <Grid container direction="row" justifyContent="center">
-            <ChoiceButton label="Aggiungi turni per un mese" path='/add_configuration_admin' distretto={distretto} />
+            <ChoiceButton label="Aggiungi turni speciali" path='/configuration_turni_admin' distretto={distretto} />
             <ChoiceButton label="Pianifica turni per mese" path='/pianificazione_turni_admin' distretto={distretto} />
             <ChoiceButton label="Modifica medici distretto" path='/modify_doctors_admin' distretto={distretto} />
           </Grid>

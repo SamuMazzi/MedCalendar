@@ -71,8 +71,9 @@ export function SelectMeseCalendar(props: PropsSelectMeseCalendar) {
 }
 
 export interface PropsCalendar {
-  fasciaTurno: string,
-  selectableDays: number[]
+  fasciaTurno: string
+  selectableDays?: number[]
+  extraDays?: Date[]
 }
 
 export function PersonalCalendar(props: PropsCalendar) {
@@ -104,7 +105,7 @@ export function PersonalCalendar(props: PropsCalendar) {
   }
 
   return (
-    <LocalizationProvider adapterLocale={'it'} dateAdapter={AdapterDayjs}>
+    <LocalizationProvider adapterLocale='it' dateAdapter={AdapterDayjs}>
       <DatePicker
         value={selected}        
         onChange={(newValue) => {
@@ -120,7 +121,7 @@ export function PersonalCalendar(props: PropsCalendar) {
         minDate={timestamp_mese !== undefined ? dayjs(timestamp_mese).startOf('month') : undefined}
         closeOnSelect={false}
         shouldDisableMonth={timestamp_mese !== undefined ? (date) => date.month() !== dayjs(timestamp_mese).month() : undefined}
-        shouldDisableDate={(date) => !props.selectableDays.includes(date.day())}
+        shouldDisableDate={(date) => !props.selectableDays?.includes(date.day()) && !props.extraDays?.some(v => dayjs(v).isSame(date, 'day'))}
         showDaysOutsideCurrentMonth={timestamp_mese === undefined}
         open={isOpen}
         disableHighlightToday={true}
@@ -147,6 +148,61 @@ export function PersonalCalendar(props: PropsCalendar) {
           //*: Fai colore select un po' sfumato (opacità?)
           return <PickersDay {...DayComponentProps} selected={isSelected}/>;
         }}
+      />
+    </LocalizationProvider>
+  );
+}
+
+interface PropsCalendarSelectSingleDay {
+  daySelected: Dayjs
+  onChangeDate: (arg0: Dayjs) => void
+}
+
+export function CalendarSelectSingleDay(props: PropsCalendarSelectSingleDay) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [anchorEl, setAnchorEl] = useState(null);
+
+  const handleClick = (event: any) => {
+    setIsOpen((isOpen) => !isOpen);
+    setAnchorEl(event.currentTarget);
+  }
+
+  const handleDaySelected = (newDate: Dayjs) => {
+    props.onChangeDate(newDate)
+  }
+
+  return (
+    <LocalizationProvider adapterLocale='it' dateAdapter={AdapterDayjs}>
+      <DatePicker
+        value={props.daySelected}        
+        onChange={(newValue) => {
+          if(newValue !== null) {
+            handleDaySelected(newValue);
+          }
+        }}
+        PopperProps={{
+          placement: "bottom-end",
+          anchorEl: anchorEl
+        }}
+        open={isOpen}
+        onClose={() => setIsOpen(false)}
+        renderInput={({
+          ref,
+          inputProps,
+          disabled,
+          onChange,
+          value,
+          ...other
+        }) => (
+          <div ref={ref} style={{
+            display: 'flex',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+          }}>
+            <IconButton onClick={handleClick}>
+              <EventIcon fontSize="large"/>
+            </IconButton>
+          </div>)}
       />
     </LocalizationProvider>
   );

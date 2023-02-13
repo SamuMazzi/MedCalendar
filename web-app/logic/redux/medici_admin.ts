@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-import { MedicoImported } from '../server/firestore'
+import { MedicoImported } from '../server/firestore/firestore'
 
 interface ListMediciState {
     distretto: string

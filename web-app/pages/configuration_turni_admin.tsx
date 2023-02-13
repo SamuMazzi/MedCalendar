@@ -1,4 +1,32 @@
 import Grid from '@mui/material/Grid'
+import Head from 'next/head';
+import HandlerSpecialTurni from '../components/admin_pages/change_single_turno';
+
+export default function ConfigurationAdmin() {
+
+  return (
+    <>
+      <Head>
+        <title>Modifica turni</title>
+      </Head>
+      <Grid container
+        display="flex"
+        direction="column"
+        alignItems="center"
+        justifyContent="center"
+        minHeight="calc(100vh - 207px)" //* Così è perfetto su Mac
+        sx = {{ pb: 5 }}
+      >
+        <Grid item>
+          <HandlerSpecialTurni />
+        </Grid>
+      </Grid>
+    </>
+  )
+}
+
+/**
+ * import Grid from '@mui/material/Grid'
 import Button from '@mui/material/Button'
 import Typography from '@mui/material/Typography'
 import CircularProgress from '@mui/material/CircularProgress'
@@ -14,6 +42,7 @@ import Head from 'next/head';
 import { AppFirebaseError } from '../logic/server/firebase';
 import { setMessageError } from '../logic/redux/settings_slice';
 import { SelectMeseCalendar } from '../components/calendar';
+import HandlerSpecialTurni from '../components/admin_pages/change_single_turno';
 
 export default function ConfigurationAdmin() {
   const configurationDistrState = useAppSelector(state => state.configurationDistr)
@@ -24,13 +53,6 @@ export default function ConfigurationAdmin() {
   const [messageSnackbar, setMessageSnackbar] = useState("")
   const [timestampMese, setTimestampMese] = useState(Date.now())
   //TODO: Aggiungere scelta del mese
-  /**
-   * 1. Admin inserisce una o più sedi (a cui da un nome), poi per ogni sede:
-   * 1a. Numero di medici per turno
-   * 1b. Definire turni
-   * 1c. I giorni coperti da questi turni (per una settimana)
-   * 2. TODO Bisogna poter fare modifiche puntuali a specifici giorni //!
-   */
 
   const showError = (msg: string) => {
     setMessageSnackbar(msg)
@@ -120,6 +142,9 @@ export default function ConfigurationAdmin() {
         sx = {{ pb: 5 }}
       >
         <Grid item sx={{ py: 2 }}>
+          <HandlerSpecialTurni />
+        </Grid>
+        <Grid item sx={{ py: 2 }}>
           <Typography fontWeight="fontWeightBold" variant="h6" component="h6" sx={{ py: 2 }}>
             Scegli il mese
           </Typography>
@@ -168,3 +193,4 @@ export default function ConfigurationAdmin() {
     </>
   )
 }
+ */

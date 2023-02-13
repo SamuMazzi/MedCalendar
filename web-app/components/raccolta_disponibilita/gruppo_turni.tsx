@@ -6,11 +6,12 @@ import CircularProgress from '@mui/material/CircularProgress'
 import { PersonalCalendar, SelectMeseCalendar } from '../calendar'
 import { useAppDispatch, useAppSelector }  from '../../logic/redux/store'
 import { setOreMassime, handleSede, setMese, clearDisponibilita } from '../../logic/redux/turni_slice'
-import { getInfoSediDistretto, RemoteSediInfo } from '../../logic/server/firestore';
+import { RemoteSediInfo } from '../../logic/server/firestore/firestore';
+import { getInfoSediDistretto } from '../../logic/server/firestore/distretti';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { NewListDropdown } from '../general/form_dropdown'
-import { capitalizeFirstLetter } from '../../logic/local_utilities'
+import { capitalizeFirstLetter, parseDateToTurno } from '../../logic/local_utilities'
 import { AppFirebaseError } from '../../logic/server/firebase'
 import { setMessageError } from '../../logic/redux/settings_slice'
 
@@ -39,12 +40,36 @@ function compareTurni(a?: string, b?: string) {
   return dateFirstBegin - dateSecondBegin === 0 ? dateFirstEnd - dateSecondEnd : dateFirstBegin - dateSecondBegin
 }
 
+const getExtraDaysFromInfo = (specialDays: any[] | undefined, timestamp_month: number | undefined) => {
+  const extraDays: Record<string, Date[]> = {} //* Turno, giorno
+  if (!specialDays || !timestamp_month) return extraDays
+
+  const month = new Date(timestamp_month).getMonth()
+  specialDays.forEach(v => {
+    const [date, turno] = parseDateToTurno(v.toDate())
+    if(v.toDate().getMonth() === month) {
+      if(Object.keys(extraDays).includes(turno)) {
+        extraDays[turno].push(date)
+      } else {
+        extraDays[turno] = [date]
+      }
+    }
+  })
+  return extraDays
+}
+
 export default function GruppoTurni(props: PropsGruppoTurni) {
   const stateTurni = useAppSelector((state) => state.turni)
   const predefinedSediUser = useAppSelector((state) => state.auth.sedi)
   const dispatch = useAppDispatch()
   const [loading, setLoading] = useState(true)
   const [infoSedi, setInfoSedi] = useState<RemoteSediInfo>()
+  console.log(infoSedi)
+  const extraDays = getExtraDaysFromInfo(infoSedi?.specialDays, stateTurni.timestamp_mese)
+  const mergedTurniToShow = [...Object.keys(infoSedi?.turni || []), ...Object.keys(extraDays).filter(v => !Object.keys(infoSedi?.turni || []).includes(v))]
+  console.log(mergedTurniToShow)
+  //const full_list = infoSedi?.turni
+  //TODO Completa questa "full_list" con anche i giorni speciali
   const router = useRouter()
 
   const setPredefinedSedi = (remoteSedi: string[]) => {
@@ -58,6 +83,7 @@ export default function GruppoTurni(props: PropsGruppoTurni) {
     } 
   }
 
+  //TODO: Rendi hook
   const getInfoSedi = async () => {
     setLoading(true)
     if(props.distretto === undefined) {
@@ -140,7 +166,7 @@ export default function GruppoTurni(props: PropsGruppoTurni) {
       { loading && <CircularProgress />}
       <Grid container sx={{pb: 3}} direction={{xs: "column", md: "row"}}>
         { !loading && infoSedi &&
-          Object.keys(infoSedi.turni).sort(compareTurni).map((turno: string, index: number) => 
+          mergedTurniToShow.sort(compareTurni).map((turno: string, index: number) => 
             <Box key={index} sx={{ borderRadius: '16px', backgroundColor: '#EFEFEF', m: 2, py: 3 }}>
               <Grid container
                   display="flex"
@@ -156,7 +182,7 @@ export default function GruppoTurni(props: PropsGruppoTurni) {
                   <Typography fontWeight="fontWeightBold" style={{color: 'black', display: 'inline-block'}}>Turno: {turno}</Typography>
                 </Grid>
                 <Grid item>
-                  <PersonalCalendar fasciaTurno={turno} selectableDays={infoSedi.turni[turno].split(',').map((day: string) => (parseInt(day) % 7))}/>
+                  <PersonalCalendar fasciaTurno={turno} extraDays={extraDays[turno]} selectableDays={infoSedi.turni[turno]?.split(',').map((day: string) => (parseInt(day) % 7))}/>
                 </Grid>
                 <Grid item>
                   {

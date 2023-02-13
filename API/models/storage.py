@@ -4,7 +4,7 @@ from typing import List
 
 from models.enums import Roles
 from models.medico import Medico
-from models.sede import Sede, create_calendar_turni_from_data, parse_turno
+from models.sede import Sede, create_calendar_turni_from_data, parse_turno_to_datetime
 
 
 def print_statistics_pre_start():
@@ -60,7 +60,7 @@ def translate_turni(disp, year, month):
     for fascia, giorni in disp.items():
         for day in giorni:
             d = datetime.datetime(year, month, day)
-            out.append(parse_turno(d, fascia))
+            out.append(parse_turno_to_datetime(d, fascia))
     return out
 
 

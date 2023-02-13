@@ -10,12 +10,13 @@ import { useAppDispatch, useAppSelector } from '../logic/redux/store';
 import { populateScheduler, setMeseAndAnno } from '../logic/redux/scheduler_slice';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router'
-import { getDataToSendAPI, getDisponibilitaMeseDistretto, uploadDefConfigurazione } from '../logic/server/firestore'
+import { getDataDistrettoToSendAPI, uploadConfigurazioneMediciDistretto } from '../logic/server/firestore/distretti'
 import { setMessageError } from '../logic/redux/settings_slice';
 import ExportExcel from '../components/admin_pages/excel_export'
 import Head from 'next/head'
 import { AppFirebaseError } from '../logic/server/firebase'
 import { SelectMeseCalendar } from '../components/calendar'
+import { getDisponibilitaMeseDistretto } from '../logic/server/firestore/firestore'
 
 interface PropsTitleOfPage {
   title: string,
@@ -138,7 +139,7 @@ export default function PianificazioneTurniPage() {
   const sendDataPianificazione = async () => {
     setLoadingTurni(true)
     try {
-      await uploadDefConfigurazione(distretto, dataScheduler)
+      await uploadConfigurazioneMediciDistretto(distretto, dataScheduler)
       setDataSent(true)
     } catch(error: unknown) {
       if (error instanceof AppFirebaseError) {
@@ -154,7 +155,7 @@ export default function PianificazioneTurniPage() {
   const pianificaTurni = async () => {
     setLoadingTurni(true)
     try {
-      const data_disp = await getDataToSendAPI(distretto, yearData, monthData)
+      const data_disp = await getDataDistrettoToSendAPI(distretto, yearData, monthData)
       await callApi(data_disp)
     } catch (e) {
       console.log(e)

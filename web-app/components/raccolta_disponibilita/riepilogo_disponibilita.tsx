@@ -10,7 +10,7 @@ import { clearState } from '../../logic/redux/turni_slice';
 import { getGiornoSettimana, mesi } from '../../logic/local_utilities'
 import { PropsDisponibilita } from './module_disponibilita'
 import { useState } from 'react'
-import { setDisponibilitaMeseMedico } from '../../logic/server/firestore';
+import { setDisponibilitaMeseMedico } from '../../logic/server/firestore/distretti';
 import Greetings from '../general/greetings';
 import CircularProgress from '@mui/material/CircularProgress'
 import { AppFirebaseError } from '../../logic/server/firebase'

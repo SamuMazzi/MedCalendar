@@ -25,7 +25,7 @@ interface SingleSedeProps {
  */
 //TODO: Devi poter aggiungere giorni speciali
 
-const turni_disp = [
+export const turni_disp = [
 '00', '00:30', '01', '01:30', '02', '02:30', '03', '03:30', 
 '04', '04:30', '05', '05:30', '06', '06:30', '07', '07:30', '08', '08:30', 
 '09', '09:30', '10', '10:30', '11', '11:30', '12', '12:30', '13', '13:30', 

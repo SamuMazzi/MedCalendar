@@ -10,7 +10,7 @@ from models.sede import Sede
 from models.soluzione import Soluzione
 from models.storage import Storage
 from scheduler import start
-from models.turno import parse_turno
+from models.turno import parse_turno_to_datetime
 
 """
 DOCUMENTAZIONE:
@@ -22,6 +22,7 @@ functions-framework --target schedule_from_data --debug
 https://europe-west1-programmazione-turni-gm.cloudfunctions.net/schedule_from_data
 gcloud functions deploy schedule_from_data --region europe-west1 --allow-unauthenticated --memory 128MB --runtime python310 --timeout 90 --min-instances 0 --max-instances 1 --trigger-http 
 --service-account hello-world-function-sa@for-developers-343319.iam.gserviceaccount.com
+
 gcloud functions deploy schedule_from_data --runtime python310 --region europe-west1 --trigger-http --allow-unauthenticated --memory 128MB
 """
 
@@ -108,7 +109,7 @@ def parse_single_medico(medico: dict, year: int, month: int):
     all_disp = []
     for turno, giorni in medico['disponibilita'].items():
         for day in giorni:
-            parsed_turno = parse_turno(datetime.date(year, month, day), turno)
+            parsed_turno = parse_turno_to_datetime(datetime.date(year, month, day), turno)
             all_disp.append(parsed_turno)
     med.disponibilita = all_disp
     return med
@@ -234,6 +235,7 @@ data = {
         {
             "nome": "Sassuolo",
             "medici_per_turno": 2,
+            "special_days": ["timestamp"],
             "fasce_turno": {
                 "8-15": "6,7",
                 "15-20": "6,7",

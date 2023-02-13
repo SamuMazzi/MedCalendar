@@ -7,7 +7,7 @@ import Grid from "@mui/material/Grid";
 import CircularProgress from "@mui/material/CircularProgress";
 import { FormButtonSubmit, FormTextField } from "./form_components";
 import { getMedici } from "../../logic/local_utilities";
-import { MedicoImported } from "../../logic/server/firestore";
+import { MedicoImported } from "../../logic/server/firestore/firestore";
 
 const calculateHashText = async (text: string) => {
     if(!window) return

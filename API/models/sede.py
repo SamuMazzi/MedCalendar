@@ -1,10 +1,10 @@
 import calendar
 import datetime
-from typing import List, Dict
+from typing import List
 from collections import OrderedDict
 
 from models.medico import Medico
-from models.turno import Turno, parse_turno
+from models.turno import Turno, parse_turno_to_datetime
 
 
 def create_calendar_turni_from_data(year: int, month: int, fasce: dict):
@@ -17,7 +17,7 @@ def create_calendar_turni_from_data(year: int, month: int, fasce: dict):
         days_of_month = [day_month for day_month in list_days if day_month.month == first_day.month]
         for day in days_of_month:
             if day.isoweekday() in list_giorni:  # Tanto le ore verranno scelte da un dropdown con solo ore intere o mezze
-                real_list.append(parse_turno(day, fascia))
+                real_list.append(parse_turno_to_datetime(day, fascia))
 
     return real_list
 

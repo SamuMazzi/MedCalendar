@@ -1,4 +1,4 @@
-import { getAllMediciServer, MedicoImported, MedicoRemote, shouldLoadOnlineMedici } from "./server/firestore"
+import { getAllMediciServer, MedicoImported, MedicoRemote, shouldLoadOnlineMedici } from "./server/firestore/firestore"
 
 export type MesiType = string[] //Record<number, string>
 export const mesi: MesiType = [
@@ -103,4 +103,34 @@ export const clearStorage = () => {
     if (typeof window !== 'undefined') {
         window.localStorage.clear();
     }
+}
+
+function parseSinglePieceTurno(piece: string): [string, string] {
+    const hAndM = piece.split(':');
+    const hours = hAndM[0];
+    const minutes = hAndM.length >= 2 && Number(hAndM[1]) !== 0 ? '1' : '0';
+    return [hours, minutes];
+}
+
+/*
+    Per ora si possono usare solo ore senza mezz'ore
+
+    Idea di turno -> 2022-04-13 12:14:11
+    12 -> ora inizio
+    14 -> ora fine
+    11 -> ogni 1 o 0 ti dice se l'ora d'inizio/fine ha la mezz'ora -> 12.30-14.30
+    :param day:
+    :param fascia:
+    :return */
+export const fromTurnoToDate = (day: Date, fascia: string): Date => {
+    const [inizioOra, inizioMinuti] = parseSinglePieceTurno(fascia.split('-')[0]);
+    const [fineOra, fineMinuti] = parseSinglePieceTurno(fascia.split('-')[1]);
+    const finalMinuti = inizioMinuti + fineMinuti;
+    return new Date(day.getFullYear(), day.getMonth(), day.getDate(), Number(inizioOra), Number(fineOra), Number(finalMinuti));
+}
+
+export const parseDateToTurno = (turno: Date): [Date, string] => {
+    const start = turno.getHours() + ':' + (turno.getSeconds().toString().split('')[0] === '1' ? '30' : '00');
+    const end = turno.getHours() + ':' + (turno.getSeconds().toString().split('')[1] === '1' ? '30' : '00');
+    return [new Date(turno.getFullYear(), turno.getMonth(), turno.getDate()), start + '-' + end];
 }
