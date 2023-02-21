@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useRouter } from "next/router";
 import { useAppDispatch } from "../../logic/redux/store";
 import { setAdmin, setUser } from '../../logic/redux/auth_slice';
@@ -6,8 +6,7 @@ import { SearchableDropdownMap } from '../general/form_dropdown';
 import Grid from "@mui/material/Grid";
 import CircularProgress from "@mui/material/CircularProgress";
 import { FormButtonSubmit, FormTextField } from "./form_components";
-import { getMedici } from "../../logic/local_utilities";
-import { MedicoImported } from "../../logic/server/firestore/firestore";
+import useMedici from "../../logic/hooks/use_medici";
 
 const calculateHashText = async (text: string) => {
     if(!window) return
@@ -28,11 +27,10 @@ interface PropsMedicoLogin {
 }
 
 export default function MedicoLogin(props: PropsMedicoLogin) {
-    const [allMedici, setAllMedici] = useState<Record<string, MedicoImported>>({});
+    const [allMedici, loadingMedici, errorMedici] = useMedici()
     const [medicoSelected, setMedico] = useState<string | null>();
     const [helperText, setHelperText] = useState("");
     const [helperPassword, setHelperPassword] = useState("")
-    const [loadingMedici, setLoadingMedici] = useState(false);
     const [loadingLogin, setLoadingLogin] = useState(false);
     const [password, setPassword] = useState("")
     const router = useRouter()
@@ -65,20 +63,6 @@ export default function MedicoLogin(props: PropsMedicoLogin) {
             setLoadingLogin(false)
         }
     }
-
-    const retrieveMedici = async () => {
-        setLoadingMedici(true)
-        try {
-            const medici = await getMedici()
-            setAllMedici(medici)
-        } finally {
-            setLoadingMedici(false)
-        }
-    }
-
-    useEffect(() => {
-        retrieveMedici();
-    }, [])
 
     return (
         <>

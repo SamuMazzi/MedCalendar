@@ -18,12 +18,6 @@ import { NewListDropdown } from "../general/form_dropdown";
 interface SingleSedeProps {
     index: number
 }
-/**
- * <Grid item>
-            <PersonalCalendar fasciaTurno={"111"}/>
-          </Grid>
- */
-//TODO: Devi poter aggiungere giorni speciali
 
 export const turni_disp = [
 '00', '00:30', '01', '01:30', '02', '02:30', '03', '03:30', 

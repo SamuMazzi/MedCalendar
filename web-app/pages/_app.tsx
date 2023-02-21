@@ -18,6 +18,18 @@ import { MenuAppBar } from '../components/general/app_bar'
 //-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
 //Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans - serif;
 
+//TODO: Ridimensiona immagini, sono troppo inutilmente grandi
+/**
+ * TODO:
+ * Integrazioni: https://vercel.com/integrations
+ * Bundlejs size: https://bundlejs.com/?q=%40okikio%2Fanimate
+ * Webpack bundle analyzer: https://github.com/vercel/next.js/tree/canary/packages/next-bundle-analyzer
+ * Minify images: https://webpack.js.org/plugins/image-minimizer-webpack-plugin/#optimize-with-imagemin
+ * https://www.npmjs.com/package/compression-webpack-plugin
+ * Optimize react app: https://medium.com/front-end-weekly/optimizing-loading-time-for-big-react-apps-cf13bbf63c57
+ * 
+ */
+
 const theme = createTheme({
   typography: {
     allVariants: {

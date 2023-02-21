@@ -41,7 +41,7 @@ export function MenuAppBar() {
     >
       <Grid item>
         <Link href="/">
-          <Image priority alt="logo" src="/logo@2x.png" width="130" height="80" data-cy="logo_image_appbar"/>
+          <Image priority alt="logo" src="/logo@2x.png" width="130" height="72" data-cy="logo_image_appbar"/>
         </Link>
       </Grid>
       <Grid item>

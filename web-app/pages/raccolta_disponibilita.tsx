@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react'
 import RiepilogoDisponibilita from '../components/raccolta_disponibilita/riepilogo_disponibilita';
 import ModuleDisponibilita from '../components/raccolta_disponibilita/module_disponibilita';
 import { CircularProgress } from '@mui/material';
+import DecorationImage from '../components/general/decoration_image';
 //import DecorationImage from '../components/decoration_image';
 /**
  *  TODO: Implementa Slide
@@ -12,6 +13,9 @@ import { CircularProgress } from '@mui/material';
             <Slide direction="right" in={!modeConferma} mountOnEnter unmountOnExit>      <Box ref={containerRef}>
 
  */
+
+//      <DecorationImage path="/grafiche/img_raccolta.webp" width={800} position="right" />
+
 export default function PageRaccolta() {
   const [modeConferma, setModeConferma] = useState(false)
   const [loading, setLoading] = useState(true)
@@ -43,9 +47,6 @@ export default function PageRaccolta() {
           changeMod={() => setModeConferma(oldVal => !oldVal)}
           distretto={distretto}
         />
-      }
-      { //TODO Capire meglio questo
-        //<DecorationImage path="/grafiche/img_raccolta.png" width={800} position="right" />
       }
     </>
   )

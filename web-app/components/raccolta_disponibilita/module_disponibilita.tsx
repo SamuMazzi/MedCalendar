@@ -28,7 +28,7 @@ export default function ModuleDisponibilita(props: PropsDisponibilita) {
     }
 
     return (
-        <Grid container direction="column" alignItems="center" justifyContent="center" minHeight="calc(100vh - 225px)">
+        <Grid container direction="column" alignItems="center" justifyContent="center" minHeight="calc(100vh - 225px)" sx={{px: 3}}>
             <Grid item>
                 <Grid container spacing={2} sx={{ pt: 3 }}
                     direction="column"

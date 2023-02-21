@@ -24,14 +24,6 @@ export default function Footer() {
                     my: 1
                 }}
             >
-                {
-                    /**
-                     * <div>
-                            <Image priority src="/logo@2x.png" width={75} height={30} alt="Logo" />
-                        </div>
-                        */
-                }
-                
             </Box>
 
             <Box

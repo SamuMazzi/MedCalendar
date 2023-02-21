@@ -74,7 +74,7 @@ export default function Home() {
         //* Capire questione immagini Dropdown
       }
       <Grid item>
-        <DecorationImage path="/grafiche/img_index.png" width={800} position="center"/>
+        <DecorationImage path="/grafiche/img_index.wepb" width={800} height={312.29} position="center"/>
       </Grid>
     </Grid>
     </>

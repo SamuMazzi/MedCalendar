@@ -1,7 +1,4 @@
 /// <reference types="cypress" />
-
-// https://on.cypress.io/introduction-to-cypress
-
 import { getFromStorage, keyLocalMedici } from '../../../logic/local_utilities'
 
 function selectMedicoLogin(nome_med: string) {
@@ -12,6 +9,7 @@ function selectMedicoLogin(nome_med: string) {
 
 describe('Med scheduler', () => {
   const nome_med = 'Medico Demo'
+
   beforeEach(() => {
     cy.visit("/")
   })

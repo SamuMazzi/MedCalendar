@@ -1,11 +1,11 @@
-import { useState } from 'react';
-import AdminLogin from '..//components/login/admin_login';
+import AdminLogin from '../components/login/admin_login';
 import MedicoLogin from '../components/login/medico_login';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
 import Button from '@mui/material/Button';
 import Head from 'next/head';
 import DecorationImage from '../components/general/decoration_image';
+import React from 'react';
 /**
  *  TODO: Implementa Slide
       <Slide direction="left" in={modeConferma} mountOnEnter unmountOnExit>
@@ -22,7 +22,7 @@ export async function getStaticProps() {
 }
 
 export default function FormLogin(props: any) {
-    const [ adminMode, setAdminMode ] = useState(false);
+    const [ adminMode, setAdminMode ] = React.useState(false);
 
     return (
     <Grid 
@@ -30,7 +30,7 @@ export default function FormLogin(props: any) {
         display="flex"
         alignItems={{ xs: 'center', md: 'start' }}
         justifyContent={{ xs: 'center', md: 'start' }}
-        minHeight="calc(100vh - 225px)"
+        minHeight="calc(100vh - 199px)"
       >
         <Head>
           <title>Accedi</title>
@@ -65,7 +65,7 @@ export default function FormLogin(props: any) {
                   </Typography>
                 </Button>
           </Grid>
-          <DecorationImage path="/grafiche/img_login.png" width={1000} position="right"/>
+          <DecorationImage path="/grafiche/img_login.webp" width={1000} height={390.63} position="right" priority/>
         </Grid>
   )
 }

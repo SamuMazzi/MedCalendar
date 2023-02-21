@@ -6,14 +6,9 @@ import CircularProgress from '@mui/material/CircularProgress'
 import { PersonalCalendar, SelectMeseCalendar } from '../calendar'
 import { useAppDispatch, useAppSelector }  from '../../logic/redux/store'
 import { setOreMassime, handleSede, setMese, clearDisponibilita } from '../../logic/redux/turni_slice'
-import { RemoteSediInfo } from '../../logic/server/firestore/firestore';
-import { getInfoSediDistretto } from '../../logic/server/firestore/distretti';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/router';
 import { NewListDropdown } from '../general/form_dropdown'
-import { capitalizeFirstLetter, parseDateToTurno } from '../../logic/local_utilities'
-import { AppFirebaseError } from '../../logic/server/firebase'
-import { setMessageError } from '../../logic/redux/settings_slice'
+import { parseDateToTurno } from '../../logic/local_utilities'
+import useSediDoctor from '../../logic/hooks/use_sedi_remote'
 
 interface PropsGruppoTurni {
   distretto: string | undefined
@@ -46,8 +41,9 @@ const getExtraDaysFromInfo = (specialDays: any[] | undefined, timestamp_month: n
 
   const month = new Date(timestamp_month).getMonth()
   specialDays.forEach(v => {
-    const [date, turno] = parseDateToTurno(v.toDate())
-    if(v.toDate().getMonth() === month) {
+    const dateValue = v.toDate()
+    const [date, turno] = parseDateToTurno(dateValue)
+    if(dateValue.getMonth() === month) {
       if(Object.keys(extraDays).includes(turno)) {
         extraDays[turno].push(date)
       } else {
@@ -58,68 +54,21 @@ const getExtraDaysFromInfo = (specialDays: any[] | undefined, timestamp_month: n
   return extraDays
 }
 
+interface PropsTitleSection { title: string }
+const TitleSection = (props: PropsTitleSection) => <Typography fontWeight="fontWeightBold" variant="h6" component="h6" sx={{ py: 2 }}>{props.title}</Typography>
+
 export default function GruppoTurni(props: PropsGruppoTurni) {
   const stateTurni = useAppSelector((state) => state.turni)
-  const predefinedSediUser = useAppSelector((state) => state.auth.sedi)
   const dispatch = useAppDispatch()
-  const [loading, setLoading] = useState(true)
-  const [infoSedi, setInfoSedi] = useState<RemoteSediInfo>()
-  console.log(infoSedi)
+  const [infoSedi, loading] = useSediDoctor(props.distretto)
   const extraDays = getExtraDaysFromInfo(infoSedi?.specialDays, stateTurni.timestamp_mese)
   const mergedTurniToShow = [...Object.keys(infoSedi?.turni || []), ...Object.keys(extraDays).filter(v => !Object.keys(infoSedi?.turni || []).includes(v))]
-  console.log(mergedTurniToShow)
-  //const full_list = infoSedi?.turni
-  //TODO Completa questa "full_list" con anche i giorni speciali
-  const router = useRouter()
-
-  const setPredefinedSedi = (remoteSedi: string[]) => {
-    if (predefinedSediUser.length > 0) {
-      const normalizedSedi = remoteSedi.map(el => el.toLowerCase())
-      const normalizedPredefinedSedi = predefinedSediUser.map(el => el.toLowerCase())
-      const out = normalizedPredefinedSedi.filter(el => normalizedSedi.includes(el)).map(el => capitalizeFirstLetter(el))
-      if(out.length > 0) {
-        dispatch(handleSede(out))
-      }
-    } 
-  }
-
-  //TODO: Rendi hook
-  const getInfoSedi = async () => {
-    setLoading(true)
-    if(props.distretto === undefined) {
-      router.replace('/')
-      return
-    }
-    try {
-      const data: RemoteSediInfo = (await getInfoSediDistretto(props.distretto))!
-      setInfoSedi(data)
-      setPredefinedSedi(Object.keys(data.sedi))
-    } catch(error: unknown) {
-      if (error instanceof AppFirebaseError) {
-        dispatch(setMessageError(error.message))
-      } else {
-        dispatch(setMessageError("Errore, riprovare!"))
-      }
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    /* if (predefinedSediUser.length > 0) { //!: Applicare filtro su queste sedi
-      dispatch(handleSede(predefinedSediUser.map(el => capitalizeFirstLetter(el))))
-    } */
-    getInfoSedi()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
 
   return (
     <>
       <Grid container direction="column">
         <Grid item sx={{py: 2}}>
-          <Typography fontWeight="fontWeightBold" variant="h6" component="h6" sx={{ py: 2 }}>
-            {"Scegli il mese"}
-          </Typography>
+          <TitleSection title='Scegli il mese'/>
           <SelectMeseCalendar maxDate={3} timestamp_mese={stateTurni.timestamp_mese} onChange={(newValue) => {
             if (newValue !== null) {
               dispatch(setMese(newValue.toDate().getTime()))
@@ -128,9 +77,7 @@ export default function GruppoTurni(props: PropsGruppoTurni) {
           }}/>
         </Grid>
         <Grid item sx={{py: 2}}>
-          <Typography fontWeight="fontWeightBold" variant="h6" component="h6" sx={{py: 2}}>
-            {"Numero massimo di turni"}
-          </Typography>
+          <TitleSection title='Numero massimo di turni'/>
           <TextField
             label=''
             placeholder='Turni'
@@ -144,9 +91,7 @@ export default function GruppoTurni(props: PropsGruppoTurni) {
           />
         </Grid>
         <Grid item>
-        <Typography fontWeight="fontWeightBold" variant="h6" component="h6" sx={{py: 2}}>
-          {"Seleziona una o più sedi"}
-        </Typography>
+        <TitleSection title='Seleziona una o più sedi'/>
         {
           infoSedi && 
           <NewListDropdown 
@@ -157,12 +102,9 @@ export default function GruppoTurni(props: PropsGruppoTurni) {
               inputList={Object.keys(infoSedi.sedi)}
           />
         }
+        </Grid>
       </Grid>
-          
-      </Grid>
-      <Typography fontWeight="fontWeightBold" variant="h6" component="h6" sx={{ py: 2 }}>
-        {"Seleziona le tue disponibilità"}
-      </Typography>
+      <TitleSection title='Seleziona le tue disponibilità'/>
       { loading && <CircularProgress />}
       <Grid container sx={{pb: 3}} direction={{xs: "column", md: "row"}}>
         { !loading && infoSedi &&

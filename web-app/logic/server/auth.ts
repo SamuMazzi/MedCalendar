@@ -1,5 +1,5 @@
 import { AppFirebaseError, firebaseApp } from "./firebase";
-import { getAuth, signInWithEmailAndPassword, signOut, AuthError } from 'firebase/auth'
+import { getAuth, signInWithEmailAndPassword, signOut, AuthError, connectAuthEmulator } from 'firebase/auth'
 import { clearStorage } from "../local_utilities";
 
 export type TypeSignError = "email" | "password";
@@ -21,6 +21,9 @@ function isInstanceOfAuthError(error: any): error is AuthError {
 } 
 
 const auth = getAuth(firebaseApp);
+if(process.env.NODE_ENV === 'test') {
+    connectAuthEmulator(auth, 'localhost:9099');
+}
 
 export const signInAdminWithEmail = async (email: string, password: string) => {
     try {

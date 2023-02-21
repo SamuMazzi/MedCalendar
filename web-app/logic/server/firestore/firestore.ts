@@ -1,8 +1,11 @@
 import { AppFirebaseError, firebaseApp } from "../firebase";
-import { getFirestore, doc, setDoc, getDoc, Timestamp } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc, Timestamp, connectFirestoreEmulator } from 'firebase/firestore';
 import { getFromStorage, getNumOreMaxByRole } from "../../local_utilities";
 
 export const firestore = getFirestore(firebaseApp);
+if(process.env.NODE_ENV === 'test') {
+    connectFirestoreEmulator(firestore, 'localhost', 8080);
+}
 
 export const firestore_usersKey = "users"
 export const firestore_infoCollectionKey = 'info'
