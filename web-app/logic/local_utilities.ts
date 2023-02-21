@@ -130,7 +130,9 @@ export const fromTurnoToDate = (day: Date, fascia: string): Date => {
 }
 
 export const parseDateToTurno = (turno: Date): [Date, string] => {
-    const start = turno.getHours() + (turno.getSeconds().toString().split('')[0] === '1' ? ':30' : '');
-    const end = turno.getMinutes() + (turno.getSeconds().toString().split('')[1] === '1' ? ':30' : '');
+    //const start = turno.getHours() + (turno.getSeconds().toString().split('')[0] === '1' ? ':30' : '');
+    //const end = turno.getMinutes() + (turno.getSeconds().toString().split('')[1] === '1' ? ':30' : '');
+    const start = turno.getHours() + ':' + (turno.getSeconds().toString().split('')[0] === '1' ? '30' : '00');
+    const end = turno.getHours() + ':' + (turno.getSeconds().toString().split('')[1] === '1' ? '30' : '00');
     return [new Date(turno.getFullYear(), turno.getMonth(), turno.getDate()), start + '-' + end];
 }
