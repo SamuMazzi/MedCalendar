@@ -43,3 +43,8 @@ cypress.env.json
 
 #Firebase
 **/credential.json
+# Sentry
+.sentryclirc
+
+# Sentry
+next.config.original.js
