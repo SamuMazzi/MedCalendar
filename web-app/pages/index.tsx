@@ -40,7 +40,7 @@ export default function Home() {
     <Grid container 
       direction="column"
       alignItems="center"
-      minHeight="calc(100vh - 207px)" //* Così è perfetto su Mac
+      minHeight="calc(100vh - 199px)" //* Così è perfetto su Mac
     >
       <Typography style={{fontWeight: "bold", fontSize: 30 }} sx={{py: 5, pl: 5}}>
         Per continuare seleziona un distretto
@@ -74,7 +74,7 @@ export default function Home() {
         //* Capire questione immagini Dropdown
       }
       <Grid item>
-        <DecorationImage path="/grafiche/img_index.wepb" width={800} height={312.29} position="center"/>
+        <DecorationImage path="/grafiche/img_index.webp" width={800} height={312.29} position="center"/>
       </Grid>
     </Grid>
     </>

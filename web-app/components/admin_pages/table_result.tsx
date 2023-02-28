@@ -24,7 +24,7 @@ import Tooltip from '@mui/material/Tooltip'
 
 const getColorRole = (ruolo: string) => {
   const lower_ruolo = ruolo.toLowerCase()
-  return lower_ruolo.startsWith("inc") ? "#ccff9b" : (lower_ruolo.startsWith("conven") || lower_ruolo.startsWith("titol")) ? "#b1f4ff" : "#ffd07d"
+  return lower_ruolo.startsWith("inc") ? "#77BA84" : (lower_ruolo.startsWith("conven") || lower_ruolo.startsWith("titol")) ? "#b1f4ff" : "#ffd07d"
 }
 
 interface PropsTableResult {
@@ -209,10 +209,9 @@ export default function TableResult(props: PropsTableResult) {
             </TableBody>
           </Table>
           <Modal
-              open={openModal}
-              onClose={() => setOpenModal(false)}
-              aria-labelledby="modal-modal-title"
-              >
+            open={openModal}
+            onClose={() => setOpenModal(false)}
+          >
               <Box sx={styleModal}>
               <Typography variant="h6" component="h6" style={{fontWeight: 'bold'}}>
                   Cambio turno

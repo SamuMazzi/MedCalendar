@@ -193,7 +193,7 @@ export default function PianificazioneTurniPage() {
       <title>Pianificazione turni</title>
     </Head>
     {dataSent ?
-      <Grid container direction="column" justifyContent="center" alignItems="center" minHeight="calc(100vh - 225px)">
+      <Grid container direction="column" justifyContent="center" alignItems="center" minHeight="calc(100vh - 199px)">
         <Grid item>
           <Greetings />
         </Grid>
@@ -204,8 +204,8 @@ export default function PianificazioneTurniPage() {
       :
     <Grid container sx={{ px: "11%", pt: 5 }}
         direction="column"
-        minHeight="calc(100vh - 225px)"
-        minWidth='100vh'
+        minHeight="calc(100vh - 199px)"
+        minWidth='100vw'
     >
       <Grid item>
         <Grid container direction="row" justifyContent="space-around">
