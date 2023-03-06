@@ -28,9 +28,9 @@ def set_default_medici():
             for sede in Storage.sedi:
                 medici_disp = [med for med in sede.get_medici_disp_per_turno(turno) if med not in medici_gia_occupati_per_turno]
                 medici_match_rules = [med for med in medici_disp if not is_medico_in_24_ore_prec_o_succ([med], turno) and not med_non_puo_fare_piu_turni(med)]
-
+                med_occupati_per_turno = sede.get_medici_occupati_per_turno(turno)
                 # Setta medici obbligati
-                if 0 < len(medici_match_rules) <= sede.medici_per_turno:
+                if 0 < len(medici_match_rules) <= sede.medici_per_turno - len(med_occupati_per_turno):
                     for med in medici_match_rules:
                         turni_posizionati_a_prescindere += setta_single_default_medico(med, sede, turno, sodd)
                     medici_gia_occupati_per_turno.extend(medici_match_rules)
@@ -130,7 +130,8 @@ def filter_by_role(list_medici: List[Medico], roles: list):
     return [med for med in list_medici if med.ruolo.lower() in roles]
 
 
-def start(data):
+def start(data: dict):
+    # print(jsonpickle.encode(data, unpicklable=False))  # debug
     init_storage(data)
     main_handler = MainHandler()
     main_handler.setup()

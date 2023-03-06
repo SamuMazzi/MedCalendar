@@ -58,7 +58,7 @@ export function ImportFileExcel() {
                 resultCsv && <Typography>{resultCsv}</Typography>
             }
         </>
-    )}
+)}
 
 interface PropsExportExcel {
     excelData: SchedulerState,

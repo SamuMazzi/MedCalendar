@@ -53,7 +53,8 @@ class FindSolution:
             return self.handle_last_round(turni_occupati, doc_sodd, conv_sodd, inc_sodd, mode)
         turno = Storage.calendar_turni[s]
         info_combination = get_all_medici_disp_per_turno(Storage.sedi, turno)
-
+        # TODO: Risolvi bug per cui alcuni giorni proprio non venivano fuori
+        #TODO: Aggiungi test per cui non ci siano più medici di quelli possibili per turno
         # TODO: Serve una funzione che in un certo giorno ti dica quanti turni mancano al giorno finale
         all_comb = list(itertools.product(*info_combination.combinations))
         all_comb = [comb for comb in all_comb if not are_there_duplicates(comb)]

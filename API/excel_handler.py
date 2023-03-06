@@ -66,7 +66,8 @@ def write_soluzione(sol: Soluzione, filename: str):
                 med: Medico = turno.turni_occupati[j]
                 med_cell = ws.cell(row=count_row, column=count_col + i + j)
                 med_cell.value = med.nome
-                med_cell.fill = get_color_from_role(med)
+                # med_cell.fill = get_color_from_role(med)
+                # A causa di un bug della libreria non si può più colorare
 
             count_row += 1
         count_col += 1
@@ -92,6 +93,7 @@ def write_soluzione(sol: Soluzione, filename: str):
     turni_cell.value = Storage.tot_turni - Storage.tot_turni_occ_a_priori
 
     wb.save(filename + '.xlsx')
+    print('Soluzione salvata sul file:', filename)
 
 
 def parse_ruolo(ruolo: str):
@@ -139,8 +141,7 @@ def read_dati(filename: str):
             el = ws.cell(row=i, column=j).value
             header_cell = ws.cell(row=1, column=j).value
             if type(el) is datetime.datetime:
-                # el.year + 1 è per colpa di un bug con il file gennaio23!!!
-                all_disp.append(datetime.datetime(el.year + 1, el.month, el.day, hour=20 if mode == 'night' else 8,
+                all_disp.append(datetime.datetime(el.year, el.month, el.day, hour=20 if mode == 'night' else 8,
                                                   minute=8 if mode == 'night' else 20))  # debug
             elif header_cell is not None and header_cell.startswith('INDICA UNA'):
                 mode = 'day'

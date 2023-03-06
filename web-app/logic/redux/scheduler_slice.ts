@@ -87,11 +87,18 @@ export const scheduler_slice = createSlice({
                 state.med_per_turno = {...state.med_per_turno, [sede]: medici_per_turno}
                 state.turni = {...state.turni, [sede]: {}}
                 Object.keys(sedi_input[sede]['turni']).forEach((turno: string) => {
-                    const medici_in_turno: string[] = sedi_input[sede]['turni'][turno];
+                    const medici_in_turno: string[] = sedi_input[sede]['turni'][turno]
                     medici_in_turno.forEach((id_med) => {
                         updateNumTurniDisponibiliMedico(state, id_med, -1)
                         insertMedicoInTurno(state, sede, turno, id_med)
                     })
+                })
+            })
+            //* Serve per mettere i giorni anche in cui non ci sono medici
+            Object.keys(input['sedi']).forEach((sede: string) => {
+                Object.keys(sedi_input[sede]['turni']).forEach((turno: string) => {
+                    if(state.turni[sede][turno] === undefined)
+                        state.turni[sede][turno] = []
                 })
             })
         },

@@ -26,6 +26,8 @@ gcloud functions deploy schedule_from_data --region europe-west1 --allow-unauthe
 gcloud functions deploy schedule_from_data --runtime python310 --region europe-west1 --trigger-http --allow-unauthenticated --memory 128MB
 """
 
+# TODO: Bug: -> Non vengono settati alcuni medici che potrebbero andare (aprile 23, giorno 30)
+# TODO: Su client, l'excel non mostra le disponibilità giuste ma solo i giorni in cui i medici sono occupati
 
 def handle_options_request():
     # Allows GET requests from any origin with the Content-Type
@@ -109,8 +111,6 @@ def parse_single_medico(medico: dict, year: int, month: int):
     all_disp = []
     for turno, giorni in medico['disponibilita'].items():
         for day in giorni:
-            if turno == '8:00-8:00': # TODO: Dopo marzo togliere questa cosa
-                turno = '8-20'
             parsed_turno = parse_turno_to_datetime(datetime.date(year, month, day), turno)
             all_disp.append(parsed_turno)
     med.disponibilita = all_disp
@@ -123,6 +123,7 @@ def parse_medici_from_request(data_medici: list, year: int, month: int):
 
 
 def execute_schedule(real_data: dict):
+    # print(real_data)
     res_check = check_data(real_data)
     real_data['month'] += 1  # compatibilità con JS
     real_data['medici'] = parse_medici_from_request(real_data['medici'], real_data['year'], real_data['month'])
@@ -223,9 +224,15 @@ data = {
     ]
 }
 
+import json
+
 if __name__ == '__main__':
-    data['month'] += 1 # compatibilità JS
-    final_sol = start(data)
-    a = create_soluzione_response(final_sol)
-    write_soluzione(final_sol, "programmazione_feb_23")
-    exit(0)
+    with open('API/test/test_data.json') as f:
+        data = json.load(f)
+        data['month'] += 1 # compatibilità JS
+        final_sol = start(data)
+        a = create_soluzione_response(final_sol)
+        # print(a)
+        # print(json.dumps(a))
+        write_soluzione(final_sol, "programmazione_feb_23")
+        exit(0)

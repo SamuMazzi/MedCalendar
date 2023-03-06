@@ -72,6 +72,7 @@ class TestFindSoluzione(unittest.TestCase):
 
         for medici_occupati in self.month_calendar.values():
             self.assertEqual(len(medici_occupati), len(set(medici_occupati)))
+            # self.assertGreaterEqual(2, len(set(medici_occupati)))
         print('Okay test generici')
 
     def test_check_creazione_tutti_turni_del_mese(self):
