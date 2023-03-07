@@ -26,7 +26,8 @@ export interface InfoMedico {
     ruolo: string,
     disponibilita: string[],
     n_turni_per_soddisfatto: number,
-    n_turni_max: number
+    n_turni_max: number,
+    sedi: string[]
 }
 
 export const getAllTurni = (formatted_data: SchedulerState) => {

@@ -122,16 +122,17 @@ const ExportExcel = (props: PropsExportExcel) => {
         return data
     }
 
+    const fixedHeader = ['Nome', 'Ruolo', 'N° turni', 'Sedi', 'Disponibilità']
     const getHeader = () => {
         const allTurni = getAllTurni(props.excelData)
-        const head = ['Nome', 'Ruolo', 'N° turni', 'Disponibilità', ...allTurni]
+        const head = [...fixedHeader, ...allTurni]
         return head
     }
 
     const formatDataDisponibilita = () => {
-        const offset = 4
+        const offset = fixedHeader.length
         const out = []
-        const header = getHeader();
+        const header = getHeader()
         out.push(header)
         const allTurni = header.slice(offset)
         for (const id_med of Object.keys(props.excelData.medici_orig)) {
@@ -139,15 +140,14 @@ const ExportExcel = (props: PropsExportExcel) => {
             if (med.disponibilita.length === 0) {
                 continue
             }
-            const tmp: (string | number | null)[] = [med.nome, med.ruolo, med.n_turni_per_soddisfatto, null, ...(new Array(allTurni.length).fill(null))]
+            const tmp: (string | number | null)[] = [med.nome, med.ruolo, med.n_turni_per_soddisfatto, med.sedi.join(', '), null, ...(new Array(allTurni.length).fill(null))]
             //tmp.push(med.disponibilita.map(disp => disp.replace('T', ' Turno ').replace(':00', '').replace(':', '-')).join(', ')
             allTurni.forEach((turno, index) => {
-                for (const sede of Object.keys(props.excelData.turni)) {
-                    const list_medici = props.excelData.turni[sede][turno]
-                    if (list_medici !== undefined && list_medici.includes(id_med)) {
+                med.disponibilita.forEach((dispMedico) => {
+                    if(turno === dispMedico) {
                         tmp.splice(offset+index, 1, 'x')
                     }
-                }
+                })
             })
             out.push(tmp)
         }
