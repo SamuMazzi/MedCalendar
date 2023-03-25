@@ -13,12 +13,12 @@ import "@fontsource/public-sans/300.css";
 import Head from 'next/head'
 import Footer from '../components/general/footer'
 import AppSnackbar from '../components/snackbar/app_snackbar'
-import { MenuAppBar } from '../components/general/app_bar'
+import { MedAppBar } from '../components/general/app_bar'
 
 //-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
 //Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans - serif;
 
-//TODO: Probabilmente da cambaire struttura: collezione doctors, per ogni distretto elenco di ID e nome dei medici, poi una volta selezionato si accede ai dati
+//TODO: Probabilmente da cambiare struttura: collezione doctors, per ogni distretto elenco di ID e nome dei medici, poi una volta selezionato si accede ai dati
 //TODO: Ridimensiona immagini, sono troppo inutilmente grandi
 /**
  * TODO:
@@ -97,7 +97,7 @@ export default function App({ Component, pageProps }: AppProps) {
       <ThemeProvider theme={theme}>
         <Provider store={store}>
           <RouteGuard>
-            <MenuAppBar />
+            <MedAppBar />
             <Component {...pageProps} />
             <Footer/>
             <AppSnackbar />

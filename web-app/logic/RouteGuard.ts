@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { useAppSelector }  from './redux/store'
-import { getFromStorage } from './local_utilities';
+import { getLocalActualDistretto } from './local_utilities';
+import useUser from './hooks/use_user';
 
 interface PropsRouteGuard {
     children: any
 }
 
 export function RouteGuard(props: PropsRouteGuard) {    
-    const authState = useAppSelector((state) => state.auth);
+    const [user, distretto, logout] = useUser()
     const [authorized, setAuthorized] = useState(false);
     const router = useRouter();
 
@@ -30,19 +30,23 @@ export function RouteGuard(props: PropsRouteGuard) {
         }
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [authState]);
+    }, [user]);
 
     function authCheck(url: string) {
-        const normal_user = authState.uid.length > 0
-        const admin_user = authState.admin
+        const normal_user = user.uid.length > 0
+        const admin_user = user.admin
         // redirect to login page if accessing a private page and not logged in 
-        const publicPaths = ['/login'];
+        const publicPaths = ['/login', '/register'];
         const path = url.split('?')[0];
-        //const { distretto } = router.query;
-        /*
-        const query = url.split('?')[1];
-        */
-        if (!normal_user && !publicPaths.some((el) => path.includes(el))) {
+        const distr = getLocalActualDistretto()  //TODO Forse si potrà sostituire con distretto in "useUser" ma è meglio testare
+        if (distr === '' && !publicPaths.some((el) => path.includes(el))) {
+            logout()
+            setAuthorized(false);
+            router.push({
+                pathname: '/login',
+                query: { returnUrl: router.asPath }
+            })
+        } else if (!normal_user && !publicPaths.some((el) => path.includes(el))) {
             setAuthorized(false);
             router.push({
                 pathname: '/login',

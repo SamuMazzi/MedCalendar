@@ -18,17 +18,7 @@ import DecorationImage from '../components/general/decoration_image';
 
 export default function PageRaccolta() {
   const [modeConferma, setModeConferma] = useState(false)
-  const [loading, setLoading] = useState(true)
-  const router = useRouter()
-  const [distretto, setDistretto] = useState("")
 
-  useEffect(() => {
-    if (router.isReady) {
-      const defDistretto = router.query.distretto !== undefined ? (Array.isArray(router.query.distretto) ? router.query.distretto.at(0) : router.query.distretto)! : ""
-      setDistretto(defDistretto)
-      setLoading(false)
-    }
-  }, [router.isReady, router.query]);
   //TODO: (Optional) Metti breakpoint per gestire meglio spazi
 
   return (
@@ -37,15 +27,13 @@ export default function PageRaccolta() {
         <title>Raccolta disponibilità</title>
       </Head>
       {
-        loading ? <CircularProgress /> : modeConferma ?
+        modeConferma ?
         <RiepilogoDisponibilita
           changeMod={() => setModeConferma(oldVal => !oldVal)}
-          distretto={distretto}
         />
         : 
         <ModuleDisponibilita
           changeMod={() => setModeConferma(oldVal => !oldVal)}
-          distretto={distretto}
         />
       }
     </>

@@ -6,25 +6,20 @@ import Typography from '@mui/material/Typography'
 import Person from '@mui/icons-material/Person'
 import Image from 'next/image';
 import { useState } from 'react';
-import { useAppDispatch, useAppSelector }  from '../../logic/redux/store'
-import { clearUserAndAdmin } from '../../logic/redux/auth_slice'
-import { logoutFirebase } from '../../logic/server/auth';
 import Link from 'next/link'
+import PlaceIcon from '@mui/icons-material/Place';
+import useUser from '../../logic/hooks/use_user'
 
-export function MenuAppBar() {
+export function MedAppBar() {
   const [ anchorEl, setAnchorEl ] = useState<null | HTMLElement>(null);
-  const authState = useAppSelector(state => state.auth)
-  const dispatch = useAppDispatch()
+  const [user, distretto, logout] = useUser()
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
   };
 
-  const logout = async () => {
-    if(authState.admin) {
-        await logoutFirebase()
-    }
-    dispatch(clearUserAndAdmin())
+  const handleLogout = async () => {
+    await logout()
     handleClose()
   };
 
@@ -44,9 +39,13 @@ export function MenuAppBar() {
           <Image priority alt="logo" src="/logo@2x.png" width="130" height="72" data-cy="logo_image_appbar"/>
         </Link>
       </Grid>
-      <Grid item>
-          {authState.uid !== "" && (
+      <Grid item display="flex" alignItems="center">
+          {user.uid !== "" && (
             <>
+              <PlaceIcon />
+              <Typography sx={{pr: 3, pl: 1}}>
+                {distretto}
+              </Typography>
               <IconButton
                 data-cy="profile_button"
                 size="large"
@@ -78,10 +77,8 @@ export function MenuAppBar() {
                 }}
                 sx={{
                   mb: 1,
-                  
                   borderRadius: '20px',
                   boxShadow: 'none',
-
                   '.MuiMenu-paper': {
                     backgroundColor: '#D8ECFD',
                     borderRadius: '20px',
@@ -90,9 +87,9 @@ export function MenuAppBar() {
                 }}
               >
               <Typography style={{ fontWeight: "bold", display: 'inline-block', whiteSpace: 'pre-line', fontSize: 20 }} sx={{px: 2, pt: 1}}>
-                {authState.nome ? authState.nome : (authState.admin ? 'Amministratore' : '')}
+                {user.nome ? user.nome : (user.admin ? 'Amministratore' : '')}
                 </Typography>
-                <MenuItem onClick={logout}>
+                <MenuItem onClick={handleLogout}>
                   <Typography style={{textDecoration: 'underline', color: 'black'}}>
                     Logout
                   </Typography>

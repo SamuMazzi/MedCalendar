@@ -9,5 +9,8 @@
     "ui": {
       "enabled": true
     }
+  },
+  "extensions": {
+    "firestore-stripe-payments": "stripe/firestore-stripe-payments@0.3.2"
   }
 }

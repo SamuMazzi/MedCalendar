@@ -45,7 +45,7 @@ def handle_options_request():
 
 
 @functions_framework.http
-def schedule_from_data(request: flask.request):
+def schedule_from_data(request: flask.Request):
     """Responds to any HTTP request.
     Args:
         request (flask.Request): HTTP request object.
@@ -79,7 +79,7 @@ def schedule_from_data(request: flask.request):
         return res
 
 
-def check_request(request: flask.request):
+def check_request(request: flask.Request):
     if request.method != 'POST':
         return "Method not allowed", 405
 

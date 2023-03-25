@@ -7,12 +7,12 @@ import { useAppSelector } from '../../logic/redux/store'
 import MessageSnackbar from '../snackbar/message_snackbar'
 
 export interface PropsDisponibilita {
-    distretto: string | undefined,
     changeMod: Function
 }
 
 export default function ModuleDisponibilita(props: PropsDisponibilita) {
     const generalState = useAppSelector((state) => state.turni)
+    const distretto = useAppSelector(state => state.settings.distretto)
     const [messageSnackbar, setMessageSnackbar] = useState("");
 
     const handleSubmit = () => {
@@ -40,12 +40,12 @@ export default function ModuleDisponibilita(props: PropsDisponibilita) {
                             Raccolta disponibilità
                         </Typography>
                         <Typography variant="h6" component="h6" sx={{ textAlign: { xs: "center", lg: "left" } }}>
-                            {"DISTRETTO: " + (props.distretto !== undefined ? props.distretto!.toUpperCase() : "")}
+                            {"DISTRETTO: " + (distretto.toUpperCase())}
                         </Typography>
 
                     </Grid>
                     <Grid item>
-                        <GruppoTurni distretto={props.distretto} />
+                        <GruppoTurni distretto={distretto} />
                     </Grid>
                     <Grid item>
                         <Button variant="contained" onClick={handleSubmit} style={{ width: '100px' }}>

@@ -12,7 +12,6 @@ import ListItemButton from "@mui/material/ListItemButton";
 import { MedicoImported } from "../logic/server/firestore/firestore";
 import { addSingleMedico, deleteSingleMedicoServer, fromRemoteToImportedMedico, updateSingleMedico } from "../logic/server/firestore/medici";
 import { NewListDropdown, NewMapDropdown } from "../components/general/form_dropdown";
-import { useRouter } from "next/router";
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import { getMedici } from "../logic/local_utilities";
@@ -57,12 +56,11 @@ function DoctorItem(props: PropsDoctorItem) {
 }
 
 export default function ContainerEditDoctors() {
-    const router = useRouter()
-    const [distretto, setDistretto] = useState("")
     const doctors = useAppSelector(state => state.mediciAdmin.doctors)
+    const distretto = useAppSelector(state => state.settings.distretto)
     const dispatch = useAppDispatch()
 
-    const setState = async (distretto: string) => {
+    const setState = async () => {
         const docs = await getMedici()
         dispatch(setDoctorsAndDistretto({
             distretto: distretto,
@@ -71,13 +69,9 @@ export default function ContainerEditDoctors() {
     }
 
     useEffect(() => {
-        if (router.isReady) {
-            const defDistretto = router.query.distretto !== undefined ? (Array.isArray(router.query.distretto) ? router.query.distretto.at(0) : router.query.distretto)! : ""
-            setDistretto(defDistretto)
-            setState(defDistretto)
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [router.isReady, router.query]);
+        setState()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     return (
         doctors && <List
@@ -96,7 +90,7 @@ interface PropsFormSingleMedico {
     medico?: MedicoImported
 }
 
-function FormSingleMedico(props: PropsFormSingleMedico) {
+export function FormSingleMedico(props: PropsFormSingleMedico) {
     const [medico, setMedico] = useState<MedicoImported>(props.medico || {nome: "", email: "", ruolo: "", sedi: []})
     const [message, setMessage] = useState("")
     const [loading, setLoading] = useState(false)

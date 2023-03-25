@@ -7,7 +7,64 @@ import { getAllTurni, SchedulerState } from '../../logic/redux/scheduler_slice'
 import { getGiornoSettimana } from '../../logic/local_utilities'
 import Typography from '@mui/material/Typography'
 
-export function ImportFileExcel() {
+export function ImportFileExcelMedici() {
+    const [ loading, setLoading ] = useState(false)
+    const [ file, setFile ] = useState<File | null>(null)
+    const [ resultCsv, setResultCsv ] = useState("")
+
+    // https://stackoverflow.com/questions/8238407/how-to-parse-excel-xls-file-in-javascript-html5
+
+    const importExcel = async (excelFile: File) => {
+        setLoading(true)
+        const textFile = await excelFile.text()
+        const wb = read(textFile, {
+            type: 'binary'
+        })
+        const ws = wb.Sheets[wb.SheetNames[0]]
+        const csv = utils.sheet_to_csv(ws)
+        console.log(csv)
+        setLoading(false)
+    }
+
+    const handleFileSelect = (e: ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+
+        if (files && files.length > 0) {
+            if (files.length > 1) {
+                throw "Puoi caricare al massimo 1 file" //* Metti alert
+            }
+            const newFile = files.item(0)
+            if (newFile){
+                setFile(newFile)
+                importExcel(newFile)
+            }
+        }
+    };
+    return (
+        <>
+            <Button
+                variant="contained"
+                component="label"
+                disabled={loading}
+            >
+                Carica file turni
+                <input
+                    type="file"
+                    accept=".xlsx, .xls, .csv"
+                    hidden
+                    onChange={(e) => handleFileSelect(e)}
+                />
+            </Button>
+            {
+                file && <Typography>{"Hai caricato il file " + file.name}</Typography>
+            }
+            {
+                resultCsv && <Typography>{resultCsv}</Typography>
+            }
+        </>
+)}
+
+export function ImportFileExcelTurni() {
     const [loading, setLoading] = useState(false)
     const [file, setFile] = useState<File | null>(null)
     const [ resultCsv, setResultCsv ] = useState("")

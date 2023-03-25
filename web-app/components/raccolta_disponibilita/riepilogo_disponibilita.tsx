@@ -41,6 +41,7 @@ export default function RiepilogoDisponibilita(props: PropsDisponibilita) {
     const [ done, setDone ] = useState(false)
     const stateTurni = useAppSelector(state => state.turni)
     const stateAuth = useAppSelector(state => state.auth)
+    const distretto = useAppSelector(state => state.settings.distretto)
     const textMese = mesi[new Date(stateTurni.timestamp_mese!).getMonth()]
     const descriptions = [(stateAuth ? stateAuth.nome : "")!, getGoodRuolo(stateAuth), stateTurni.sedi.join(', '), textMese, stateTurni.oreMassime.toString()]
     const generalState = useAppSelector((state) => state.turni)
@@ -50,7 +51,7 @@ export default function RiepilogoDisponibilita(props: PropsDisponibilita) {
     const onConfirm = async () => {
         setLoading(true)
         try {
-            await setDisponibilitaMeseMedico(props.distretto!, stateAuth.uid, generalState)
+            await setDisponibilitaMeseMedico(distretto, stateAuth.uid, generalState)
             dispatch(clearState())
             setDone(true)
         } catch(error: unknown) {
@@ -78,7 +79,7 @@ export default function RiepilogoDisponibilita(props: PropsDisponibilita) {
                         </IconButton>
                         <Grid item sx={{pb: 6, pt: 3}}>
                             <Typography variant="h3" component="h3" style={{fontWeight: 900}}>Riepilogo dei dati</Typography>
-                            <Typography sx={{pt: 1}}>{"DISTRETTO: " + (props.distretto !== undefined ? props.distretto!.toUpperCase() : "")}</Typography>
+                            <Typography sx={{pt: 1}}>{"DISTRETTO: " + distretto.toUpperCase()}</Typography>
                         </Grid>
                         <Grid item>
                             <Grid key="containerSezioni" container direction={{ xs: "column", md: "row" }}>

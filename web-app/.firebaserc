@@ -1,5 +1,13 @@
 {
   "projects": {
     "default": "programmazione-turni-gm"
+  },
+  "targets": {},
+  "etags": {
+    "programmazione-turni-gm": {
+      "extensionInstances": {
+        "firestore-stripe-payments": "4b61c4369684279efbec266d9abe3c2f675eb12aba7431c66b1b610eeee5c5c1"
+      }
+    }
   }
 }

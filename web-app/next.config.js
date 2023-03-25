@@ -28,6 +28,7 @@ export default withSentryConfig(moduleExports, sentryWebpackPluginOptions);
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
+  transpilePackages: ["@stripe/firestore-stripe-payments"],
 }  
 
 module.exports = nextConfig
@@ -36,7 +37,6 @@ module.exports = withSentryConfig(
   { silent: true },
   { hideSourceMaps: true },
 );
-
 /* const withBundleAnalyzer = require('@next/bundle-analyzer')({
   enabled: process.env.ANALYZE === 'true',
 })

@@ -94,21 +94,12 @@ export default function PianificazioneTurniPage() {
   const [ dataSent, setDataSent ] = useState(false)
   const [ nMedici, setNMedici ] = useState(0)
   const dispatch = useAppDispatch()
-  const router = useRouter()
+  const distretto = useAppSelector(state => state.settings.distretto)
   const legendaRuoli: Record<string, string> = {
     'Incaricato': '#77BA84',
     'Sostituto': '#EDC272',
     'Titolare': '#729DED'
   }
-  const [ distretto, setDistretto ] = useState("")
-
-  useEffect(() => {
-    if (router.isReady) {
-      const defDistretto = router.query.distretto !== undefined ? (Array.isArray(router.query.distretto) ? router.query.distretto.at(0) : router.query.distretto)! : ""
-      setDistretto(defDistretto)
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [router.isReady, router.query]);
 
   const getTurniMedici = async () => {
     if(yearData === 0) return

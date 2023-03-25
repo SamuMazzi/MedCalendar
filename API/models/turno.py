@@ -1,5 +1,6 @@
 import datetime
 from typing import List
+from API.models.sede import Sede
 
 from models.medico import Medico, real_update_sodd
 
@@ -41,7 +42,7 @@ def copy_list(my_list: List[Medico | None]):
     return list(my_list)
 
 
-def get_all_medici_disp_per_turno(sedi: List, turno: datetime.datetime, con_sostituti=False):
+def get_all_medici_disp_per_turno(sedi: List[Sede], turno: datetime.datetime):
     info_combination = InfoCombinationTurno()
 
     for sede in sedi:
@@ -53,8 +54,6 @@ def get_all_medici_disp_per_turno(sedi: List, turno: datetime.datetime, con_sost
         # if len(medici_disp_per_turno) == 0 and len(medici_gia_assegnati) != n_medici_necessari:
         #    return
         # Vuol dire che con anche i sostituti non riusciamo a riempire le ore
-        if len(medici_disp_per_turno) < n_medici_necessari and con_sostituti:
-            return
         # Se ci sono 2 persone per 3 turni, vogliamo calcolare la possibilità di ignorare uno dei turni inserendo None
         # if n_medici_necessari > 0:
         medici_disp_per_turno.append(None)
@@ -122,14 +121,14 @@ def parse_turno_to_datetime(day: datetime.date, fascia: str):
     return datetime.datetime(day.year, day.month, day.day, int(inizio_ora), int(fine_ora), final_minuti)
 
 
-def delete_turni_vuoti(storage_sedi: list, storage_calendar_turni: List[datetime.datetime]):
+def delete_turni_vuoti(storage_sedi: List[Sede], storage_calendar_turni: List[datetime.datetime]):
     turni_vuoti = {}
     for sede in storage_sedi:
         delete_list = []
         for turno in sede.month_calendar.keys():
             if len(sede.get_medici_disp_per_turno(turno)) == 0:
                 delete_list.append(turno)
-                turni_vuoti[turno] = 1 if turni_vuoti.get(turno) is None else turni_vuoti.get(turno) + 1
+                turni_vuoti[turno] = 1 if turni_vuoti.get(turno) is None else turni_vuoti[turno] + 1
         for key in delete_list:
             del sede.month_calendar[key]
 

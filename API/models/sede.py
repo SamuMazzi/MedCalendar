@@ -1,18 +1,17 @@
 import calendar
 import datetime
-from typing import List
+from typing import Dict, List
 from collections import OrderedDict
 
 from models.medico import Medico
 from models.turno import Turno, parse_turno_to_datetime
 
 
-def create_calendar_turni_from_data(year: int, month: int, fasce: dict):
+def create_calendar_turni_from_data(year: int, month: int, fasce: Dict[str, str]):
     first_day = datetime.date(year, month, 1)
     list_days = list(calendar.Calendar().itermonthdates(first_day.year, first_day.month))
     real_list = []
-    for fascia in fasce.keys():
-        giorni = fasce.get(fascia)
+    for fascia, giorni in fasce.items():
         list_giorni = [int(giorno) for giorno in giorni.split(',')]
         days_of_month = [day_month for day_month in list_days if day_month.month == first_day.month]
         for day in days_of_month:
@@ -31,7 +30,7 @@ class Sede:
                  special_days: List[datetime.datetime] = []):
         self.nome = nome
         # iter_days = calendar.Calendar().itermonthdates(datetime.date.today().year, datetime.date.today().month)
-        self.month_calendar = OrderedDict()
+        self.month_calendar: OrderedDict[datetime.datetime, Turno] = OrderedDict()
         """Giorni ordinati del mese grazie a OrderedDict"""
         self.medici_per_turno = medici_per_turno
         self.special_days = special_days
@@ -67,9 +66,10 @@ class Sede:
                         self.month_calendar[disp].medici_disponibili.append(med)
 
     def get_medici_disp_per_turno(self, turno: datetime.datetime):
+        out: List[Medico] = []
         if turno in self.month_calendar:
-            return self.month_calendar[turno].medici_disponibili
-        return []
+            out = self.month_calendar[turno].medici_disponibili
+        return out
 
     def clear_medici_per_turno(self, turno: datetime.datetime):
         if self.month_calendar.get(turno) is not None:

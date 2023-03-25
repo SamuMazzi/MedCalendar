@@ -1,5 +1,5 @@
 import { AppFirebaseError, firebaseApp } from "./firebase";
-import { getAuth, signInWithEmailAndPassword, signOut, AuthError, connectAuthEmulator } from 'firebase/auth'
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, AuthError, connectAuthEmulator } from 'firebase/auth'
 import { clearStorage } from "../local_utilities";
 
 export type TypeSignError = "email" | "password";
@@ -28,6 +28,20 @@ if(process.env.NODE_ENV === 'test') {
 export const signInAdminWithEmail = async (email: string, password: string) => {
     try {
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        const user = userCredential.user;
+        return user;
+    } catch (error: unknown) {
+        if (isInstanceOfAuthError(error)) {
+            throw new AppFirebaseError({code: error.code})
+        } else {
+            throw new Error("C'è stato un errore, riprovare dopo")
+        }
+    }
+}
+
+export const registerAdminWithEmail = async (email: string, password: string) => {
+    try {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
         return user;
     } catch (error: unknown) {

@@ -1,7 +1,7 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import { getFromStorage, saveToStorage } from '../local_utilities';
 
-interface StateAuth {
+export interface StateAuth {
   admin: boolean,
   uid: string,
   distretti: string[],

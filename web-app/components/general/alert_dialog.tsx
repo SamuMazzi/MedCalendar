@@ -45,3 +45,42 @@ export default function ConfirmAlertDialog(props: PropsAlertDialog) {
     </div>
   );
 }
+
+
+interface PropsGenericAlertDialog {
+  open: boolean
+  onClose: () => void
+  onConfirm: () => void
+  content: JSX.Element
+  title?: string
+}
+
+export function GenericAlertDialog(props: PropsGenericAlertDialog) {
+const _handleConfirm = () => {
+  props.onConfirm()
+  props.onClose()
+}
+
+return (
+  <div>
+    <Dialog
+      open={props.open}
+      onClose={() => props.onClose()}
+      aria-labelledby="alert-dialog-title"
+    >
+      <DialogTitle>
+        {props.title}
+      </DialogTitle>
+      <DialogContent>
+        {props.content}
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={() => props.onClose()}>Annulla</Button>
+        <Button onClick={_handleConfirm} autoFocus>
+          Confermo
+        </Button>
+      </DialogActions>
+    </Dialog>
+  </div>
+);
+}

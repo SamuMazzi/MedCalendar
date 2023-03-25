@@ -1,8 +1,12 @@
+from typing import List
+from API.models.sede import Sede
+
+
 class Soluzione:
     def __init__(self, inc_sodd=0, conv_sodd=0, doc_sodd=0, turni_occupati=0):
         self.turni_occupati = turni_occupati
         self.medici_soddisfatti = doc_sodd
-        self.sedi = []
+        self.sedi: List[Sede] = []
         self.convenzionati_soddisfatti = conv_sodd
         self.incaricati_soddisfatti = inc_sodd
         self.sostituti_soddisfatti = 0

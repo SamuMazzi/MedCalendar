@@ -149,5 +149,24 @@ def start(data: dict):
                                                doc_sodd=best_sol.medici_soddisfatti + sodd[2],
                                                conv_sodd=best_sol.convenzionati_soddisfatti + sodd[0],
                                                inc_sodd=best_sol.incaricati_soddisfatti + + sodd[1])
+    """# TODO: Metti secondo giro
+    # Un giro per vedere se qualche medico è "sfuggito" e può essere semplicemente messo
+
+    # Un altro giro per fare eventuali cambi per migliorare la situazione
+    for sede in best_sol.sedi:
+        for turno, info_turno in sede.month_calendar.items():
+            # Ci sono medici che vorrebero mettersi qua? Se no, allora si passa al giorno dopo
+            # Se si, controlliamo se, rimuovendo questo medico, si può mettere in un altro giorno
+            # Tutto questo magari fatto in ordine titolari -> conv -> sost
+            med_liberi = sede.get_medici_disp_per_turno(turno)
+            not_hired_doctors = doctors_not_hired(med_liberi, sede.get_medici_occupati_per_turno(turno))
+            # Controlla se soddisfa le regole, nel caso cerca di spostare uno di quelli occupati
+            # TODO: Continue"""
+            
 
     return best_sol
+
+"""def doctors_not_hired(med_disp: list, med_occupati: list):
+    # Cioè in realtà devo controllare che, mettendolo qua, rispetti tutte le regole
+    out = [x for x in med_disp if x not in med_occupati]
+    return out"""

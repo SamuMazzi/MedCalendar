@@ -3,7 +3,6 @@ import Grid from "@mui/material/Grid";
 import TextField from "@mui/material/TextField";
 import { useState } from "react";
 import Button from "@mui/material/Button";
-import { ImportFileExcel } from "./excel_export";
 import { setDataMedici } from "../../logic/server/firestore/medici";
 import { useAppDispatch } from "../../logic/redux/store";
 import { setMessageError } from "../../logic/redux/settings_slice";
@@ -61,10 +60,6 @@ export default function UploadDatiMedico() {
                     Invia i dati
                 </Button>
             </Grid>
-            <Grid item>
-                <Typography>Oppure carica il file</Typography>
-            </Grid>
-            <ImportFileExcel />
         </Grid>
     )
 }

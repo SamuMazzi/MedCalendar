@@ -10,7 +10,7 @@ from utilities import count_turni_occupati_in_combinazione, check_if_skip, are_t
 
 
 class FindSolution:
-    def __init__(self, medici: List[Medico], sol: Soluzione = None):
+    def __init__(self, medici: List[Medico], sol: Soluzione | None = None):
         self.medici = medici
         self.sol = sol if sol is not None else Soluzione()
 
@@ -57,7 +57,7 @@ class FindSolution:
         #TODO: Aggiungi test per cui non ci siano più medici di quelli possibili per turno
         # TODO: Serve una funzione che in un certo giorno ti dica quanti turni mancano al giorno finale
         all_comb = list(itertools.product(*info_combination.combinations))
-        all_comb = [comb for comb in all_comb if not are_there_duplicates(comb)]
+        all_comb = [list(comb) for comb in all_comb if not are_there_duplicates(comb)]
 
         if len(all_comb) == 0:
             return self.handle_empty_container_turno(s, turni_occupati, doc_sodd, conv_sodd, inc_sodd, mode)

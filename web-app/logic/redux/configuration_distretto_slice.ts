@@ -1,48 +1,32 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 
+type ModeTurni = 'Interi' | 'Mezzi'
+
 interface Sede {
     nome: string,
     medici_per_turno: number,
-    fasce_turno: Turno[],
-    modifiche: Record<string, string> | undefined //* Ancora da definire
 }
 
-export interface Turno {
-    fascia: string,
-    giorni_settimana: number[]
-}
-
-interface StateCreateSediType {
+interface StateDistretto {
     sedi: Sede[],
+    mode_turno: ModeTurni,
     password: string, //?
     medici: string[] //?
+    modifiche?: Record<string, string> //* Ancora da definire
 }
 
 export interface ParamSede {
     index: number,
     nome: string,
     medici_per_turno: number,
-    fasce_turno: Turno[] | undefined,
+    mode_turno: ModeTurni,
 }
 
-type TypeModifica = "add_turno" | "remove_turno" | "change_n_medici" | "unknown"
-
-interface ModificheTurno {
-    giorni: string[],
-    type: TypeModifica,
-    fascia_turno: string | undefined,
-    n_medici: number | undefined
-}
-
-interface ParamsModificheTurno {
-    index: number,
-    modifiche: ModificheTurno
-}
-
-const initialState: StateCreateSediType = {
+const initialState: StateDistretto = {
   sedi: [],
   password: "",
-  medici: []
+  medici: [],
+  mode_turno: 'Interi',
 }
 
 const checkIndex = (lenSedi: number, index: number) => {
@@ -62,8 +46,6 @@ export const configuration_distretti_slice = createSlice({
             const newSede: Sede = {
                 nome: action.payload.nome,
                 medici_per_turno: action.payload.medici_per_turno,
-                fasce_turno: action.payload.fasce_turno !== undefined ? action.payload.fasce_turno : [],
-                modifiche: undefined
             }
             state.sedi = [...state.sedi, newSede]
         },
@@ -79,24 +61,10 @@ export const configuration_distretti_slice = createSlice({
             checkIndex(state.sedi.length, index)
             state.sedi[index].medici_per_turno = data.medici_per_turno
         },
-        changeFasceTurnoSede: (state, action) => {
-            const index = action.payload.index
-            const data = action.payload
-            checkIndex(state.sedi.length, index)
-            state.sedi[index].fasce_turno = data.fasce_turno
-        },
-        addModificheTurno: (state, action: PayloadAction<ParamsModificheTurno>) => {
-            const index = action.payload.index
-            const data = action.payload
-            if(state.sedi.length - 1 < index) {
-                throw "Errore nel trovare la sede"
-            }
-            //* Here
-        },
     }
 })
 
 // Action creators are generated for each case reducer function
-export const { addSede, changeFasceTurnoSede, changeNumMediciPerTurnoSede, changeNomeSede } = configuration_distretti_slice.actions
+export const { addSede, changeNumMediciPerTurnoSede, changeNomeSede } = configuration_distretti_slice.actions
 
 export default configuration_distretti_slice.reducer

@@ -60,13 +60,12 @@ export const saveToStorage = (key: string, value: any) => {
 
 export const getFromStorage = (key: string) => {
     if (typeof window !== 'undefined') {
-        window.localStorage.removeItem('all_medici'); //legacy
         const res = window.localStorage.getItem(key);
         if (res !== null) {
             return JSON.parse(res);
         }
-        return null;
     }
+    return null;
 }
 
 export const getLocalDistretti = (admin = false) => {
@@ -76,11 +75,18 @@ export const getLocalDistretti = (admin = false) => {
         const res = window.localStorage.getItem(key);
         if (res !== null) {
             out = JSON.parse(res);
-            return out
         }
-        return out
     }
     return out
+}
+
+export const getLocalActualDistretto = () => {
+    const out: string = getFromStorage('distretto')
+    return out ?? ''
+}
+
+export const setLocalActualDistretto = (distr: string) => {
+    saveToStorage('distretto', distr)
 }
 
 export const getMedici = async () => {
