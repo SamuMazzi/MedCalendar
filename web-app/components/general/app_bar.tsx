@@ -13,6 +13,7 @@ import useUser from '../../logic/hooks/use_user'
 export function MedAppBar() {
   const [ anchorEl, setAnchorEl ] = useState<null | HTMLElement>(null);
   const [user, distretto, logout] = useUser()
+  console.log(user)
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);

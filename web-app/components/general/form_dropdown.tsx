@@ -10,33 +10,27 @@ import Paper from '@mui/material/Paper';
 import FormHelperText from '@mui/material/FormHelperText';
 import { ReactNode } from 'react'
 
-interface PropsListDropdown {
+interface CommonPropsDropdown {
   value: any
   label: string
-  inputList: any[],
   onChangeFn: (event: SelectChangeEvent<any>, child: ReactNode) => void
-  helperText?: string,
-  extraFieldMenuItem?: string,
+  helperText?: string
+  extraFieldMenuItem?: string
+  width?: number
+}
+
+interface PropsListDropdown extends CommonPropsDropdown {
+  inputList: any[]
   multiple?: boolean
 }
 
-interface PropsMapDropdown {
-    value: any
-    label: string
+interface PropsMapDropdown extends CommonPropsDropdown {
     inputMap: Record<any, any>
-    onChangeFn: (event: SelectChangeEvent<any>, child: ReactNode) => void
-    helperText?: string
-    extraFieldMenuItem?: string
 }
 
-export interface PropsGenericDropdown {
-  value: any
-  label: string
-  inputList: any[],
-  onChangeFn: (event: SelectChangeEvent<any>, child: ReactNode) => void
-  helperText?: string,
-  extraFieldMenuItem?: string
-  map?: Record<any, any>,
+export interface PropsGenericDropdown extends CommonPropsDropdown {
+  inputList: any[]
+  map?: Record<any, any>
   multiple?: boolean
 }
 
@@ -75,6 +69,9 @@ const getSxDropdown = (placeholder?: string) => {
         content: `"${placeholder}"`,
         opacity: 0.42,
       }
+      if(placeholder.toLowerCase().includes('alle')) {
+        sxDropdown['mb'] = 0
+      }
   }
   return sxDropdown
 }
@@ -94,22 +91,14 @@ export function NewMapDropdown(props: PropsMapDropdown) {
 
 export function NewListDropdown(props: PropsListDropdown) {
   return (
-    <GenericDropdown
-      value={props.value}
-      label={props.label}
-      onChangeFn={props.onChangeFn}
-      helperText={props.helperText}
-      inputList={props.inputList}
-      extraFieldMenuItem={props.extraFieldMenuItem}
-      multiple={props.multiple}
-    />)
+    <GenericDropdown {...props}/>)
 }
 
 
 function GenericDropdown(props: PropsGenericDropdown) {
   return (
     <Grid item>
-      <FormControl style={{ width: "230px" }}>
+      <FormControl style={{ width: props.width ?? '230px' }}>
         {
         //  <InputLabel>{props.label}</InputLabel> //! Non si sa perchè ma si bugga
         }

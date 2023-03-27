@@ -21,6 +21,7 @@ import { AppFirebaseError } from '../logic/server/firebase'
 import { setMessageError } from '../logic/redux/settings_slice'
 import { setAdmin, setUser } from '../logic/redux/auth_slice'
 import ConfigurationAdmin from '../components/admin_pages/create_configuration_admin'
+import { setPasswordDistrettoSlice } from '../logic/redux/configuration_distretto_slice'
 
 // #1a77d1
 // #64b5f4
@@ -28,11 +29,15 @@ import ConfigurationAdmin from '../components/admin_pages/create_configuration_a
 
 function Register(props: PropsPageStepper) {
     const [email, setEmail] = useState("")
+    const [passwordDistretto, setPasswordDistretto] = useState("")
     const [password, setPassword] = useState("")
     const [confermaPassword, setConfermaPassword] = useState("")
     const [helperMail, setHelperMail] = useState("")
+    const [helperPasswordDistretto, setHelperPasswordDistretto] = useState("")
     const [helperPassword, setHelperPassword] = useState("")
     const [helperConfermaPassword, setHelperConfermaPassword] = useState("")
+    const [nomeDistretto, setNomeDistretto] = useState("")
+    const [helperNomeDistretto, setHelperNomeDistretto] = useState("")
     const [loading, setLoading] = useState(false)
     const dispatch = useAppDispatch()
 
@@ -62,6 +67,7 @@ function Register(props: PropsPageStepper) {
 
     const onSubmit = async () => {
         setHelperMail("")
+        setHelperPasswordDistretto("")
         setHelperPassword("")
         setHelperConfermaPassword("")
         if (password.length === 0) {
@@ -72,10 +78,19 @@ function Register(props: PropsPageStepper) {
             setHelperConfermaPassword("Inserisci di nuovo la password")
         } else if (confermaPassword !== password) {
             setHelperConfermaPassword("Le password devono combaciare")
+        } else if (passwordDistretto.length === 0) {
+            setHelperPasswordDistretto("Inserisci una password per il distretto")
+        } else if (nomeDistretto.length === 0) {
+            setHelperNomeDistretto("Inserisci un nome")
+            return false
+        } else if (nomeDistretto.length > 15) {
+            setHelperNomeDistretto("Lunghezza massima di 15 caratteri")
+            return false
         } else {
             setLoading(true)
             try {
                 await signIn()
+                dispatch(setPasswordDistrettoSlice(password))
                 props.nextPage()
             } catch (error) {
                 console.log(error)
@@ -93,7 +108,15 @@ function Register(props: PropsPageStepper) {
         alignItems="center"
     >
         <Grid item>
-            <Grid container gap={1} direction="column" sx={{borderRadius: 8, maxWidth: 300}} alignItems="center">
+            <Grid container gap={1} direction="column" sx={{borderRadius: 8, maxWidth: 350}} alignItems="center">
+                <Grid item sx={{mb: 2}} textAlign="left">
+                    <Typography style={{fontWeight: 600}}>
+                        Account
+                    </Typography>
+                    <Typography style={{fontWeight: 300}}>
+                        Inserisci i tuoi dati da amministratore. Tutte le modifiche verranno salvate su questo account.
+                    </Typography>
+                </Grid>
                 <Grid item>
                     <FormTextField 
                         value={email}
@@ -120,6 +143,31 @@ function Register(props: PropsPageStepper) {
                         placeholder='Conferma password'
                     />
                 </Grid>
+                <Grid item sx={{mt: 4}}>
+                    <Typography style={{fontWeight: 600}}>
+                        Informazioni distretto
+                    </Typography>
+                    <Typography style={{fontWeight: 300}}>
+                        Imposta il nome del distretto e la password che i medici dovranno inserire per segnare le loro disponibilità
+                    </Typography>
+                </Grid>
+                <Grid item sx={{mt: 1}}>
+                    <FormTextField 
+                        value={nomeDistretto}
+                        helperText={helperNomeDistretto}
+                        onChangeFn={(newVal) => setNomeDistretto(newVal)}
+                        placeholder='Nome distretto'
+                    />
+                </Grid>
+                <Grid item>
+                    <FormTextField 
+                        value={passwordDistretto}
+                        helperText={helperPasswordDistretto}
+                        onChangeFn={(newVal) => setPasswordDistretto(newVal)}
+                        placeholder='Password distretto'
+                        password
+                    />
+                </Grid>
                 <Grid item>
                     <Button variant="contained" onClick={onSubmit} disabled={loading}>
                         Registrati
@@ -131,8 +179,8 @@ function Register(props: PropsPageStepper) {
   )
 }
 
-//TODO: Visualizzazione turni su pagina online
-//TODO: Fai settare al medico la password per i turni
+//TODO: Visualizzazione turni su pagina online -> come tabella solita ma senza avere la possibilità di modificare? O forse in una tabella filtrabile, magari vedendo direttamente i propri turni
+//TODO: Fai settare al medico la password per i turni, oppure fai scegliere all'admin cosa fare, cioè se obbligare i medici ad iscriversi o accesso con password
 //TODO: Modifica logica password... devono essere controllate sul server (GCF)
 
 interface PropsProElementList {
@@ -178,7 +226,7 @@ const PagePlans = () => {
                 <Divider />
                 <List dense>
                     <ProElementList label="Massimo 90 medici"/>
-                    <ProElementList label="Massimo 7 distretti"/>
+                    <ProElementList label="Massimo 7 sedi"/>
                     <ProElementList label="Massimo 4 configurazioni regolari"/>
                 </List>
                 <Button variant="contained" style={{textAlign: 'center', color: '#1a77d1', backgroundColor: 'white'}} sx={{mt: 2}}>
@@ -210,10 +258,15 @@ const PayPage = () => {
     )
 }
 
-const AddDoctorsPage = () => {
+//TODO: Metti SignInAnonymously per medici normali, cosi puoi modificare i settings di sicurezza
+const AddDoctorsPage = (props: PropsPageStepper) => {
+
     return (
         <Box>
             <TableDoctors />
+            <Button variant="contained" onClick={props.nextPage}>
+                Continua
+            </Button>
         </Box>
     )
 }
@@ -251,7 +304,7 @@ export default function PageCreaTurni() {
         <PagePlans key="Page_plans" />, 
         <Register nextPage={nextPage} key="register_page" />, 
         <ConfigurationTurniPage key="configuration_page" />, 
-        <AddDoctorsPage key="med_page"/>, 
+        <AddDoctorsPage nextPage={nextPage} key="med_page"/>, 
         <PayPage key="pay_page"/>
     ]
 

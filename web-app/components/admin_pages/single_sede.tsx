@@ -5,7 +5,6 @@ import Box from '@mui/material/Box'
 import TextField from '@mui/material/TextField'
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
-import { useEffect } from "react";
 import { useAppSelector, useAppDispatch } from '../../logic/redux/store'
 import { changeNumMediciPerTurnoSede, changeNomeSede } from '../../logic/redux/configuration_distretto_slice'
 import IconButton from '@mui/material/IconButton'

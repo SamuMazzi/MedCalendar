@@ -17,20 +17,7 @@ import ListItem from '@mui/material/ListItem';
 import ListItemText from '@mui/material/ListItemText';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
-
-const turni_disp = [
-  '8:00-20:00',
-  '20:00-8:00',
-  '8:00-14:00',
-  '14:00-20:00'
-]
-
-/*
-  '00', '00:30', '01', '01:30', '02', '02:30', '03', '03:30', 
-  '04', '04:30', '05', '05:30', '06', '06:30', '07', '07:30', '08', '08:30', 
-  '09', '09:30', '10', '10:30', '11', '11:30', '12', '12:30', '13', '13:30', 
-  '14', '14:30', '15', '15:30', '16', '16:30', '17', '17:30', '18', '18:30', 
-  '19', '19:30', '20', '20:30', '21', '21:30', '22', '22:30', '23', '23:30'*/
+import { turni_disp } from './create_configuration_admin';
 
 interface PropsHandlerSpecialTurni {
   specialTurni?: Date[]
@@ -41,7 +28,8 @@ export default function HandlerSpecialTurni(props: PropsHandlerSpecialTurni) {
   const [messageSnackbar, setMessageSnackbar] = useState("")
   const [loading, setLoading] = useState(false)
   const [daySelected, setDaySelected] = useState(dayjs())
-  const [turno, setTurno] = useState(turni_disp[0])
+  const [turnoFrom, setTurnoFrom] = useState("")
+  const [turnoTo, setTurnoTo] = useState("")
   const [specialTurni, setSpecialTurni] = useState<Date[] | undefined>()
 
   useEffect(() => {
@@ -51,9 +39,6 @@ export default function HandlerSpecialTurni(props: PropsHandlerSpecialTurni) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const changeFasciaTurno = (val: string) => {
-    setTurno(val)
-  }
   const showError = (msg: string) => {
     setMessageSnackbar(msg)
   }
@@ -79,7 +64,7 @@ export default function HandlerSpecialTurni(props: PropsHandlerSpecialTurni) {
     setMessageError("")
     setLoading(true)
     try {
-      const dateTurno = fromTurnoToDate(daySelected.toDate(), turno)
+      const dateTurno = fromTurnoToDate(daySelected.toDate(), turnoFrom + '-' + turnoTo)
       addSpecialTurnoServer(dateTurno, distretto)
       setSpecialTurni(old => old ? [...old, dateTurno] : [dateTurno])
     } catch (e: any) {
@@ -131,10 +116,16 @@ export default function HandlerSpecialTurni(props: PropsHandlerSpecialTurni) {
         </Box>
           <Container sx={{py: 1}}/>
           <NewListDropdown
-              label="Turno"
-              value={turno}
+              label="Dalle"
+              value={turnoFrom}
               inputList={turni_disp}
-              onChangeFn={(event) => changeFasciaTurno(event.target.value)}
+              onChangeFn={(event) => setTurnoFrom(event.target.value)}
+          />
+          <NewListDropdown
+              label="Alle"
+              value={turnoTo}
+              inputList={turni_disp}
+              onChangeFn={(event) => setTurnoTo(event.target.value)}
           />
           <Button variant="contained" onClick={() => addSpecialTurno()} disabled={loading}>
             Aggiungi turno

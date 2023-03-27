@@ -22,6 +22,7 @@ import { MedicoImported } from '../logic/server/firestore/firestore';
 import { GenericAlertDialog } from './general/alert_dialog';
 import { FormSingleMedico } from '../pages/modify_doctors_admin';
 import Button from '@mui/material/Button';
+import EditRoundedIcon from '@mui/icons-material/EditRounded';
 
 const rows: MedicoImported[] = [
     {nome: 'aa', ruolo: 'Titolare', sedi: ['Formigine'], email: 'ss@ss.it'},
@@ -160,7 +161,7 @@ function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
           variant="subtitle1"
           component="div"
         >
-          {numSelected} selected
+          {numSelected.toString() + (numSelected === 1 ? ' selezionato' : ' selezionati')} 
         </Typography>
       ) : (
         <Typography
@@ -175,6 +176,9 @@ function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
       {numSelected > 0 ? (
         <Tooltip title="Elimina">
           <IconButton>
+            {
+              //TODO: Implementa elimina
+            }
             <DeleteIcon />
           </IconButton>
         </Tooltip>
@@ -232,9 +236,14 @@ export default function EnhancedTable() {
       );
     }
 
-    setSelDoctor(newSelected[0])
     setSelected(newSelected);
   };
+
+  const editDoctor = (e: any, idDoctor: string) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setSelDoctor(idDoctor)
+  }
 
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
@@ -268,7 +277,6 @@ export default function EnhancedTable() {
               rowCount={rows.length}
             />
             <TableBody>
-            
               {rows.slice().sort(getComparator(order, orderBy))
                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                 .map((row, index) => {
@@ -297,11 +305,14 @@ export default function EnhancedTable() {
                         scope="row"
                         padding="none"
                       >
+                        <IconButton>
+                          <EditRoundedIcon onClick={(e) => editDoctor(e, row.nome)} />
+                        </IconButton>
                         {row.nome}
                       </TableCell>
-                      <TableCell align="right">{row.ruolo}</TableCell>
-                      <TableCell align="right">{row.sedi}</TableCell>
-                      <TableCell align="right">{row.email}</TableCell>
+                      <TableCell align="left">{row.ruolo}</TableCell>
+                      <TableCell align="left">{row.sedi}</TableCell>
+                      <TableCell align="left">{row.email}</TableCell>
                     </TableRow>
                   );
                 })}
@@ -317,7 +328,8 @@ export default function EnhancedTable() {
             </TableBody>
           </Table>
         </TableContainer>
-        <TablePagination
+        {
+          /*<TablePagination
           rowsPerPageOptions={[5, 10, 25]}
           component="div"
           count={rows.length}
@@ -325,7 +337,8 @@ export default function EnhancedTable() {
           page={page}
           onPageChange={handleChangePage}
           onRowsPerPageChange={handleChangeRowsPerPage}
-        />
+        /> */
+        }
       </Paper>
       <GenericAlertDialog open={selDoctor !== ''} onClose={() => setSelDoctor('')} onConfirm={() => setSelDoctor('')} 
       content={

@@ -1,32 +1,48 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 
-type ModeTurni = 'Interi' | 'Mezzi'
-
 interface Sede {
     nome: string,
     medici_per_turno: number,
 }
 
+interface HoursTurno {
+    from: string
+    to: string
+}
+
+export interface TurnoDistretto extends HoursTurno {
+    daysOfWeek: number[]
+}
+
+export interface SingleTurnoDistretto extends HoursTurno {
+    date_millis: number //* Milliseconds since epoch of day
+}
+
 interface StateDistretto {
     sedi: Sede[],
-    mode_turno: ModeTurni,
+    turni: TurnoDistretto[],
     password: string, //?
     medici: string[] //?
-    modifiche?: Record<string, string> //* Ancora da definire
+    extraTurni?: SingleTurnoDistretto[]
+    // modifiche?: Record<string, string> //* Ancora da definire
 }
 
 export interface ParamSede {
     index: number,
     nome: string,
     medici_per_turno: number,
-    mode_turno: ModeTurni,
+}
+
+interface ParamSetExtraTurno {
+    turno: SingleTurnoDistretto
+    index?: number
 }
 
 const initialState: StateDistretto = {
   sedi: [],
   password: "",
   medici: [],
-  mode_turno: 'Interi',
+  turni: [],
 }
 
 const checkIndex = (lenSedi: number, index: number) => {
@@ -61,10 +77,37 @@ export const configuration_distretti_slice = createSlice({
             checkIndex(state.sedi.length, index)
             state.sedi[index].medici_per_turno = data.medici_per_turno
         },
+        changeFasciaTurnoDistretto: (state, action) => {
+            //const index = action.payload.index
+            const newTurni = action.payload
+            //checkIndex(state.sedi.length, index)
+            state.turni = [...newTurni]
+        },
+        setExtraTurno: (state, action: PayloadAction<ParamSetExtraTurno>) => {
+            const turno = action.payload.turno
+            const index = action.payload.index
+            if (index) {
+                const newExtraTurni = [...state.extraTurni!]
+                newExtraTurni[index] = turno
+                state.extraTurni = [...newExtraTurni]
+            }
+            if (state.extraTurni) {
+                state.extraTurni = [...state.extraTurni, turno]
+            } else {
+                state.extraTurni = [turno]
+            }
+        },
+        removeExtraTurno: (state, action: PayloadAction<number>) => {
+            const index = action.payload
+            state.extraTurni = state.extraTurni!.filter((v, i) => i !== index)
+        },
+        setPasswordDistrettoSlice: (state, action: PayloadAction<string>) => {
+            state.password = action.payload
+        }
     }
 })
 
 // Action creators are generated for each case reducer function
-export const { addSede, changeNumMediciPerTurnoSede, changeNomeSede } = configuration_distretti_slice.actions
+export const { addSede, changeNumMediciPerTurnoSede, changeNomeSede, changeFasciaTurnoDistretto, setPasswordDistrettoSlice } = configuration_distretti_slice.actions
 
 export default configuration_distretti_slice.reducer
