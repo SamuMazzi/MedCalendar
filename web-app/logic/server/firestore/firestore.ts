@@ -1,6 +1,7 @@
 import { AppFirebaseError, firebaseApp } from "../firebase";
 import { getFirestore, doc, setDoc, getDoc, Timestamp, connectFirestoreEmulator } from 'firebase/firestore';
 import { getFromStorage, getNumOreMaxByRole } from "../../local_utilities";
+import { StateDistretto } from "../../redux/configuration_distretto_slice";
 
 export const firestore = getFirestore(firebaseApp);
 if(process.env.NODE_ENV === 'test') {
@@ -133,4 +134,29 @@ export const getDisponibilitaMeseDistretto = async (distretto: string, anno: num
     } catch (error: unknown) {
         handleFirebaseError(error)
     }
+}
+
+export const uploadConfigurationDistretto = async (distretto: StateDistretto, uid: string) => {
+    const distrettoRef = doc(firestore, firestore_distrettiCollectionKey, distretto.name)
+    await setDoc(distrettoRef, {
+        admins: [uid],
+        password: distretto.password,
+        [firestore_lastTimeModifyInfoDoctorsKey]: Timestamp.now() 
+    })
+    const infoSedi: Record<any, any> = {
+        sedi: {}
+    }
+    for(const sede of distretto.sedi) {
+        infoSedi['sedi'][sede.nome] = { medici_per_turno: sede.medici_per_turno }
+    }
+    infoSedi['special_days'] = [distretto.extraTurni[0]]
+    infoSedi['turni'] = //TODO: Finisci
+    const infoSediRef = doc(firestore, distrettoRef.path, 'info', 'info_sedi')
+    await setDoc(infoSediRef, infoSedi)
+    const infoMedici: Record<string, any> = {}
+    for (const id_doc of Object.keys(distretto.medici)) {
+        const doc = distretto.medici[id_doc]
+        infoMedici[id_doc] = doc
+    }
+
 }

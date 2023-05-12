@@ -15,7 +15,8 @@ export const store = configureStore({
     scheduler: schedulerReducer,
     settings: settingsReducer,
     mediciAdmin: mediciAdminReducer
-  }
+  },
+  devTools: process.env.NODE_ENV !== 'production',
 })
 
 // Infer the `RootState` and `AppDispatch` types from the store itself

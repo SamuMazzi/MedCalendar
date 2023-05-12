@@ -18,17 +18,15 @@ import Tooltip from '@mui/material/Tooltip';
 import DeleteIcon from '@mui/icons-material/Delete';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import { visuallyHidden } from '@mui/utils';
-import { MedicoImported } from '../logic/server/firestore/firestore';
+import { MedicoImported, MedicoRemote } from '../logic/server/firestore/firestore';
 import { GenericAlertDialog } from './general/alert_dialog';
 import { FormSingleMedico } from '../pages/modify_doctors_admin';
 import Button from '@mui/material/Button';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
-
-const rows: MedicoImported[] = [
-    {nome: 'aa', ruolo: 'Titolare', sedi: ['Formigine'], email: 'ss@ss.it'},
-    {nome: 'bb', ruolo: 'Titolare', sedi: ['Formigine'], email: 'ss@ss.it'},
-    {nome: 'cc', ruolo: 'Titolare', sedi: ['Formigine'], email: 'ss@ss.it'},
-];
+import { useAppDispatch, useAppSelector } from '../logic/redux/store';
+import { removeMedicoDistrettoSlice, setMedicoDistrettoSlice } from '../logic/redux/configuration_distretto_slice';
+import { fromRemoteToImportedMedico } from '../logic/server/firestore/medici';
+import AddIcon from '@mui/icons-material/AddRounded';
 
 function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
   if (b[orderBy] < a[orderBy]) {
@@ -137,11 +135,25 @@ function EnhancedTableHead(props: EnhancedTableProps) {
 }
 
 interface EnhancedTableToolbarProps {
-  numSelected: number;
+  docs_selected: string[]
 }
 
 function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
-  const { numSelected } = props;
+  const numSelected = props.docs_selected.length
+  const [showModalCreateDoc, setShowModalCreateDoc] = React.useState(false)
+  const dispatch = useAppDispatch()
+  //TODO: In futuro aggiungi funzionalità di recupero dati locali se l'utente si è interrotto e si era registrato
+
+  const onDelete = () => {
+    for(const d of props.docs_selected) {
+      dispatch(removeMedicoDistrettoSlice(d))
+    }
+  }
+
+  const handleCreateMedico = async (med: MedicoRemote) => {
+    dispatch(setMedicoDistrettoSlice(fromRemoteToImportedMedico(med)))
+    setShowModalCreateDoc(false)
+  }
 
   return (
     <Toolbar
@@ -175,20 +187,29 @@ function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
       )}
       {numSelected > 0 ? (
         <Tooltip title="Elimina">
-          <IconButton>
-            {
-              //TODO: Implementa elimina
-            }
+          <IconButton onClick={onDelete}>
             <DeleteIcon />
           </IconButton>
         </Tooltip>
       ) : (
-        <Tooltip title="Filtra">
-          <IconButton>
-            <FilterListIcon />
-          </IconButton>
-        </Tooltip>
+        <>
+          <Tooltip title="Aggiungi medico">
+            <IconButton onClick={() => setShowModalCreateDoc(true)}>
+              <AddIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Filtra">
+            <IconButton>
+              <FilterListIcon />
+            </IconButton>
+          </Tooltip>
+        </>
       )}
+      <GenericAlertDialog 
+        open={showModalCreateDoc} 
+        onClose={() => setShowModalCreateDoc(false)} 
+        content={<FormSingleMedico onSetMedico={handleCreateMedico}/>}
+      />
     </Toolbar>
   );
 }
@@ -196,10 +217,11 @@ function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
 export default function EnhancedTable() {
   const [order, setOrder] = React.useState<Order>('asc');
   const [orderBy, setOrderBy] = React.useState<keyof MedicoImported>('nome');
-  const [selected, setSelected] = React.useState<readonly string[]>([]);
-  const [ selDoctor, setSelDoctor ] = React.useState("")
+  const [selected, setSelected] = React.useState<string[]>([]);
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
+  const doctors = useAppSelector(state => state.configurationDistr.medici)
+  const rows = Object.keys(doctors).map(k => doctors[k])
 
   const handleRequestSort = (
     event: React.MouseEvent<unknown>,
@@ -212,19 +234,19 @@ export default function EnhancedTable() {
 
   const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
-      const newSelected = rows.map((n) => n.nome);
+      const newSelected = rows.map((n) => n.email);
       setSelected(newSelected);
       return;
     }
     setSelected([]);
   };
 
-  const handleClick = (event: React.MouseEvent<unknown>, name: string) => {
-    const selectedIndex = selected.indexOf(name);
-    let newSelected: readonly string[] = [];
+  const handleClick = (email: string) => {  // event: React.MouseEvent<unknown>, 
+    const selectedIndex = selected.indexOf(email);
+    let newSelected: string[] = [];
 
     if (selectedIndex === -1) {
-      newSelected = newSelected.concat(selected, name);
+      newSelected = newSelected.concat(selected, email);
     } else if (selectedIndex === 0) {
       newSelected = newSelected.concat(selected.slice(1));
     } else if (selectedIndex === selected.length - 1) {
@@ -239,12 +261,6 @@ export default function EnhancedTable() {
     setSelected(newSelected);
   };
 
-  const editDoctor = (e: any, idDoctor: string) => {
-    e.preventDefault()
-    e.stopPropagation()
-    setSelDoctor(idDoctor)
-  }
-
   const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
   };
@@ -254,7 +270,7 @@ export default function EnhancedTable() {
     setPage(0);
   };
 
-  const isSelected = (name: string) => selected.indexOf(name) !== -1;
+  const isSelected = (email: string) => selected.indexOf(email) !== -1;
 
   // Avoid a layout jump when reaching the last page with empty rows.
   const emptyRows =
@@ -263,7 +279,7 @@ export default function EnhancedTable() {
   return (
     <Box sx={{ width: '100%' }}>
       <Paper sx={{ width: '100%', mb: 2 }}>
-        <EnhancedTableToolbar numSelected={selected.length} />
+        <EnhancedTableToolbar docs_selected={selected} />
         <TableContainer>
           <Table
             sx={{ minWidth: 750 }}
@@ -279,42 +295,12 @@ export default function EnhancedTable() {
             <TableBody>
               {rows.slice().sort(getComparator(order, orderBy))
                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((row, index) => {
-                  const isItemSelected = isSelected(row.nome);
-                  const labelId = `enhanced-table-checkbox-${index}`;
+                .map((doctor, index) => {
+                  const isItemSelected = isSelected(doctor.email);
 
                   return (
-                    <TableRow
-                      hover
-                      onClick={(event) => handleClick(event, row.nome)}
-                      role="checkbox"
-                      aria-checked={isItemSelected}
-                      tabIndex={-1}
-                      key={row.nome}
-                      selected={isItemSelected}
-                    >
-                      <TableCell padding="checkbox">
-                        <Checkbox
-                          color="primary"
-                          checked={isItemSelected}
-                        />
-                      </TableCell>
-                      <TableCell
-                        component="th"
-                        id={labelId}
-                        scope="row"
-                        padding="none"
-                      >
-                        <IconButton>
-                          <EditRoundedIcon onClick={(e) => editDoctor(e, row.nome)} />
-                        </IconButton>
-                        {row.nome}
-                      </TableCell>
-                      <TableCell align="left">{row.ruolo}</TableCell>
-                      <TableCell align="left">{row.sedi}</TableCell>
-                      <TableCell align="left">{row.email}</TableCell>
-                    </TableRow>
-                  );
+                    <RowTableDoctor key={doctor.email} isSelected={isItemSelected} doc={doctor} onSelect={handleClick}/>
+                  )
                 })}
               {emptyRows > 0 && (
                 <TableRow
@@ -340,15 +326,76 @@ export default function EnhancedTable() {
         /> */
         }
       </Paper>
-      <GenericAlertDialog open={selDoctor !== ''} onClose={() => setSelDoctor('')} onConfirm={() => setSelDoctor('')} 
-      content={
-        <>
-            <FormSingleMedico />
-        </>
-      }/>
-        <Button variant="contained" onClick={() => setSelDoctor('a')}>
-            Nuovo medico
-        </Button>
     </Box>
   );
+}
+
+interface ParamsRowTabelDoctor {
+  doc: MedicoImported
+  isSelected: boolean
+  onSelect: (arg0: string) => void
+}
+
+const RowTableDoctor = (props: ParamsRowTabelDoctor) => {
+  const [showModal, setShowModal] = React.useState(false)
+  const dispatch = useAppDispatch()
+
+  const editDoctor = (e: any) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setShowModal(true)
+  }
+
+  const handleDelete = async (idDoc: string) => {
+    dispatch(removeMedicoDistrettoSlice(idDoc))
+    setShowModal(false)
+  }
+
+  const handleSetMedico = async (med: MedicoRemote) => {
+    dispatch(setMedicoDistrettoSlice(fromRemoteToImportedMedico(med)))
+    setShowModal(false)
+  }
+
+  return (
+    <>
+      <TableRow
+        hover
+        onClick={() => props.onSelect(props.doc.email)}
+        role="checkbox"
+        tabIndex={-1}
+        key={'table' + props.doc.email}
+        selected={props.isSelected}
+      >
+        <TableCell padding="checkbox">
+          <Checkbox
+            color="primary"
+            checked={props.isSelected}
+          />
+        </TableCell>
+        <TableCell
+          component="th"
+          scope="row"
+          padding="none"
+        >
+          <IconButton>
+            <EditRoundedIcon onClick={editDoctor} />
+          </IconButton>
+          {props.doc.nome}
+        </TableCell>
+        <TableCell align="left">{props.doc.ruolo}</TableCell>
+        <TableCell align="left">{props.doc.sedi.join(', ')}</TableCell>
+        <TableCell align="left">{props.doc.email}</TableCell>
+      </TableRow>
+      <GenericAlertDialog open={showModal} onClose={() => setShowModal(false)}
+      content={
+        <>
+            <FormSingleMedico 
+            medico={props.doc} 
+            onDelete={handleDelete}
+            onSetMedico={handleSetMedico}/>
+        </>
+      }/>
+    </>
+
+  )
 }

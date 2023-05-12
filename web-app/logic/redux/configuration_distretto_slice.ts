@@ -1,9 +1,12 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
+import { MedicoImported } from '../server/firestore/firestore'
 
 interface Sede {
     nome: string,
     medici_per_turno: number,
 }
+
+export type PricingPlan = 'GM_Base' | 'Contattaci'
 
 interface HoursTurno {
     from: string
@@ -18,12 +21,14 @@ export interface SingleTurnoDistretto extends HoursTurno {
     date_millis: number //* Milliseconds since epoch of day
 }
 
-interface StateDistretto {
+export interface StateDistretto {
+    name: string,
     sedi: Sede[],
     turni: TurnoDistretto[],
     password: string, //?
-    medici: string[] //?
+    medici: Record<string, MedicoImported> //?
     extraTurni?: SingleTurnoDistretto[]
+    pricingPlan: PricingPlan
     // modifiche?: Record<string, string> //* Ancora da definire
 }
 
@@ -39,10 +44,12 @@ interface ParamSetExtraTurno {
 }
 
 const initialState: StateDistretto = {
-  sedi: [],
-  password: "",
-  medici: [],
-  turni: [],
+    name: '',
+    sedi: [],
+    password: "",
+    medici: {},
+    turni: [],
+    pricingPlan: 'Contattaci'
 }
 
 const checkIndex = (lenSedi: number, index: number) => {
@@ -103,11 +110,21 @@ export const configuration_distretti_slice = createSlice({
         },
         setPasswordDistrettoSlice: (state, action: PayloadAction<string>) => {
             state.password = action.payload
-        }
+        },
+        setMedicoDistrettoSlice: (state, action: PayloadAction<MedicoImported>) => {
+            const medico = action.payload
+            const id_doc = medico.email
+            state.medici = {...state.medici, [id_doc]: medico}
+        },
+        removeMedicoDistrettoSlice: (state, action: PayloadAction<string>) => {
+            const id_doc = action.payload
+            const { [id_doc]: _, ...others} = state.medici
+            state.medici = others
+        },
     }
 })
 
 // Action creators are generated for each case reducer function
-export const { addSede, changeNumMediciPerTurnoSede, changeNomeSede, changeFasciaTurnoDistretto, setPasswordDistrettoSlice } = configuration_distretti_slice.actions
+export const { addSede, changeNumMediciPerTurnoSede, changeNomeSede, changeFasciaTurnoDistretto, setPasswordDistrettoSlice, setMedicoDistrettoSlice, removeMedicoDistrettoSlice } = configuration_distretti_slice.actions
 
 export default configuration_distretti_slice.reducer

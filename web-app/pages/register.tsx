@@ -82,10 +82,8 @@ function Register(props: PropsPageStepper) {
             setHelperPasswordDistretto("Inserisci una password per il distretto")
         } else if (nomeDistretto.length === 0) {
             setHelperNomeDistretto("Inserisci un nome")
-            return false
         } else if (nomeDistretto.length > 15) {
             setHelperNomeDistretto("Lunghezza massima di 15 caratteri")
-            return false
         } else {
             setLoading(true)
             try {
@@ -200,7 +198,11 @@ const ProElementList = (props: PropsProElementList) => {
     )
 }
 
-const PagePlans = () => {
+const PagePlans = (props: PropsPageStepper) => {
+    const handleSelectPiano = () => {
+        props.nextPage()
+    }
+
     return (
         <Box
             style={{backgroundColor: 'white'}}
@@ -229,7 +231,11 @@ const PagePlans = () => {
                     <ProElementList label="Massimo 7 sedi"/>
                     <ProElementList label="Massimo 4 configurazioni regolari"/>
                 </List>
-                <Button variant="contained" style={{textAlign: 'center', color: '#1a77d1', backgroundColor: 'white'}} sx={{mt: 2}}>
+                <Button variant="contained" 
+                    onClick={handleSelectPiano} 
+                    style={{textAlign: 'center', color: '#1a77d1', backgroundColor: 'white'}} 
+                    sx={{mt: 2}}
+                >
                     Scegli questo piano!
                 </Button>
             </Box>
@@ -264,7 +270,7 @@ const AddDoctorsPage = (props: PropsPageStepper) => {
     return (
         <Box>
             <TableDoctors />
-            <Button variant="contained" onClick={props.nextPage}>
+            <Button style={{position: 'absolute', right: 35}} variant="contained" onClick={props.nextPage}>
                 Continua
             </Button>
         </Box>
@@ -272,9 +278,6 @@ const AddDoctorsPage = (props: PropsPageStepper) => {
 }
 
 const TableDoctors = () => {
-    const doctors = useAppSelector(state => state.mediciAdmin.doctors)
-    const dispatch = useAppDispatch()
-
     return (
         <Box sx={{px: 15, py: 5}}>
             <EnhancedTable />
@@ -301,28 +304,35 @@ export default function PageCreaTurni() {
         }
     }
     const pages = [
-        <PagePlans key="Page_plans" />, 
+        <PagePlans key="Page_plans" nextPage={nextPage} />, 
         <Register nextPage={nextPage} key="register_page" />, 
         <ConfigurationTurniPage key="configuration_page" />, 
         <AddDoctorsPage nextPage={nextPage} key="med_page"/>, 
         <PayPage key="pay_page"/>
     ]
 
+    /**
+     * Prima ti registri, poi scegli piano, poi dai nomi, poi turni, poi doctor, poi paghi
+     * S1: Controlla se utente è loggato
+     * S1b: Se utente si logga con credenziali già esistenti allora gli dici qualcosa (e recuperi dati locali se ce ne sono e sono associati a quell'account)
+     * 
+     */
+
     return (
         <Box style={{backgroundColor: 'white'}}>
-        <Stepper activeStep={step} alternativeLabel>
-            {steps.map((label, index) => (
-                <Step key={label}>
-                    <StepButton onClick={() => setStep(index)}>
-                        {label}
-                    </StepButton>
-                </Step>
-            ))}
-        </Stepper>
-        {pages[step]}
-        <Button onClick={() => setStep(old => old + 1 )} disabled={step >= steps.length - 1}>
-            Continua
-        </Button>
-    </Box>
+            <Stepper activeStep={step} alternativeLabel>
+                {steps.map((label, index) => (
+                    <Step key={label}>
+                        <StepButton onClick={() => setStep(index)}>
+                            {label}
+                        </StepButton>
+                    </Step>
+                ))}
+            </Stepper>
+            {pages[step]}
+            <Button onClick={() => setStep(old => old + 1 )} disabled={step >= steps.length - 1}>
+                Continua
+            </Button>
+        </Box>
     )
 }

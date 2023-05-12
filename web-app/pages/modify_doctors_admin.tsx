@@ -9,16 +9,17 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Collapse from "@mui/material/Collapse";
 import ListItemText from "@mui/material/ListItemText";
 import ListItemButton from "@mui/material/ListItemButton";
-import { MedicoImported } from "../logic/server/firestore/firestore";
+import { MedicoImported, MedicoRemote } from "../logic/server/firestore/firestore";
 import { addSingleMedico, deleteSingleMedicoServer, fromRemoteToImportedMedico, updateSingleMedico } from "../logic/server/firestore/medici";
 import { NewListDropdown, NewMapDropdown } from "../components/general/form_dropdown";
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
-import { getMedici } from "../logic/local_utilities";
+import { getMedici, validateEmail } from "../logic/local_utilities";
 import ConfirmAlertDialog from "../components/general/alert_dialog";
 import { useAppDispatch, useAppSelector } from "../logic/redux/store";
 import { setDoctorsAndDistretto, setMedicoLocal, deleteMedicoLocal } from "../logic/redux/medici_admin";
 import List from "@mui/material/List";
+import assert from 'assert'
 
 const ruoli: Record<string, string> = {
     'Sostituto': 'Sostituto',
@@ -34,6 +35,22 @@ interface PropsDoctorItem {
 
 function DoctorItem(props: PropsDoctorItem) {
     const [open, setOpen] = useState(false);
+    const distretto = useAppSelector(state => state.mediciAdmin.distretto)
+    const dispatch = useAppDispatch()
+
+    const setMedico = async (med: MedicoRemote) => {
+        if(props.doc) {
+            await updateSingleMedico(med, distretto)
+        } else {
+            await addSingleMedico(med, distretto)
+        }
+        dispatch(setMedicoLocal(fromRemoteToImportedMedico(med)))
+    }
+
+    const deleteMedico = async (id_doc: string) => {
+        await deleteSingleMedicoServer(id_doc, distretto)
+        dispatch(deleteMedicoLocal(id_doc))
+    }
 
     const handleClick = () => {
       setOpen(!open);
@@ -49,7 +66,7 @@ function DoctorItem(props: PropsDoctorItem) {
                 {open ? <ExpandLess /> : <ExpandMore />}
             </ListItemButton>
             <Collapse in={open} timeout="auto" unmountOnExit>
-                <FormSingleMedico medico={props.doc}/>  
+                <FormSingleMedico medico={props.doc} onDelete={deleteMedico} onSetMedico={setMedico}/>  
             </Collapse>
         </Card>
     );
@@ -88,21 +105,21 @@ export default function ContainerEditDoctors() {
 
 interface PropsFormSingleMedico {
     medico?: MedicoImported
+    onDelete?: (arg0: string) => Promise<void>
+    onSetMedico: (arg0: MedicoRemote) => Promise<void>
 }
 
 export function FormSingleMedico(props: PropsFormSingleMedico) {
+    assert(props.medico === undefined && props.onDelete === undefined || props.medico !== undefined && props.onDelete !== undefined)
     const [medico, setMedico] = useState<MedicoImported>(props.medico || {nome: "", email: "", ruolo: "", sedi: []})
     const [message, setMessage] = useState("")
     const [loading, setLoading] = useState(false)
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false)
-    const distretto = useAppSelector(state => state.mediciAdmin.distretto)
-    const dispatch = useAppDispatch()
 
     const _deleteMedico = async () => {
         setLoading(true)
         try {
-            await deleteSingleMedicoServer(props.medico!.email, distretto)
-            dispatch(deleteMedicoLocal(props.medico!.email))
+            await props.onDelete!(props.medico!.email)
         } finally {
             setLoading(false)
         }
@@ -112,6 +129,9 @@ export function FormSingleMedico(props: PropsFormSingleMedico) {
         setMessage("")
         if (!medico.nome || !medico.ruolo || !medico.email || medico.sedi.length === 0) {
             setMessage("Riempi tutti i campi")
+            return
+        } else if (!validateEmail(medico.email)) {
+            setMessage('Inserisci una mail valida')
             return
         }
         setLoading(true)
@@ -123,12 +143,7 @@ export function FormSingleMedico(props: PropsFormSingleMedico) {
             ruolo: medico.ruolo
         }
         try {
-            if(props.medico) {
-                await updateSingleMedico(dataMedico, distretto)
-            } else {
-                await addSingleMedico(dataMedico, distretto)
-            }
-            dispatch(setMedicoLocal(fromRemoteToImportedMedico(dataMedico)))
+            await props.onSetMedico(dataMedico)
         } catch (e: any) {
             setMessage(e.message)
         } finally {
@@ -198,18 +213,15 @@ export function FormSingleMedico(props: PropsFormSingleMedico) {
                     </Grid>
                 </Grid>
             </Grid>
-            <Grid item>
-                <Typography>{message}</Typography>
-            </Grid>
                 {
                     loading && <Grid item>
                         <CircularProgress />
                     </Grid>
                 }
             <Grid item>
-                <Button variant="contained" onClick={uploadMedico}>{
-                    props.medico ? "Modifica medico" : "Carica medico"
-                }</Button>
+                <Button variant="contained" onClick={uploadMedico}>
+                    {props.medico ? "Modifica medico" : "Carica medico"}
+                </Button>
                 {
                     props.medico && 
                     <Button variant="contained" 
@@ -219,6 +231,9 @@ export function FormSingleMedico(props: PropsFormSingleMedico) {
                         Elimina medico
                     </Button>
                 }
+            </Grid>
+            <Grid item>
+                <Typography color='error' style={{fontSize: 14}}>{message}</Typography>
             </Grid>
             <ConfirmAlertDialog 
             open={openDeleteDialog} 

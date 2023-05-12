@@ -1,4 +1,4 @@
-import { getAllMediciServer, MedicoImported, MedicoRemote, shouldLoadOnlineMedici } from "./server/firestore/firestore"
+import { getAllMediciServer, MedicoImported, shouldLoadOnlineMedici } from "./server/firestore/firestore"
 
 export type MesiType = string[] //Record<number, string>
 export const mesi: MesiType = [
@@ -104,6 +104,10 @@ export const getMedici = async () => {
     return out
 }
 
+export const validateEmail = (email: string) => {
+    var re = /\S+@\S+\.\S+/;
+    return re.test(email);
+}
 
 export const clearStorage = () => {
     if (typeof window !== 'undefined') {

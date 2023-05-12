@@ -23,6 +23,7 @@ import ToggleButton from '@mui/material/ToggleButton'
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import { NewListDropdown } from '../general/form_dropdown';
+import Box from '@mui/material/Box';
 
 const days = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
 
@@ -232,7 +233,7 @@ export default function ConfigurationAdmin() {
             ))
           }
         </List>
-        <IconButton>
+        <IconButton sx={{mb: 2}}>
           <AddIcon onClick={() => addNewTurno()} />
         </IconButton>
         <Divider flexItem />
@@ -240,17 +241,15 @@ export default function ConfigurationAdmin() {
         <Grid item sx={{ py: 2 }}>
           <HandlerSpecialTurni specialTurni={[]} />
         </Grid>
-        {
-          !infoSent ? <Button
-            variant="contained"
-            component="label"
-            onClick={creaConfiguration}
-          >
-            Invia
-          </Button>
-          :
-          <Greetings />
-        }
+        <Grid item width="100%" display="flex" justifyContent="flex-end">
+            <Button
+              sx={{mr: 20}}
+              variant="contained"
+              onClick={creaConfiguration}
+            >
+              Continua
+            </Button>
+        </Grid>
         {
           loading && <CircularProgress />
         }

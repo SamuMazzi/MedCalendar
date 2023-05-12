@@ -90,6 +90,7 @@ export default function FormLogin(props: any) {
             }
           </Grid>
           <DecorationImage path="/grafiche/img_login.webp" width={1000} height={390.63} position="right" priority/>
+          <Typography sx={{position: 'relative', bottom: 0, left: 5}}>Sei un amministratore e vuoi usufruire del servizio? Clicca qui</Typography>
         </Grid>
   )
 }
