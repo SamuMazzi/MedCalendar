@@ -18,13 +18,18 @@ import ListItemText from '@mui/material/ListItemText';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import { turni_disp } from './create_configuration_admin';
+import useUser from '../../logic/hooks/use_user';
 
 interface PropsHandlerSpecialTurni {
   specialTurni?: Date[]
 }
 
+//TODO: Gestire special turni -> creare callback per registrarli su configurationDistretto (o farlo direttamente da qua, ma si rischia)
+
+
 export default function HandlerSpecialTurni(props: PropsHandlerSpecialTurni) {
-  const distretto = 'Sassuolo'
+  const [_, distretto] = useUser()
+  const tmpMode = props.specialTurni !== undefined
   const [messageSnackbar, setMessageSnackbar] = useState("")
   const [loading, setLoading] = useState(false)
   const [daySelected, setDaySelected] = useState(dayjs())
@@ -33,8 +38,8 @@ export default function HandlerSpecialTurni(props: PropsHandlerSpecialTurni) {
   const [specialTurni, setSpecialTurni] = useState<Date[] | undefined>()
 
   useEffect(() => {
-    if (props.specialTurni === undefined) {
-      getSpecialTurniServer(distretto).then((res) => setSpecialTurni(res))
+    if (!tmpMode) {
+      getSpecialTurniServer(distretto!).then((res) => setSpecialTurni(res))
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -47,8 +52,10 @@ export default function HandlerSpecialTurni(props: PropsHandlerSpecialTurni) {
     setMessageError("")
     setLoading(true)
     try {
-        removeSpecialTurnoServer(specialTurni![index], distretto)
-        setSpecialTurni(old => old!.splice(index, 1))
+      if(!tmpMode) {
+        removeSpecialTurnoServer(specialTurni![index], distretto!)
+      }
+      setSpecialTurni(old => old!.splice(index, 1))
     } catch (e: any) {
       if (e instanceof AppFirebaseError) {
         showError(e.message)
@@ -65,7 +72,9 @@ export default function HandlerSpecialTurni(props: PropsHandlerSpecialTurni) {
     setLoading(true)
     try {
       const dateTurno = fromTurnoToDate(daySelected.toDate(), turnoFrom + '-' + turnoTo)
-      addSpecialTurnoServer(dateTurno, distretto)
+      if(!tmpMode) {
+        addSpecialTurnoServer(dateTurno, distretto!)
+      }
       setSpecialTurni(old => old ? [...old, dateTurno] : [dateTurno])
     } catch (e: any) {
       if (e instanceof AppFirebaseError) {
@@ -81,39 +90,17 @@ export default function HandlerSpecialTurni(props: PropsHandlerSpecialTurni) {
   return (
     <>
       <Box display="flex" justifyContent="center">
-        <Box sx={{mr: 4}}>
-        <Typography fontWeight="fontWeightBold" variant="h6" component="h6" sx={{ py: 2 }}>
-            Modifiche attuali ai turni
-        </Typography>
-        <Card sx={{borderRadius: 8, maxWidth: 350, mb: 2}}>
-            <List>
-                {
-                  specialTurni?.map((dateTurno, index) => {
-                    const out = parseDateToTurno(dateTurno)
-                    return (
-                      <ListItem key={dateTurno.toISOString()} secondaryAction={
-                        <IconButton edge="end" aria-label="delete" onClick={() => removeSpecialTurno(index)} disabled={loading}>
-                                <DeleteIcon />
-                                </IconButton>
-                            }>
-                                <ListItemText primary={dayjs(out[0]).format('DD/MM/YYYY') + ' ' + out[1]}/>
-                            </ListItem>
-                        )
-                      })
-                    }
-            </List>
-        </Card>
-        </Box>
+        
         <Box>
-        <Typography fontWeight="fontWeightBold" variant="h6" component="h6" sx={{ py: 2 }}>
-            Aggiungi turno specifico
-        </Typography>
-        <Box display='flex' alignItems="center">
-          <Typography textAlign='center' sx={{pr: 2}}>
-            {'Giorno: ' + daySelected.format('DD/MM/YYYY')}
+          <Typography fontWeight="fontWeightBold" variant="h6" component="h6" sx={{ py: 2 }}>
+              Aggiungi turno specifico
           </Typography>
-          <CalendarSelectSingleDay daySelected={daySelected} onChangeDate={setDaySelected}/>
-        </Box>
+          <Box display='flex' alignItems="center">
+            <Typography textAlign='center' sx={{pr: 2}}>
+              {'Giorno: ' + daySelected.format('DD/MM/YYYY')}
+            </Typography>
+            <CalendarSelectSingleDay daySelected={daySelected} onChangeDate={setDaySelected}/>
+          </Box>
           <Container sx={{py: 1}}/>
           <NewListDropdown
               label="Dalle"
@@ -130,6 +117,34 @@ export default function HandlerSpecialTurni(props: PropsHandlerSpecialTurni) {
           <Button variant="contained" onClick={() => addSpecialTurno()} disabled={loading}>
             Aggiungi turno
           </Button>
+        </Box>
+        <Box sx={{ml: 4}}>
+          <Typography fontWeight="fontWeightBold" variant="h6" component="h6" sx={{ py: 2 }}>
+              Modifiche attuali ai turni
+          </Typography>
+          {
+            (specialTurni === undefined || specialTurni.length === 0) ? <Typography>
+              Ancora nessuna modifica applicata ai turni
+            </Typography> : 
+            <Card sx={{borderRadius: 8, maxWidth: 350, mb: 2}}>
+              <List>
+                  {
+                    specialTurni?.map((dateTurno, index) => {
+                      const out = parseDateToTurno(dateTurno)
+                      return (
+                        <ListItem key={dateTurno.toISOString()} secondaryAction={
+                          <IconButton edge="end" aria-label="delete" onClick={() => removeSpecialTurno(index)} disabled={loading}>
+                                  <DeleteIcon />
+                                  </IconButton>
+                              }>
+                                  <ListItemText primary={dayjs(out[0]).format('DD/MM/YYYY') + ' ' + out[1]}/>
+                              </ListItem>
+                          )
+                        })
+                      }
+              </List>
+            </Card>
+          }
         </Box>
         <MessageSnackbar isOpen={messageSnackbar !== ''} handleClose={() => setMessageError("")} message={messageSnackbar}/>
       </Box>

@@ -10,7 +10,7 @@ import { getAllDistretti } from '../logic/server/firestore/distretti';
 // import { getLocalDistretti, saveToStorage } from '../logic/local_storage'
 
 interface ParamSelectDistretto {
-    distretto: string,
+    distretto: string | undefined,
     setDistretto: (arg0: string) => void
 }
 

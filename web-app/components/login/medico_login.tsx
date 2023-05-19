@@ -7,6 +7,7 @@ import Grid from "@mui/material/Grid";
 import CircularProgress from "@mui/material/CircularProgress";
 import { FormButtonSubmit, FormTextField } from "./form_components";
 import useMedici from "../../logic/hooks/use_medici";
+import { signInAnonym } from "../../logic/server/auth";
 
 const calculateHashText = async (text: string) => {
     if(!window) return
@@ -48,6 +49,7 @@ export default function MedicoLogin(props: PropsMedicoLogin) {
         try {
             setLoadingLogin(true)
             if (await checkPassword(password, props.server_psw)) {
+                await signInAnonym()
                 dispatch(setUser({ uid: medicoSelected, data: allMedici[medicoSelected] }))
                 dispatch(setAdmin(false))
                 if (returnUrl && !returnUrl.includes('login') && !returnUrl.includes('_admin')) {

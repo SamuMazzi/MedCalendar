@@ -221,4 +221,5 @@ export default function SingleSede(props: SingleSedeProps) {
     </Grow>
     );
   } */
+  // eslint-disable-next-line import/no-anonymous-default-export
   export default ""

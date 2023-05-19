@@ -144,13 +144,21 @@ export const uploadConfigurationDistretto = async (distretto: StateDistretto, ui
         [firestore_lastTimeModifyInfoDoctorsKey]: Timestamp.now() 
     })
     const infoSedi: Record<any, any> = {
-        sedi: {}
+        sedi: {},
+        special_days: {},
+        turni: {}
     }
     for(const sede of distretto.sedi) {
         infoSedi['sedi'][sede.nome] = { medici_per_turno: sede.medici_per_turno }
     }
-    infoSedi['special_days'] = [distretto.extraTurni[0]]
-    infoSedi['turni'] = //TODO: Finisci
+    if(distretto.extraTurni) {
+        //TODO: Check che timestamp non modifichi con fuso orario
+        infoSedi['special_days'] = distretto.extraTurni.map((t) => Timestamp.fromMillis(t.date_millis))
+    }
+    for(const t of distretto.turni) {
+        const fascia = t.from + '-' + t.to
+        infoSedi['turni'][fascia] = t.daysOfWeek.join(',')
+    }
     const infoSediRef = doc(firestore, distrettoRef.path, 'info', 'info_sedi')
     await setDoc(infoSediRef, infoSedi)
     const infoMedici: Record<string, any> = {}
@@ -158,5 +166,4 @@ export const uploadConfigurationDistretto = async (distretto: StateDistretto, ui
         const doc = distretto.medici[id_doc]
         infoMedici[id_doc] = doc
     }
-
 }

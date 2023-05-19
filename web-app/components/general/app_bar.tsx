@@ -12,8 +12,7 @@ import useUser from '../../logic/hooks/use_user'
 
 export function MedAppBar() {
   const [ anchorEl, setAnchorEl ] = useState<null | HTMLElement>(null);
-  const [user, distretto, logout] = useUser()
-  console.log(user)
+  const [user, distretto, logout, fbUser] = useUser()
 
   const handleMenu = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -43,10 +42,14 @@ export function MedAppBar() {
       <Grid item display="flex" alignItems="center">
           {user.uid !== "" && (
             <>
-              <PlaceIcon />
-              <Typography sx={{pr: 3, pl: 1}}>
-                {distretto}
-              </Typography>
+              {
+                distretto !== undefined && <>
+                  <PlaceIcon />
+                  <Typography sx={{pr: 3, pl: 1}}>
+                    {distretto}
+                  </Typography>
+                </>
+              }
               <IconButton
                 data-cy="profile_button"
                 size="large"
@@ -87,9 +90,16 @@ export function MedAppBar() {
                   },
                 }}
               >
-              <Typography style={{ fontWeight: "bold", display: 'inline-block', whiteSpace: 'pre-line', fontSize: 20 }} sx={{px: 2, pt: 1}}>
-                {user.nome ? user.nome : (user.admin ? 'Amministratore' : '')}
+                <Typography style={{ fontWeight: "bold", display: 'inline-block', whiteSpace: 'pre-line', fontSize: 20 }} sx={{px: 2, pt: 1}}>
+                  {user.nome ? user.nome : (user.admin ? 'Amministratore' : '')}
                 </Typography>
+                {
+                  fbUser != null && <MenuItem sx={{textAlign:'left'}}>
+                    <Typography textAlign='left' style={{ fontSize: 14, fontWeight: 400 }} sx={{px: 2, pt: 1}}>
+                      {"Email: " + fbUser.email}
+                    </Typography>
+                  </MenuItem>
+                }
                 <MenuItem onClick={handleLogout}>
                   <Typography style={{textDecoration: 'underline', color: 'black'}}>
                     Logout

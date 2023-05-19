@@ -1,5 +1,5 @@
 import { initializeApp, FirebaseApp } from "firebase/app";
-import { getAnalytics, isSupported } from "firebase/analytics";
+//import { initializeAnalytics, getAnalytics, isSupported } from "firebase/analytics";
 import { AuthErrorCodes } from "firebase/auth";
 
 const firebaseConfig = {
@@ -28,6 +28,7 @@ interface PropsAppFirebaseError {
 export class AppFirebaseError extends Error {
   code: string
   type: string
+  signinType?: string
 
   constructor(props: PropsAppFirebaseError) {
     super(props.msg ? props.msg : '');
@@ -54,26 +55,32 @@ export class AppFirebaseError extends Error {
     switch(code) {
       case (AuthErrorCodes.CREDENTIAL_ALREADY_IN_USE): {
         message = "Credenziali già utilizzate"
+        this.signinType = 'email'
         break;
       }
       case (AuthErrorCodes.CREDENTIAL_MISMATCH): {
         message = "Credenziali sbagliate"
+        this.signinType = 'email'
         break;
       }
       case (AuthErrorCodes.EMAIL_EXISTS): {
         message = "Credenziali sbagliate"
+        this.signinType = 'email'
         break;
       }
       case (AuthErrorCodes.INVALID_PASSWORD): {
         message = "Credenziali sbagliate"
+        this.signinType = 'email'
         break;
       }
       case (AuthErrorCodes.USER_DELETED): {
         message = "Credenziali sbagliate"
+        this.signinType = 'email'
         break;
       }
       case (AuthErrorCodes.INVALID_EMAIL): {
         message = "Email non valida"
+        this.signinType = 'email'
         break;
       }
       case (AuthErrorCodes.TOO_MANY_ATTEMPTS_TRY_LATER): {
@@ -82,10 +89,12 @@ export class AppFirebaseError extends Error {
       }
       case (AuthErrorCodes.WEAK_PASSWORD): {
         message = "La password deve essere di almeno 6 caratteri"
+        this.signinType = 'password'
         break;
       }
       case (AuthErrorCodes.UNVERIFIED_EMAIL): {
         message = "Email non verificata"
+        this.signinType = 'email'
         break;
       }
       case ('unavailable'): {
@@ -93,6 +102,7 @@ export class AppFirebaseError extends Error {
         break;
       }
       default: {
+        console.log(code)
         message = "Si è verificato un errore, riprovare"
         break;
       }
@@ -103,4 +113,9 @@ export class AppFirebaseError extends Error {
 }
 
 export const firebaseApp = initializeApp(firebaseConfig);
-const analytics = isSupported().then(yes => yes ? getAnalytics(firebaseApp) : null);
+/* const analytics = isSupported().then(yes => {
+  if (yes) {
+    initializeAnalytics(firebaseApp)
+    getAnalytics(firebaseApp)
+  }}
+); */

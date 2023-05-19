@@ -72,6 +72,10 @@ export const configuration_distretti_slice = createSlice({
             }
             state.sedi = [...state.sedi, newSede]
         },
+        deleteSede: (state, action: PayloadAction<number>) => {
+            const index = action.payload
+            state.sedi = state.sedi!.filter((v, i) => i !== index)
+        },
         changeNomeSede: (state, action) => {
             const index = action.payload.index
             const data = action.payload
@@ -111,6 +115,9 @@ export const configuration_distretti_slice = createSlice({
         setPasswordDistrettoSlice: (state, action: PayloadAction<string>) => {
             state.password = action.payload
         },
+        setNameDistrettoSlice: (state, action: PayloadAction<string>) => {
+            state.name = action.payload
+        },
         setMedicoDistrettoSlice: (state, action: PayloadAction<MedicoImported>) => {
             const medico = action.payload
             const id_doc = medico.email
@@ -121,10 +128,15 @@ export const configuration_distretti_slice = createSlice({
             const { [id_doc]: _, ...others} = state.medici
             state.medici = others
         },
+        setPricingPlan: (state, action: PayloadAction<PricingPlan>) => {
+            state.pricingPlan = action.payload
+        }
     }
 })
 
 // Action creators are generated for each case reducer function
-export const { addSede, changeNumMediciPerTurnoSede, changeNomeSede, changeFasciaTurnoDistretto, setPasswordDistrettoSlice, setMedicoDistrettoSlice, removeMedicoDistrettoSlice } = configuration_distretti_slice.actions
+export const { addSede, deleteSede, changeNumMediciPerTurnoSede, changeNomeSede, 
+    changeFasciaTurnoDistretto, setPasswordDistrettoSlice, setMedicoDistrettoSlice, 
+    removeMedicoDistrettoSlice, setPricingPlan, setNameDistrettoSlice } = configuration_distretti_slice.actions
 
 export default configuration_distretti_slice.reducer

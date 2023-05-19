@@ -3,7 +3,7 @@ import { getLocalActualDistretto } from '../local_utilities'
 
 interface SettingsState {
     messageError: string
-    distretto: string
+    distretto?: string
 }
 
 const initialState: SettingsState = {

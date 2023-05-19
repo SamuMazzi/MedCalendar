@@ -68,6 +68,10 @@ export const uploadConfigurazioneMediciDistretto = async (distretto: string, inf
     }
 }
 
+export const checkIfDistrettoExists = async (name: string) => {
+    const querySnapshot = await getDoc(doc(firestore, firestore_distrettiCollectionKey, name));
+    return querySnapshot.exists()
+}
 
 export const getAllDistretti = async () => {
     try {

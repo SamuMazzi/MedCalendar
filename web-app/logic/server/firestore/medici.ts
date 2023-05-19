@@ -53,6 +53,16 @@ export const fromRemoteToImportedMedico = (med: MedicoRemote): MedicoImported =>
     }
 }
 
+export const fromImportedToRemoteMedico = (med: MedicoImported): MedicoRemote => {
+    return {
+        Nome: med.nome,
+        Cognome: '',
+        ruolo: med.ruolo,
+        sedi: med.sedi,
+        Email: med.email
+    }
+}
+
 export const deleteSingleMedicoServer = async (id_med: string, distretto: string) => {
     const futures = []
     const docMedico = doc(firestore, firestore_distrettiCollectionKey, distretto, firestore_infoCollectionKey, firestore_infoMediciKey)
@@ -60,6 +70,33 @@ export const deleteSingleMedicoServer = async (id_med: string, distretto: string
         futures.push(deleteDoc(doc(firestore, firestore_usersKey, id_med)))
         futures.push(setDoc(docMedico, { [id_med]: deleteField() }, { merge: true }));
         futures.push(setDoc(doc(firestore, firestore_distrettiCollectionKey, distretto, firestore_infoCollectionKey, firestore_listaMediciKey), { 'list': arrayRemove(id_med) }, { merge: true }));
+        futures.push(updateLastModifyDoctors(distretto))
+        await Promise.all(futures)
+    } catch (error: unknown) {
+        handleFirebaseError(error)
+    }
+}
+
+const _createObjMedico = (data: MedicoRemote) => {
+    const obj: Record<string, any> = {...data}
+    obj['uid'] = data.Email
+    return obj
+}
+
+export const addBatchMedici = async (medici: Record<string, MedicoImported>, distretto: string) => {
+    const futures = []
+    const infoMedici: Record<string, any> = {}
+    const infoDocMedico = doc(firestore, firestore_distrettiCollectionKey, distretto, firestore_infoCollectionKey, firestore_infoMediciKey)
+    for(const id_m of Object.keys(medici)){
+        const med = medici[id_m]
+        const obj = _createObjMedico(fromImportedToRemoteMedico(med))
+        infoMedici[id_m] = obj
+        futures.push(setDoc(doc(firestore, firestore_usersKey, id_m), obj))
+    }
+    try {
+        futures.push(setDoc(infoDocMedico, infoMedici, { merge: true }));
+        futures.push(setDoc(doc(firestore, firestore_distrettiCollectionKey, distretto, firestore_infoCollectionKey, firestore_listaMediciKey), 
+            { 'list': arrayUnion(...Object.keys(infoMedici)) }, { merge: true }));
         futures.push(updateLastModifyDoctors(distretto))
         await Promise.all(futures)
     } catch (error: unknown) {
@@ -75,19 +112,20 @@ export const updateSingleMedico = async (data: MedicoRemote, distretto: string) 
     await _setSingleMedico(data, distretto, "update")
 }
 
-const _setSingleMedico = async (data: MedicoRemote, distretto: string, mode: "add" | "update") => {
+const _setSingleMedico = async (data: MedicoRemote, distretto: string, mode: "add" | "update", updateLastModify=true) => {
     const futures = []
-    const obj: Record<string, any> = {...data}
-    obj['uid'] = data.Email
+    const obj = _createObjMedico(data)
+    const infoDocMedico = doc(firestore, firestore_distrettiCollectionKey, distretto, firestore_infoCollectionKey, firestore_infoMediciKey)
     const uidMed: string = obj['uid']
-    const docMedico = doc(firestore, firestore_distrettiCollectionKey, distretto, firestore_infoCollectionKey, firestore_infoMediciKey)
     try {
         futures.push(setDoc(doc(firestore, firestore_usersKey, uidMed), obj))
-        futures.push(setDoc(docMedico, { [uidMed]: obj }, { merge: true }));
+        futures.push(setDoc(infoDocMedico, { [uidMed]: obj }, { merge: true }));
         if (mode === "add") {
             futures.push(setDoc(doc(firestore, firestore_distrettiCollectionKey, distretto, firestore_infoCollectionKey, firestore_listaMediciKey), { 'list': arrayUnion(uidMed) }, { merge: true }));
         }
-        futures.push(updateLastModifyDoctors(distretto))
+        if(updateLastModify) {
+            futures.push(updateLastModifyDoctors(distretto))
+        }
         await Promise.all(futures)
     } catch (error: unknown) {
         handleFirebaseError(error)

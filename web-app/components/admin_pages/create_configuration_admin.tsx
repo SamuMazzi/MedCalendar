@@ -6,7 +6,6 @@ import AddIcon from '@mui/icons-material/AddRounded';
 import DeleteIcon from '@mui/icons-material/DeleteRounded';
 import SingleSede from './single_sede';
 import MessageSnackbar from '../snackbar/message_snackbar';
-import Greetings from '../general/greetings';
 import { setConfigurationDistrettoMese } from '../../logic/server/firestore/distretti'
 import { useState, useEffect } from 'react'
 import { useAppSelector, useAppDispatch } from '../../logic/redux/store'
@@ -15,7 +14,6 @@ import Head from 'next/head';
 import { AppFirebaseError } from '../../logic/server/firebase';
 import { setMessageError } from '../../logic/redux/settings_slice';
 import HandlerSpecialTurni from './change_single_turno';
-import { FormTextField } from '../login/form_components';
 import IconButton from '@mui/material/IconButton';
 import Divider from '@mui/material/Divider';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
@@ -23,7 +21,8 @@ import ToggleButton from '@mui/material/ToggleButton'
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import { NewListDropdown } from '../general/form_dropdown';
-import Box from '@mui/material/Box';
+import { uploadConfigurationDistretto } from '../../logic/server/firestore/firestore';
+import useUser from '../../logic/hooks/use_user';
 
 const days = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
 
@@ -49,21 +48,26 @@ const TitleSection = (props: PropsTitleSection) => {
     )
 }
 
+interface PropsPageStepper {
+  nextPage: () => void
+}
+
 export const turni_disp = [
   '00', '00:30', '01', '01:30', '02', '02:30', '03', '03:30', 
   '04', '04:30', '05', '05:30', '06', '06:30', '07', '07:30', '08', '08:30', 
   '09', '09:30', '10', '10:30', '11', '11:30', '12', '12:30', '13', '13:30', 
   '14', '14:30', '15', '15:30', '16', '16:30', '17', '17:30', '18', '18:30', 
   '19', '19:30', '20', '20:30', '21', '21:30', '22', '22:30', '23', '23:30']
-export default function ConfigurationAdmin() {
+
+export default function ConfigurationAdmin(props: PropsPageStepper) {
   //TODO: Numero massimo di turni notturni per mese
   //TODO: distanza temporale minima fra turni (diurni/notturni)
   const configurationDistretto = useAppSelector(state => state.configurationDistr)
   const dispatch = useAppDispatch()
   const [ loading, setLoading ] = useState(false)
-  const [ infoSent, setInfoSent ] = useState(false)
   const [ isOpenSnackbar, setIsOpenSnackbar ] = useState(false)
   const [messageSnackbar, setMessageSnackbar] = useState("")
+  const [user] = useUser()
 
   const _editTurno = (newTurno: TurnoDistretto, index?: number) => {
     const newSt = [...configurationDistretto.turni]
@@ -113,9 +117,31 @@ export default function ConfigurationAdmin() {
     setIsOpenSnackbar(true)
   }
   const validateConfiguration = () => {
-    for(let sede of configurationDistretto.sedi) {
+    if(configurationDistretto.sedi.length <= 0) {
+      showError("Inserisci almeno una sede")
+      return false
+    }
+    for(const sede of configurationDistretto.sedi) {
       if(!sede.nome) {
         showError("Il nome di una sede non può essere vuoto")
+        return false
+      }
+      if(sede.medici_per_turno <= 0) {
+        showError("La sede " + sede.nome + " deve avere almeno un medico per turno.")
+        return false
+      }
+    }
+    if(configurationDistretto.turni.length <= 0) {
+      showError("Inserisci almeno un turno")
+      return false
+    }
+    for(const turno of configurationDistretto.turni) {
+      if(turno.daysOfWeek.length <= 0) {
+        showError("Ogni turno necessita di essere applicato ad almeno un giorno")
+        return false
+      }
+      if(turno.from === turno.to) {
+        showError("Un turno non può iniziare e finire nello stesso momento")
         return false
       }
     }
@@ -126,9 +152,9 @@ export default function ConfigurationAdmin() {
     setLoading(true)
     try {
       if(validateConfiguration()) {
-        //new Date() dovrebbe essere del mese dopo
-        await setConfigurationDistrettoMese(new Date(), "distretto", configurationDistretto.sedi)
-        setInfoSent(true)
+        await uploadConfigurationDistretto(configurationDistretto, user.uid)
+        //TODO: Save local
+        props.nextPage()
       }
     } catch (e: any) {
       if (e instanceof AppFirebaseError) {
@@ -209,7 +235,7 @@ export default function ConfigurationAdmin() {
                     days.map((day) => <ToggleButton key={day} value={day}>{day}</ToggleButton>)
                   }
                 </ToggleButtonGroup>
-                <Typography sx={{pr: 1}}>
+                <Typography sx={{pr: 1, pl: 2}}>
                   Dalle
                 </Typography>
                 <NewListDropdown
@@ -233,9 +259,9 @@ export default function ConfigurationAdmin() {
             ))
           }
         </List>
-        <IconButton sx={{mb: 2}}>
-          <AddIcon onClick={() => addNewTurno()} />
-        </IconButton>
+        <Button sx={{mb: 2}} startIcon={<AddIcon/>} onClick={() => addNewTurno()} >
+          Aggiungi un turno
+        </Button>
         <Divider flexItem />
         <TitleSection title="Modifiche ai turni" description='Qui puoi inserire degli specifici turni extra dovuti a vari eventi in quella zona (non preoccuparti se ti dimentichi qualcosa, potrai aggiungerli o rimuoverli in futuro)'/>
         <Grid item sx={{ py: 2 }}>

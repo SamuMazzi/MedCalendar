@@ -14,6 +14,8 @@ import Box from '@mui/material/Box';
 import { useAppDispatch, useAppSelector } from '../logic/redux/store';
 import { setDistrettoSlice } from '../logic/redux/settings_slice';
 import { setLocalActualDistretto } from '../logic/local_utilities';
+import Link from 'next/link';
+import { Routes } from '../logic/Routes';
 
 export async function getStaticProps() {
   return {
@@ -89,8 +91,16 @@ export default function FormLogin(props: any) {
               </Box> 
             }
           </Grid>
+          <Grid item
+            style={{
+                position: 'absolute',
+                bottom: 55,
+                left: 5,
+            }}
+          >
+            <Typography component={Link} href={Routes.Register} sx={{fontSize: {xs: 12, md: 15}}}>Sei un amministratore e vuoi usufruire del servizio? Clicca qui</Typography>
+          </Grid>
           <DecorationImage path="/grafiche/img_login.webp" width={1000} height={390.63} position="right" priority/>
-          <Typography sx={{position: 'relative', bottom: 0, left: 5}}>Sei un amministratore e vuoi usufruire del servizio? Clicca qui</Typography>
         </Grid>
   )
 }
@@ -117,7 +127,7 @@ function SelectDistrettoLogin(props: PropsSelectDistrettoLogin) {
       </Grid>
       <Grid item>
         <SelectDistretto distretto={distretto} setDistretto={handleSetDistretto}/>
-        </Grid>
+      </Grid>
       <Grid item>
         <Button style={{textTransform: 'none'}} 
           sx={{mt: 1}} variant="contained" 

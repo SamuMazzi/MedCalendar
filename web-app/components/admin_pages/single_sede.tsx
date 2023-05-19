@@ -5,8 +5,9 @@ import Box from '@mui/material/Box'
 import TextField from '@mui/material/TextField'
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
+import DeleteIcon from '@mui/icons-material/DeleteRounded';
 import { useAppSelector, useAppDispatch } from '../../logic/redux/store'
-import { changeNumMediciPerTurnoSede, changeNomeSede } from '../../logic/redux/configuration_distretto_slice'
+import { changeNumMediciPerTurnoSede, changeNomeSede, deleteSede } from '../../logic/redux/configuration_distretto_slice'
 import IconButton from '@mui/material/IconButton'
 
 interface SingleSedeProps {
@@ -35,6 +36,10 @@ export default function SingleSede(props: SingleSedeProps) {
             })
         )
     }
+
+    const handleDeleteSede = () => {
+        dispatch(deleteSede(props.index))
+    }
   
     return (
     <Grow
@@ -58,7 +63,6 @@ export default function SingleSede(props: SingleSedeProps) {
                 variant="standard"
                 onChange={(event) => changeNome(event.target.value)}
             />
-            {/**fontWeight="fontWeightBold" */}
           </Grid>
           
           <Grid item sx={{pt: 2, px: 2}}>
@@ -74,6 +78,11 @@ export default function SingleSede(props: SingleSedeProps) {
                     <AddIcon fontSize="small"/>
                 </IconButton>
             </Box>
+          </Grid>
+          <Grid item>
+            <IconButton onClick={handleDeleteSede}>
+                <DeleteIcon />
+            </IconButton>
           </Grid>
         </Grid>
       </Box>
