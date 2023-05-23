@@ -5,7 +5,6 @@ import StepButton from '@mui/material/StepButton'
 import Stepper from '@mui/material/Stepper'
 import { useState } from 'react'
 import EnhancedTable from '../components/table_doctors'
-import { startSubscription } from '../logic/server/firestore/stripe'
 import ConfigurationAdmin from '../components/admin_pages/create_configuration_admin'
 import { PagePlans } from '../components/registration/plans'
 import { RegisterAdminSection, RegisterDistrettoSection } from '../components/registration/register_section'
@@ -13,6 +12,7 @@ import { useAppDispatch, useAppSelector } from '../logic/redux/store'
 import { setMessageError } from '../logic/redux/settings_slice'
 import { addBatchMedici } from '../logic/server/firestore/medici'
 import { AppFirebaseError } from '../logic/server/firebase'
+import PayPage from '../components/registration/payment_page'
 
 // #1a77d1
 // #64b5f4
@@ -22,17 +22,6 @@ import { AppFirebaseError } from '../logic/server/firebase'
 //TODO: Fai settare al medico la password per i turni, oppure fai scegliere all'admin cosa fare, cioè se obbligare i medici ad iscriversi o accesso con password
 //TODO: Modifica logica password... devono essere controllate sul server (GCF)
 
-const PayPage = () => {
-    return (
-        <Box>
-            <Button onClick={() => startSubscription('price_1MlKoXLQn1xS5BAMTOjsk8kM')}>
-                Paga
-            </Button>
-        </Box>
-    )
-}
-
-//TODO: Metti SignInAnonymously per medici normali, cosi puoi modificare i settings di sicurezza
 const AddDoctorsPage = (props: PropsPageStepper) => {
     const medici = useAppSelector(state => state.configurationDistr.medici)
     const distretto = useAppSelector(state => state.settings.distretto)
@@ -46,6 +35,7 @@ const AddDoctorsPage = (props: PropsPageStepper) => {
             await addBatchMedici(medici, distretto!)
             props.nextPage()
         } catch (e) {
+            console.log(e)
             if (e instanceof AppFirebaseError) {
                 dispatch(setMessageError(e.message))
             } else {
@@ -57,7 +47,7 @@ const AddDoctorsPage = (props: PropsPageStepper) => {
     return (
         <Box>
             <TableDoctors />
-            <Button style={{position: 'absolute', right: 35, bottom: 4}} variant="contained" onClick={handleContinua}>
+            <Button style={{position: 'absolute', right: 35}} variant="contained" onClick={handleContinua}>
                 Continua
             </Button>
         </Box>
@@ -93,25 +83,20 @@ export default function PageCreaTurni() {
         <PayPage key="pay_page"/>
     ]
 
-    /**
-     * Prima ti registri, poi scegli piano, poi dai nomi, poi turni, poi doctor, poi paghi
-     * S1: Controlla se utente è loggato
-     * S1b: Se utente si logga con credenziali già esistenti allora gli dici qualcosa (e recuperi dati locali se ce ne sono e sono associati a quell'account)
-     * 
-     */
-
     return (
-        <Box style={{backgroundColor: 'white'}}>
-            <Stepper activeStep={step} alternativeLabel>
-                {steps.map((label, index) => (
-                    <Step key={label}>
-                        <StepButton onClick={() => setStep(index)}>
-                            {label}
-                        </StepButton>
-                    </Step>
-                ))}
-            </Stepper>
-            {pages[step]}
+        <Box minHeight="calc(100vh - 199px)">
+            <Box style={{backgroundColor: 'white'}}>
+                <Stepper activeStep={step} alternativeLabel>
+                    {steps.map((label) => (
+                        <Step key={label}>
+                            <StepButton>
+                                {label}
+                            </StepButton>
+                        </Step>
+                    ))}
+                </Stepper>
+                {pages[step]}
+            </Box>
         </Box>
     )
 }

@@ -1,5 +1,5 @@
 import { AppFirebaseError, firebaseApp } from "./firebase";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, AuthError, connectAuthEmulator, AuthErrorCodes, signInAnonymously } from 'firebase/auth'
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, AuthError, connectAuthEmulator, AuthErrorCodes, signInAnonymously, GoogleAuthProvider, signInWithPopup } from 'firebase/auth'
 import { clearStorage } from "../local_utilities";
 
 function isInstanceOfAuthError(error: any): error is AuthError {
@@ -25,6 +25,23 @@ export const signInAdminWithEmail = async (email: string, password: string) => {
             throw new Error("C'è stato un errore, riprovare dopo")
         }
     }
+}
+
+export const signInWithGoogle = async () => {
+    const provider = new GoogleAuthProvider();
+    // provider.setCustomParameters({ prompt: "select_account" });
+    try {
+        const userCredential = await signInWithPopup(fbAuth, provider);
+        const user = userCredential.user;
+        return user
+    } catch (error: unknown) {
+        if (isInstanceOfAuthError(error)) {
+            throw new AppFirebaseError({code: error.code})
+        } else {
+            throw new Error("C'è stato un errore, riprovare dopo")
+        }
+    }
+    
 }
 
 export const signInAnonym = async () => {

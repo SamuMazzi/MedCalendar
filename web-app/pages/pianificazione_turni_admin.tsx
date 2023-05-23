@@ -104,7 +104,7 @@ export default function PianificazioneTurniPage() {
   const getTurniMedici = async () => {
     if(yearData === 0) return
     try {
-      const dataMedici: any = await getDisponibilitaMeseDistretto(distretto, yearData, monthData)
+      const dataMedici: any = await getDisponibilitaMeseDistretto(distretto!, yearData, monthData)
       const listMedici = getListMediciFromData(dataMedici)
       setNMedici(listMedici ? listMedici.length : 0)
     } catch (error: unknown) {
@@ -130,7 +130,7 @@ export default function PianificazioneTurniPage() {
   const sendDataPianificazione = async () => {
     setLoadingTurni(true)
     try {
-      await uploadConfigurazioneMediciDistretto(distretto, dataScheduler)
+      await uploadConfigurazioneMediciDistretto(distretto!, dataScheduler)
       setDataSent(true)
     } catch(error: unknown) {
       if (error instanceof AppFirebaseError) {
@@ -146,7 +146,7 @@ export default function PianificazioneTurniPage() {
   const pianificaTurni = async () => {
     setLoadingTurni(true)
     try {
-      const data_disp = await getDataDistrettoToSendAPI(distretto, yearData, monthData)
+      const data_disp = await getDataDistrettoToSendAPI(distretto!, yearData, monthData)
       await callApi(data_disp)
     } catch (e) {
       console.log(e)
@@ -203,7 +203,7 @@ export default function PianificazioneTurniPage() {
           <Grid item>
             <TitleOfPage
               title="Pianifica i turni" 
-              distretto={distretto} 
+              distretto={distretto!} 
                   //* Dovrebbe dirti che c'è gente
                   description={""
                     /**!turniUploaded && yearData !== 0 ? "Per " + mesi[dateData.getMonth()+1] + " " + dateData.getFullYear() +  " hanno inserito le loro disponibilità " + nMedici + (nMedici !== 1 ? " medici" : " medico") : "" */}

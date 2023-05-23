@@ -173,6 +173,7 @@ export function SearchableDropdown(props: PropsSearchableDropdown) {
   const filterOptions = createFilterOptions({
     stringify: (option: any) => getValueFromOption(option),
   });
+  const options: string[] = props.map ? props.inputList.sort((a,b) => getValueFromOption(a) === getValueFromOption(b) ? 0 : getValueFromOption(a) < getValueFromOption(b) ? -1 : 1 ) : props.inputList
 
   return (
     <Grid item>
@@ -182,8 +183,8 @@ export function SearchableDropdown(props: PropsSearchableDropdown) {
           ListboxProps={{style: {overflow: 'auto'}}}
           filterOptions={filterOptions}
           disablePortal
-          id="combo-box"
-          options={props.map ? props.inputList.sort((a,b) => getValueFromOption(a) === getValueFromOption(b) ? 0 : getValueFromOption(a) < getValueFromOption(b) ? -1 : 1 ) : props.inputList}
+          id={"combo-box" + props.label}
+          options={options}
           onChange={(event: any, newValue: string | null) => {
             props.onChangeFn(newValue)
           }}

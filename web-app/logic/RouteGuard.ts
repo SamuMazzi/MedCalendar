@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { getLocalActualDistretto } from './local_utilities';
 import useUser from './hooks/use_user';
 import { Routes } from './Routes';
 
@@ -9,7 +8,7 @@ interface PropsRouteGuard {
 }
 
 export function RouteGuard(props: PropsRouteGuard) {    
-    const [user, _, logout] = useUser()
+    const [user, distretto, logout, fbUser, fbLoading] = useUser()
     const [authorized, setAuthorized] = useState(false);
     const router = useRouter();
 
@@ -31,23 +30,28 @@ export function RouteGuard(props: PropsRouteGuard) {
         }
 
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [user]);
+    }, [user, fbUser, fbLoading]);
 
     function authCheck(url: string) {
-        const normal_user = user.uid.length > 0
+        if (fbLoading) {
+            return
+        }
+        const normal_user = fbUser !== null
         const admin_user = user.admin
         // redirect to login page if accessing a private page and not logged in 
         const publicPaths = [Routes.Login, Routes.Register];
         const path = url.split('?')[0];
-        const distr = getLocalActualDistretto()  //TODO Forse si potrà sostituire con distretto in "useUser" ma è meglio testare
-        if (distr === '' && !publicPaths.some((el) => path.includes(el))) {
+        if (distretto === undefined && !publicPaths.some((el) => path.includes(el))) {
             logout()
-            setAuthorized(false);
+            setAuthorized(false)
             router.push({
                 pathname: Routes.Login,
                 query: { returnUrl: router.asPath }
             })
         } else if (!normal_user && !publicPaths.some((el) => path.includes(el))) {
+            if (user.uid.length > 0) {
+                logout() //legacy -> if user was logged in standard way, so only locale, without signInAnonym, logout so everything is cleared
+            }
             setAuthorized(false);
             router.push({
                 pathname: Routes.Login,
@@ -60,7 +64,7 @@ export function RouteGuard(props: PropsRouteGuard) {
         } else {
             setAuthorized(true);
         }
-        return;
+        return
     }
 
     return (authorized && props.children);

@@ -1,4 +1,4 @@
-import { getAllMediciServer, MedicoImported, shouldLoadOnlineMedici } from "./server/firestore/firestore"
+import { getAllMediciServer, MedicoInterface, shouldLoadOnlineMedici } from "./server/firestore/firestore"
 
 export type MesiType = string[] //Record<number, string>
 export const mesi: MesiType = [
@@ -17,6 +17,7 @@ export const mesi: MesiType = [
 ]
 
 export const keyLocalMedici = 'medici'
+const keyLocalDistretto = 'distretto'
 
 const giorni_settimana = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato']
 export const getGiornoSettimana = (timestamp: number, day: number) => {
@@ -81,20 +82,21 @@ export const getLocalDistretti = (admin = false) => {
 }
 
 export const getLocalActualDistretto = () => {
-    const out: string = getFromStorage('distretto')
+    const out: string = getFromStorage(keyLocalDistretto)
     return out ?? undefined
 }
 
 export const setLocalActualDistretto = (distr: string) => {
-    saveToStorage('distretto', distr)
+    saveToStorage(keyLocalDistretto, distr)
 }
 
 export const getMedici = async () => {
-    let out;
-    const localMedici: Record<string, MedicoImported> = getFromStorage(keyLocalMedici);
+    const distretto = getLocalActualDistretto()
+    const localMedici: Record<string, MedicoInterface> = getFromStorage(keyLocalMedici);
     const shouldLoadOnlineDoctors = await shouldLoadOnlineMedici()
+    let out;
     if (localMedici === null || shouldLoadOnlineDoctors) {
-        const onlineMedici: Record<string, MedicoImported> = await getAllMediciServer();
+        const onlineMedici: Record<string, MedicoInterface> = await getAllMediciServer(distretto);
         saveToStorage(keyLocalMedici, onlineMedici)
         saveToStorage('lastTimeModifyDoctors', Date.now())
         out = onlineMedici

@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react"
 import { getMedici } from "../local_utilities"
-import { MedicoImported } from "../server/firestore/firestore"
+import { MedicoInterface } from "../server/firestore/firestore"
 
-export default function useMedici(): [Record<string, MedicoImported>, boolean, string] {
+export default function useMedici(): [Record<string, MedicoInterface>, boolean, string] {
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState("")
-    const [medici, setMedici] = useState<Record<string, MedicoImported>>({})
+    const [medici, setMedici] = useState<Record<string, MedicoInterface>>({})
     
     const retrieveMedici = async () => {
         try {

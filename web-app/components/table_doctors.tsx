@@ -18,14 +18,12 @@ import Tooltip from '@mui/material/Tooltip';
 import DeleteIcon from '@mui/icons-material/Delete';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import { visuallyHidden } from '@mui/utils';
-import { MedicoImported, MedicoRemote } from '../logic/server/firestore/firestore';
+import { MedicoInterface } from '../logic/server/firestore/firestore';
 import { GenericAlertDialog } from './general/alert_dialog';
 import { FormSingleMedico } from '../pages/modify_doctors_admin';
-import Button from '@mui/material/Button';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import { useAppDispatch, useAppSelector } from '../logic/redux/store';
 import { removeMedicoDistrettoSlice, setMedicoDistrettoSlice } from '../logic/redux/configuration_distretto_slice';
-import { fromRemoteToImportedMedico } from '../logic/server/firestore/medici';
 import AddIcon from '@mui/icons-material/AddRounded';
 
 function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
@@ -54,7 +52,7 @@ function getComparator<Key extends keyof any>(
 
 interface HeadCell {
   disablePadding: boolean;
-  id: keyof MedicoImported;
+  id: keyof MedicoInterface;
   label: string;
 }
 
@@ -83,7 +81,7 @@ const headCells: readonly HeadCell[] = [
 
 interface EnhancedTableProps {
   numSelected: number;
-  onRequestSort: (event: React.MouseEvent<unknown>, property: keyof MedicoImported) => void;
+  onRequestSort: (event: React.MouseEvent<unknown>, property: keyof MedicoInterface) => void;
   onSelectAllClick: (event: React.ChangeEvent<HTMLInputElement>) => void;
   order: Order;
   orderBy: string;
@@ -94,7 +92,7 @@ function EnhancedTableHead(props: EnhancedTableProps) {
   const { onSelectAllClick, order, orderBy, numSelected, rowCount, onRequestSort } =
     props;
   const createSortHandler =
-    (property: keyof MedicoImported) => (event: React.MouseEvent<unknown>) => {
+    (property: keyof MedicoInterface) => (event: React.MouseEvent<unknown>) => {
       onRequestSort(event, property);
     };
 
@@ -150,8 +148,8 @@ function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
     }
   }
 
-  const handleCreateMedico = async (med: MedicoRemote) => {
-    dispatch(setMedicoDistrettoSlice(fromRemoteToImportedMedico(med)))
+  const handleCreateMedico = async (med: MedicoInterface) => {
+    dispatch(setMedicoDistrettoSlice(med))
     setShowModalCreateDoc(false)
   }
 
@@ -216,7 +214,7 @@ function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
 
 export default function EnhancedTable() {
   const [order, setOrder] = React.useState<Order>('asc');
-  const [orderBy, setOrderBy] = React.useState<keyof MedicoImported>('nome');
+  const [orderBy, setOrderBy] = React.useState<keyof MedicoInterface>('nome');
   const [selected, setSelected] = React.useState<string[]>([]);
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
@@ -225,7 +223,7 @@ export default function EnhancedTable() {
 
   const handleRequestSort = (
     event: React.MouseEvent<unknown>,
-    property: keyof MedicoImported,
+    property: keyof MedicoInterface,
   ) => {
     const isAsc = orderBy === property && order === 'asc';
     setOrder(isAsc ? 'desc' : 'asc');
@@ -311,7 +309,7 @@ export default function EnhancedTable() {
 }
 
 interface ParamsRowTabelDoctor {
-  doc: MedicoImported
+  doc: MedicoInterface
   isSelected: boolean
   onSelect: (arg0: string) => void
 }
@@ -331,8 +329,8 @@ const RowTableDoctor = (props: ParamsRowTabelDoctor) => {
     setShowModal(false)
   }
 
-  const handleSetMedico = async (med: MedicoRemote) => {
-    dispatch(setMedicoDistrettoSlice(fromRemoteToImportedMedico(med)))
+  const handleSetMedico = async (med: MedicoInterface) => {
+    dispatch(setMedicoDistrettoSlice(med))
     setShowModal(false)
   }
 

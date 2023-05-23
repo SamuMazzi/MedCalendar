@@ -40,7 +40,7 @@ export default function ModuleDisponibilita(props: PropsDisponibilita) {
                             Raccolta disponibilità
                         </Typography>
                         <Typography variant="h6" component="h6" sx={{ textAlign: { xs: "center", lg: "left" } }}>
-                            {"DISTRETTO: " + (distretto.toUpperCase())}
+                            {"DISTRETTO: " + (distretto?.toUpperCase())}
                         </Typography>
 
                     </Grid>

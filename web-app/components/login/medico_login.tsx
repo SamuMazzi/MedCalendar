@@ -8,6 +8,7 @@ import CircularProgress from "@mui/material/CircularProgress";
 import { FormButtonSubmit, FormTextField } from "./form_components";
 import useMedici from "../../logic/hooks/use_medici";
 import { signInAnonym } from "../../logic/server/auth";
+import { MedicoInterface } from "../../logic/server/firestore/firestore";
 
 const calculateHashText = async (text: string) => {
     if(!window) return
@@ -82,7 +83,7 @@ export default function MedicoLogin(props: PropsMedicoLogin) {
                         label="Seleziona il medico"
                         value={medicoSelected ? medicoSelected : null}
                         onChangeFn={(newMed) => setMedico(newMed)}
-                        inputMap={allMedici}
+                        inputMap={toTitleCaseNameMedici(allMedici)}
                         helperText={helperText}
                         extraFieldMenuItem={'nome'}
                     />
@@ -108,3 +109,18 @@ export default function MedicoLogin(props: PropsMedicoLogin) {
         </>
     )
 }
+
+const toTitleCase = (phrase: string) => {
+    return phrase
+      .toLowerCase()
+      .split(' ')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+};
+
+const toTitleCaseNameMedici = (obj: Record<string, MedicoInterface>) =>
+  Object.fromEntries(
+    Object.entries(obj).map(
+      ([k, v]) => [k, {...v, nome: toTitleCase(v.nome)}]
+    )
+  )

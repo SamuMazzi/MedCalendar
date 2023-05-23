@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-import { MedicoImported } from '../server/firestore/firestore'
+import { MedicoInterface } from '../server/firestore/firestore'
 
 interface Sede {
     nome: string,
@@ -7,6 +7,17 @@ interface Sede {
 }
 
 export type PricingPlan = 'GM_Base' | 'Contattaci'
+
+export const InfoPricingPlan: Record<PricingPlan, any> = {
+    GM_Base: {
+        name: 'Guardia medica (Base)',
+        price: 50
+    },
+    Contattaci: {
+        name: 'Contattaci',
+        reason: 'mock'
+    }
+}
 
 interface HoursTurno {
     from: string
@@ -26,7 +37,7 @@ export interface StateDistretto {
     sedi: Sede[],
     turni: TurnoDistretto[],
     password: string, //?
-    medici: Record<string, MedicoImported> //?
+    medici: Record<string, MedicoInterface> //?
     extraTurni?: SingleTurnoDistretto[]
     pricingPlan: PricingPlan
     // modifiche?: Record<string, string> //* Ancora da definire
@@ -118,7 +129,7 @@ export const configuration_distretti_slice = createSlice({
         setNameDistrettoSlice: (state, action: PayloadAction<string>) => {
             state.name = action.payload
         },
-        setMedicoDistrettoSlice: (state, action: PayloadAction<MedicoImported>) => {
+        setMedicoDistrettoSlice: (state, action: PayloadAction<MedicoInterface>) => {
             const medico = action.payload
             const id_doc = medico.email
             state.medici = {...state.medici, [id_doc]: medico}

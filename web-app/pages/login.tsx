@@ -72,9 +72,6 @@ export default function FormLogin(props: any) {
                       <Typography style={{ fontWeight: 900 }} variant="h3" component="h3" sx={{ mb: '20px' }}>
                         Accedi
                       </Typography>
-                      <Typography variant="h6" component="h6" style={{whiteSpace: 'pre-line'}} sx={{mb: 2}}>
-                        {"Distretto: " + distretto}
-                      </Typography>
                       {adminMode ? <AdminLogin /> : <MedicoLogin server_psw={props.secret} />}
                     </Grid>
                     <Button onClick={() => setAdminMode(oldVal => !oldVal)} sx={{

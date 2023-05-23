@@ -9,8 +9,8 @@ import CircularProgress from "@mui/material/CircularProgress";
 import Collapse from "@mui/material/Collapse";
 import ListItemText from "@mui/material/ListItemText";
 import ListItemButton from "@mui/material/ListItemButton";
-import { MedicoImported, MedicoRemote } from "../logic/server/firestore/firestore";
-import { addSingleMedico, deleteSingleMedicoServer, fromRemoteToImportedMedico, updateSingleMedico } from "../logic/server/firestore/medici";
+import { MedicoInterface } from "../logic/server/firestore/firestore";
+import { addSingleMedico, deleteSingleMedicoServer, updateSingleMedico } from "../logic/server/firestore/medici";
 import { NewListDropdown, NewMapDropdown } from "../components/general/form_dropdown";
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
@@ -30,7 +30,7 @@ const ruoli: Record<string, string> = {
 }
 
 interface PropsDoctorItem {
-    doc?: MedicoImported
+    doc?: MedicoInterface
 }
 
 function DoctorItem(props: PropsDoctorItem) {
@@ -38,13 +38,13 @@ function DoctorItem(props: PropsDoctorItem) {
     const distretto = useAppSelector(state => state.mediciAdmin.distretto)
     const dispatch = useAppDispatch()
 
-    const setMedico = async (med: MedicoRemote) => {
+    const setMedico = async (med: MedicoInterface) => {
         if(props.doc) {
             await updateSingleMedico(med, distretto)
         } else {
             await addSingleMedico(med, distretto)
         }
-        dispatch(setMedicoLocal(fromRemoteToImportedMedico(med)))
+        dispatch(setMedicoLocal(med))
     }
 
     const deleteMedico = async (id_doc: string) => {
@@ -104,17 +104,18 @@ export default function ContainerEditDoctors() {
 }
 
 interface PropsFormSingleMedico {
-    medico?: MedicoImported
+    medico?: MedicoInterface
     onDelete?: (arg0: string) => Promise<void>
-    onSetMedico: (arg0: MedicoRemote) => Promise<void>
+    onSetMedico: (arg0: MedicoInterface) => Promise<void>
 }
 
 export function FormSingleMedico(props: PropsFormSingleMedico) {
     assert(props.medico === undefined && props.onDelete === undefined || props.medico !== undefined && props.onDelete !== undefined)
-    const [medico, setMedico] = useState<MedicoImported>(props.medico || {nome: "", email: "", ruolo: "", sedi: []})
+    const [medico, setMedico] = useState<MedicoInterface>(props.medico || {nome: "", email: "", ruolo: "", sedi: []})
     const [message, setMessage] = useState("")
     const [loading, setLoading] = useState(false)
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false)
+    const sedi = useAppSelector(state => state.configurationDistr.sedi) //TODO: Da modificare per poter essere utilizzato anche solo nelle modifiche e non solo nella creazione
 
     const _deleteMedico = async () => {
         setLoading(true)
@@ -135,15 +136,8 @@ export function FormSingleMedico(props: PropsFormSingleMedico) {
             return
         }
         setLoading(true)
-        const dataMedico = {
-            Nome: medico.nome,
-            Cognome: "",
-            Email: medico.email,
-            sedi: medico.sedi,
-            ruolo: medico.ruolo
-        }
         try {
-            await props.onSetMedico(dataMedico)
+            await props.onSetMedico(medico)
         } catch (e: any) {
             setMessage(e.message)
         } finally {
@@ -203,7 +197,7 @@ export function FormSingleMedico(props: PropsFormSingleMedico) {
                         <NewListDropdown
                             label="Sedi"
                             value={medico.sedi}
-                            inputList={['Sassuolo', 'Formigine']}
+                            inputList={sedi.map((s) => s.nome)}
                             multiple
                             onChangeFn={(event) => setMedico({
                                 ...medico,

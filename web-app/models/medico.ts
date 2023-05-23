@@ -1,15 +1,4 @@
-const get_n_ore_by_role = (role: string) => {
-    const def_role = role.toLowerCase().trim()
-    if (def_role.startsWith('convenzionato') || def_role.startsWith('incaricato24')) {
-        return 8
-    } else if (def_role.startsWith('incaricato12')) {
-        return 4
-    } else if (def_role.startsWith('sostituto')) {
-        return 4
-    } else {
-        throw "Ruolo non riconosciuto: " + def_role
-    }
-}
+import { getNumOreMaxByRole } from "../logic/local_utilities";
 
 export class Medico {
     id: string;
@@ -25,7 +14,7 @@ export class Medico {
         this.ruolo = ruolo
         this.disponbilita = disponibilita
         this.sedi = sedi
-        this.n_ore_soddisfatto = get_n_ore_by_role(ruolo)
+        this.n_ore_soddisfatto = getNumOreMaxByRole(ruolo)
     }
 }
 

@@ -47,11 +47,11 @@ export default function RiepilogoDisponibilita(props: PropsDisponibilita) {
     const generalState = useAppSelector((state) => state.turni)
     const [loading, setLoading] = useState(false)
     const dispatch = useAppDispatch()
-    //TODO: L'ordine (in senso crescente) dei giorni da ancora dei problemi
+
     const onConfirm = async () => {
         setLoading(true)
         try {
-            await setDisponibilitaMeseMedico(distretto, stateAuth.uid, generalState)
+            await setDisponibilitaMeseMedico(distretto!, stateAuth.uid, generalState)
             dispatch(clearState())
             setDone(true)
         } catch(error: unknown) {
@@ -79,7 +79,7 @@ export default function RiepilogoDisponibilita(props: PropsDisponibilita) {
                         </IconButton>
                         <Grid item sx={{pb: 6, pt: 3}}>
                             <Typography variant="h3" component="h3" style={{fontWeight: 900}}>Riepilogo dei dati</Typography>
-                            <Typography sx={{pt: 1}}>{"DISTRETTO: " + distretto.toUpperCase()}</Typography>
+                            <Typography sx={{pt: 1}}>{"DISTRETTO: " + distretto!.toUpperCase()}</Typography>
                         </Grid>
                         <Grid item>
                             <Grid key="containerSezioni" container direction={{ xs: "column", md: "row" }}>

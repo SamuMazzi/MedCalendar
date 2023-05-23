@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/router';
 import { useAppDispatch } from '../../logic/redux/store';
-import { signInAdminWithEmail, SignError } from '../../logic/server/auth';
+import { signInAdminWithEmail } from '../../logic/server/auth';
 import { setAdmin, setUser } from '../../logic/redux/auth_slice';
 import Grid from '@mui/material/Grid';
 import { FormButtonSubmit, FormTextField } from './form_components';
@@ -18,16 +18,15 @@ export default function AdminLogin() {
     const dispatch = useAppDispatch()
 
     const handleSignError = (error: any) => {
-        if (error instanceof SignError) {
-            if (error.type === 'email') {
+        if (error instanceof AppFirebaseError) {
+            if (error.signinType === 'email') {
                 setHelperMail(error.message);
             } else if (error.type === 'password') {
                 setHelperPassword(error.message);
+            } else {
+                dispatch(setMessageError(error.message))
             }
-        } else if (error instanceof AppFirebaseError) {
-            dispatch(setMessageError(error.message))
         } else {
-            //console.log(error)
             dispatch(setMessageError("Si è verificato un errore, riprovare"))
         }
     }

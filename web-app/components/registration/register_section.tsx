@@ -1,21 +1,24 @@
 import Button from '@mui/material/Button'
 import Grid from '@mui/material/Grid'
 import Typography from '@mui/material/Typography'
+import Avatar from '@mui/material/Avatar'
 import { useEffect, useState } from 'react'
 import { useAppDispatch } from '../../logic/redux/store'
 import { FormTextField } from '../login/form_components'
-import { registerAdminWithEmail } from '../../logic/server/auth'
+import { registerAdminWithEmail, signInWithGoogle } from '../../logic/server/auth'
 import { AppFirebaseError } from '../../logic/server/firebase'
-import { setMessageError } from '../../logic/redux/settings_slice'
+import { setDistrettoSlice, setMessageError } from '../../logic/redux/settings_slice'
 import { setAdmin, setUser } from '../../logic/redux/auth_slice'
 import { setNameDistrettoSlice, setPasswordDistrettoSlice } from '../../logic/redux/configuration_distretto_slice'
 import { checkIfDistrettoExists } from '../../logic/server/firestore/distretti'
 import useUser from '../../logic/hooks/use_user'
+import Divider from '@mui/material/Divider'
 
 interface PropsPageStepper {
     nextPage: () => void
 }
-//TODO: Add conferma password
+//TODO: Add conferma password distretto
+//TODO: Add google sign in
 export const RegisterAdminSection = (props: PropsPageStepper) => {
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
@@ -78,11 +81,22 @@ export const RegisterAdminSection = (props: PropsPageStepper) => {
                 await signIn()
                 props.nextPage()
             } catch (error) {
-                console.log(error)
                 handleSignError(error)
             } finally {
                 setLoading(false)
             }
+        }
+    }
+
+    const handleButtonGoogle = async () => {
+        setLoading(true)
+        try {
+            await signInWithGoogle()
+            props.nextPage()
+        } catch (error) {
+            handleSignError(error)
+        } finally {
+            setLoading(false)
         }
     }
 
@@ -129,8 +143,22 @@ export const RegisterAdminSection = (props: PropsPageStepper) => {
                     />
                 </Grid>
                 <Grid item>
-                    <Button variant="contained" onClick={onSubmit} disabled={loading}>
+                    <Button variant="contained" onClick={onSubmit} disabled={loading} sx={{width: 250, mt: 2}}>
                         Registrati
+                    </Button>
+                </Grid>
+                <Grid item width={250}>
+                    <Divider>
+                        <Typography color="grey">
+                            Oppure
+                        </Typography>
+                    </Divider>
+                </Grid>
+                <Grid item>
+                    <Button variant="outlined" onClick={handleButtonGoogle} disabled={loading}
+                        startIcon={<Avatar src="logoGoogle.png" sx={{height: 30, width: 30}} />} 
+                        sx={{height: 40}}>
+                        Registrati con Google
                     </Button>
                 </Grid>
             </Grid>
@@ -162,6 +190,7 @@ export const RegisterDistrettoSection = (props: PropsPageStepper) => {
                 if (await checkIfDistrettoExists(nomeDistretto)) {
                     setHelperNomeDistretto('Il nome del distretto esiste già, usane un altro')
                 } else {
+                    dispatch(setDistrettoSlice(nomeDistretto))
                     dispatch(setNameDistrettoSlice(nomeDistretto))
                     dispatch(setPasswordDistrettoSlice(passwordDistretto))
                     props.nextPage()

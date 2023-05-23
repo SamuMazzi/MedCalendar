@@ -40,16 +40,16 @@ export function MedAppBar() {
         </Link>
       </Grid>
       <Grid item display="flex" alignItems="center">
+          {
+            distretto !== undefined && <>
+              <PlaceIcon />
+              <Typography sx={{pr: 3, pl: 1}}>
+                {distretto}
+              </Typography>
+            </>
+          }
           {user.uid !== "" && (
             <>
-              {
-                distretto !== undefined && <>
-                  <PlaceIcon />
-                  <Typography sx={{pr: 3, pl: 1}}>
-                    {distretto}
-                  </Typography>
-                </>
-              }
               <IconButton
                 data-cy="profile_button"
                 size="large"
@@ -94,7 +94,7 @@ export function MedAppBar() {
                   {user.nome ? user.nome : (user.admin ? 'Amministratore' : '')}
                 </Typography>
                 {
-                  fbUser != null && <MenuItem sx={{textAlign:'left'}}>
+                  fbUser != null && user.admin && <MenuItem sx={{textAlign:'left'}}>
                     <Typography textAlign='left' style={{ fontSize: 14, fontWeight: 400 }} sx={{px: 2, pt: 1}}>
                       {"Email: " + fbUser.email}
                     </Typography>

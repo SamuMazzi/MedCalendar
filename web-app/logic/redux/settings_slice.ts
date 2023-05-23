@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-import { getLocalActualDistretto } from '../local_utilities'
+import { getLocalActualDistretto, setLocalActualDistretto } from '../local_utilities'
 
 interface SettingsState {
     messageError: string
@@ -19,6 +19,7 @@ export const settingsSlice = createSlice({
             state.messageError = action.payload
         },
         setDistrettoSlice: (state, action: PayloadAction<string>) => {
+            setLocalActualDistretto(action.payload)
             state.distretto = action.payload
         }
     }

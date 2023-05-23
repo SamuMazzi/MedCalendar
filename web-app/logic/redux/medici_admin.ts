@@ -1,9 +1,9 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-import { MedicoImported } from '../server/firestore/firestore'
+import { MedicoInterface } from '../server/firestore/firestore'
 
 interface ListMediciState {
     distretto: string
-    doctors: Record<string, MedicoImported>
+    doctors: Record<string, MedicoInterface>
 }
 
 const initialState: ListMediciState = {
@@ -19,7 +19,7 @@ export const medici_admin_slice = createSlice({
             state.distretto = action.payload['distretto']
             state.doctors = action.payload['doctors']
         },
-        setMedicoLocal: (state, action: PayloadAction<MedicoImported>) => {
+        setMedicoLocal: (state, action: PayloadAction<MedicoInterface>) => {
             const id_med = action.payload.email
             state.doctors[id_med] = action.payload
         },

@@ -55,37 +55,29 @@ export const shouldLoadOnlineMedici = async () => {
     return false
 }
 
-export interface MedicoImported {
+export interface MedicoInterface {
     nome: string,
     ruolo: string,
     sedi: string[],
     email: string
 }
 
-export interface MedicoRemote {
-    Cognome: string,
-    Nome: string,
-    ruolo: string,
-    sedi: string[],
-    Email: string
-}
-
 /**
  * Per evitare troppe letture, finchè siamo sul distretto di Sassuolo teniamo la lettura specifica dei medici di quel distretto
  * @returns 
  */
-export const getAllMediciServer = async () => {
-    const tmpMedici: Record<string, MedicoImported> = {}
+export const getAllMediciServer = async (distretto: string) => {
+    const tmpMedici: Record<string, MedicoInterface> = {}
     try {
-        const docMediciSassuolo = getFirestoreDocInfoMedici('Sassuolo')
+        const docMediciSassuolo = getFirestoreDocInfoMedici(distretto)
         const res = await getDoc(docMediciSassuolo);
         const dataMedici: any = res.data()
         Object.keys(dataMedici).forEach((uid: string) => {
-            const singleMedico: MedicoRemote = dataMedici[uid];
+            const singleMedico = dataMedici[uid];
             tmpMedici[uid] = {
-                nome: singleMedico.Nome + ' ' + singleMedico.Cognome,
+                nome: singleMedico.nome ?? singleMedico.Nome + ' ' + singleMedico.Cognome, //legacy
                 ruolo: singleMedico.ruolo,
-                email: singleMedico.Email,
+                email: singleMedico.email ?? singleMedico.Email, //legacy
                 sedi: singleMedico.sedi
             }
         });
@@ -143,7 +135,7 @@ export const uploadConfigurationDistretto = async (distretto: StateDistretto, ui
         password: distretto.password,
         [firestore_lastTimeModifyInfoDoctorsKey]: Timestamp.now() 
     })
-    const infoSedi: Record<any, any> = {
+    const infoSedi: Record<string, any> = {
         sedi: {},
         special_days: {},
         turni: {}
