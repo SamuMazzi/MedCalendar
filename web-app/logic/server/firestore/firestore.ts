@@ -45,9 +45,9 @@ export function getFirestoreDocInfoMedici(distretto: string) {
 }
 
 //TODO: Crea test
-export const shouldLoadOnlineMedici = async () => {
-    const dataInfoDistrettoSassuolo = await getDoc(doc(firestore, firestore_distrettiCollectionKey, 'Sassuolo'))
-    const serverLastTime: Timestamp | undefined = dataInfoDistrettoSassuolo.get(firestore_lastTimeModifyInfoDoctorsKey)
+export const shouldLoadOnlineMedici = async (distretto: string) => {
+    const dataInfoDistretto = await getDoc(doc(firestore, firestore_distrettiCollectionKey, distretto))
+    const serverLastTime: Timestamp | undefined = dataInfoDistretto.get(firestore_lastTimeModifyInfoDoctorsKey)
     const localLastTime: number | null = getFromStorage('lastTimeModifyDoctors')
     if (serverLastTime === undefined || localLastTime === null || Timestamp.fromMillis(localLastTime) < serverLastTime) {
         return true
@@ -62,16 +62,12 @@ export interface MedicoInterface {
     email: string
 }
 
-/**
- * Per evitare troppe letture, finchè siamo sul distretto di Sassuolo teniamo la lettura specifica dei medici di quel distretto
- * @returns 
- */
 export const getAllMediciServer = async (distretto: string) => {
     const tmpMedici: Record<string, MedicoInterface> = {}
     try {
-        const docMediciSassuolo = getFirestoreDocInfoMedici(distretto)
-        const res = await getDoc(docMediciSassuolo);
-        const dataMedici: any = res.data()
+        const docMedici = getFirestoreDocInfoMedici(distretto)
+        const res = await getDoc(docMedici);
+        const dataMedici: any = res.exists() ? res.data() : {}
         Object.keys(dataMedici).forEach((uid: string) => {
             const singleMedico = dataMedici[uid];
             tmpMedici[uid] = {
@@ -137,7 +133,7 @@ export const uploadConfigurationDistretto = async (distretto: StateDistretto, ui
     })
     const infoSedi: Record<string, any> = {
         sedi: {},
-        special_days: {},
+        special_days: [],
         turni: {}
     }
     for(const sede of distretto.sedi) {

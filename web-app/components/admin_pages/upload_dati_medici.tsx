@@ -8,12 +8,14 @@ import { useAppDispatch } from "../../logic/redux/store";
 import { setMessageError } from "../../logic/redux/settings_slice";
 import { AppFirebaseError } from "../../logic/server/firebase";
 import React from "react";
+import useUser from "../../logic/hooks/use_user";
 
 //! Da fare refactor
 export default function UploadDatiMedico() {
     const [data, setData] = useState("")
     const [loading, setLoading] = useState(false)
     const [done, setDone] = useState(false)
+    const [___, distretto, _, __] = useUser()
     const dispatch = useAppDispatch()
 
     const sendInfo = async () => {
@@ -21,7 +23,7 @@ export default function UploadDatiMedico() {
         setLoading(true)
         setDone(false)
         try {
-            await setDataMedici(data)
+            await setDataMedici(data, distretto!)
             setDone(true)
         } catch(error: unknown) {
             if (error instanceof AppFirebaseError) {

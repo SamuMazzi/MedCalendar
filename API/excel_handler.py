@@ -113,7 +113,7 @@ def parse_sedi(sedi: str):
     list_sedi = sedi.split(',')
     out_list = []
     for sede in list_sedi:
-        if sede.strip().lower() == 'sassuolo':
+        if sede.strip().lower() == 'sassuolo':  # TODO Must be dynamic
             out_list.append('sassuolo')
         elif sede.strip().lower() == 'formigine':
             out_list.append('formigine')

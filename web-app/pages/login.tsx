@@ -74,15 +74,18 @@ export default function FormLogin(props: any) {
                       </Typography>
                       {adminMode ? <AdminLogin /> : <MedicoLogin server_psw={props.secret} />}
                     </Grid>
-                    <Button onClick={() => setAdminMode(oldVal => !oldVal)} sx={{
-                        "& .MuiTouchRipple-root span": {
-                          backgroundColor: 'transparent',
-                        },
-                      }} data-cy="change_mod_login">
-                        <Typography sx={{ pt: 1 }} style={{ textDecoration: 'underline', color: 'black', textTransform: 'none' }}>
-                          {!adminMode ? "Sei un amministratore? Clicca qua" : "Sei un medico? Clicca qua"}
-                        </Typography>
-                    </Button>
+                    {/*
+                      <Button onClick={() => setAdminMode(oldVal => !oldVal)} sx={{
+                          "& .MuiTouchRipple-root span": {
+                            backgroundColor: 'transparent',
+                          },
+                        }} data-cy="change_mod_login">
+                          <Typography sx={{ pt: 1 }} style={{ textDecoration: 'underline', color: 'black', textTransform: 'none' }}>
+                            {!adminMode ? "Sei un amministratore? Clicca qua" : "Sei un medico? Clicca qua"}
+                          </Typography>
+                      </Button>
+                      */
+                    }
                   </Box>
                 </Slide>
               </Box> 

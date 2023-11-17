@@ -71,14 +71,8 @@ export const getFromStorage = (key: string) => {
 
 export const getLocalDistretti = (admin = false) => {
     let out: string[] = []
-    if (typeof window !== 'undefined') {
-        const key = admin ? 'distretti_admin' : 'admin'
-        const res = window.localStorage.getItem(key);
-        if (res !== null) {
-            out = JSON.parse(res);
-        }
-    }
-    return out
+    const key = admin ? 'distretti_admin' : 'distretti'
+    return getFromStorage(key) || out
 }
 
 export const getLocalActualDistretto = () => {
@@ -93,7 +87,7 @@ export const setLocalActualDistretto = (distr: string) => {
 export const getMedici = async () => {
     const distretto = getLocalActualDistretto()
     const localMedici: Record<string, MedicoInterface> = getFromStorage(keyLocalMedici);
-    const shouldLoadOnlineDoctors = await shouldLoadOnlineMedici()
+    const shouldLoadOnlineDoctors = await shouldLoadOnlineMedici(distretto)
     let out;
     if (localMedici === null || shouldLoadOnlineDoctors) {
         const onlineMedici: Record<string, MedicoInterface> = await getAllMediciServer(distretto);

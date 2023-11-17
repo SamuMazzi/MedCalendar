@@ -141,8 +141,9 @@ export const getInfoSediDistretto = async (distretto: string) => {
 export const getSpecialTurniServer = async (distretto: string) => {
     const docInfoSedi = getFirestoreDocInfoSedi(distretto)
     try {
-        const out: undefined | Timestamp[] = (await getDoc(docInfoSedi)).get('special_days')
-        return out?.map(v => v.toDate())
+        const out: Timestamp[] = (await getDoc(docInfoSedi)).get('special_days') || []
+        console.log(out)
+        return out.map(v => v.toDate())
     } catch (error: unknown) {
         handleFirebaseError(error)
     }

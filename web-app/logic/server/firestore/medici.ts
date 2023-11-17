@@ -21,7 +21,7 @@ const updateLastModifyDoctors = async (distretto: string) => {
     }, { merge: true })
 }
 
-export const setDataMedici = async (bufferString: string) => {
+export const setDataMedici = async (bufferString: string, distretto: string) => {
     const futures = []
     const arr = bufferString.split('\n'); 
     const headers = arr[0].split(',').map(el => capitalizeFirstLetter(el.trim()));
@@ -31,9 +31,9 @@ export const setDataMedici = async (bufferString: string) => {
             const uidMed = obj['uid']
             futures.push(setDoc(doc(firestore, firestore_usersKey, uidMed), obj))
             //! Hardcoded, cambiare quando si aggiungeranno più distretti
-            futures.push(setDoc(doc(firestore, firestore_distrettiCollectionKey, 'Sassuolo', firestore_infoCollectionKey, firestore_infoMediciKey), { [uidMed]: obj }, { merge: true }));
-            futures.push(setDoc(doc(firestore, firestore_distrettiCollectionKey, 'Sassuolo', firestore_infoCollectionKey, firestore_listaMediciKey), { 'list': arrayUnion(uidMed) }, {merge: true}));
-            futures.push(updateLastModifyDoctors('Sassuolo'))
+            futures.push(setDoc(doc(firestore, firestore_distrettiCollectionKey, distretto, firestore_infoCollectionKey, firestore_infoMediciKey), { [uidMed]: obj }, { merge: true }));
+            futures.push(setDoc(doc(firestore, firestore_distrettiCollectionKey, distretto, firestore_infoCollectionKey, firestore_listaMediciKey), { 'list': arrayUnion(uidMed) }, {merge: true}));
+            futures.push(updateLastModifyDoctors(distretto))
         }
         await Promise.all(futures)
     } catch (error: unknown) {
