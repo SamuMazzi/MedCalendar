@@ -78,6 +78,7 @@ export const getAllDistretti = async () => {
     } catch (error: unknown) {
         handleFirebaseError(error)
     }
+    return []
 }
 
 export const getDistrettiForMedico = async (id: string) => {

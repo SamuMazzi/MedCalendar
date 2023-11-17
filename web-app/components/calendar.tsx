@@ -61,7 +61,7 @@ export function SelectMeseCalendar(props: PropsSelectMeseCalendar) {
           placement: "bottom-end",
           anchorEl: anchorEl
         }}
-        minDate={dayjs(new Date())}
+        // minDate={dayjs(new Date())}
         closeOnSelect={true}
         open={isOpen}
         onClose={() => setIsOpen(false)}

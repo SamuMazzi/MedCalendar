@@ -4,6 +4,8 @@ import Typography from '@mui/material/Typography'
 import { useEffect, useState } from 'react';
 import { useAppSelector } from '../logic/redux/store';
 import { NewListDropdown } from './general/form_dropdown';
+import { getLocalDistretti } from '../logic/local_utilities';
+import { getAllDistretti } from '../logic/server/firestore/distretti';
 // import { getDistrettiForMedico } from '../logic/server/firestore'
 // import { getLocalDistretti, saveToStorage } from '../logic/local_storage'
 
@@ -21,10 +23,10 @@ export default function SelectDistretto(props: ParamSelectDistretto) {
 
     const getDistretti = async () => {
         setLoading(true)
-        let distretti = ['Sassuolo'] //getLocalDistretti()
+        let distretti = getLocalDistretti()
         //let distretti_admin = ['Sassuolo'] //getLocalDistretti(true)
         if(!distretti || distretti.length === 0) { //|| !distretti_admin || distretti_admin.length === 0) {
-          if(!distretti || distretti.length === 0) {
+          /* if(!distretti || distretti.length === 0) {
             //distretti = ['Sassuolo']
             //distretti = await getDistrettiForMedico(authState.id);
             //saveToStorage('distretti', distretti)
@@ -36,7 +38,8 @@ export default function SelectDistretto(props: ParamSelectDistretto) {
                 //distretti_admin = await getDistrettiForAdmin(authState.id)
                 //saveToStorage('distretti_admin', distretti_admin)
                 setDistrettiAdmin(distretti)
-            }
+            } */
+            distretti = await getAllDistretti()
         }
         setAllDistretti(distretti)
         setLoading(false)
