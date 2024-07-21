@@ -1,6 +1,4 @@
-import dayjs, { Dayjs } from 'dayjs';
-import IconButton from '@mui/material/IconButton';
-import EventIcon from '@mui/icons-material/Event';
+import dayjs from 'dayjs';
 import { useAppDispatch, useAppSelector }  from '../logic/redux/store'
 import { setNewAvailabilityDoctor } from '../logic/redux/turni_slice'
 import { Calendar } from 'primereact/calendar';
