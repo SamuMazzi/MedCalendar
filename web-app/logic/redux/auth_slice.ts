@@ -1,49 +1,55 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import { getFromStorage, saveToStorage } from '../local_utilities';
+import { DoctorInterface } from '../server/firestore/firestore';
 
 export interface StateAuth {
-  admin: boolean,
   uid: string,
-  distretti: string[],
-  sedi: string[],
-  nome: string | undefined,
-  ruolo: string
+  /** Districts in which we act as doctors that need to set the availabilities */
+  districts: string[],
+  /** Districts in which we act as administrators */
+  ownedDistricts: string[],
+  /** I'd say this is deprecated */
+  locations?: string[],
+  name: string,
+  role: string
+  selectedDistrict: string
 }
 
 export interface ParamSetUser {
   uid: string,
-  data: Record<string, any>
+  data: DoctorInterface | undefined
 }
 
 export const getGoodRuolo = (user: StateAuth) => {
-  const role = user.ruolo.toLowerCase()
+  const role = user.role.toLowerCase()
   if(role.startsWith('titolare')) {
     return 'Titolare'
   } else if (role.startsWith('incaricato')) {
     return 'Incaricato Temporaneo'
   } 
-  return user.ruolo
+  return user.role
 }
 
-const initialUser = getFromStorage('user');
-const initialAdmin = getFromStorage('admin');
+const initialUser: StateAuth = getFromStorage('user');
 
 const emptyState: StateAuth = {
-  admin: false,
   uid: "",
-  distretti: [],
-  sedi: [],
-  nome: "",
-  ruolo: ""
+  districts: [],
+  ownedDistricts: [],
+  locations: [],
+  name: "",
+  role: "",
+  selectedDistrict: ""
 }
 
 const initialStateAuth: StateAuth = {
-  admin: initialAdmin !== undefined ? initialAdmin : false,
   uid: initialUser?.uid !== undefined ? initialUser.uid : "",
-  distretti: initialUser?.distretti !== undefined ? initialUser.distretti : [],
-  sedi: initialUser?.sedi !== undefined ? initialUser.sedi : [],
-  nome: initialUser?.nome !== undefined ? initialUser.nome : "",
-  ruolo: initialUser?.ruolo !== undefined ? initialUser.ruolo : ""
+  districts: initialUser?.districts !== undefined ? initialUser.districts : [],
+  locations: initialUser?.locations !== undefined ? initialUser.locations : [],
+  name: initialUser?.name !== undefined ? initialUser.name : "",
+  role: initialUser?.role !== undefined ? initialUser.role : "",
+  ownedDistricts: initialUser?.ownedDistricts !== undefined ? initialUser.ownedDistricts : [],
+  selectedDistrict: initialUser?.selectedDistrict !== undefined ? initialUser.selectedDistrict : "",
 }
 
 export const authSlice = createSlice({
@@ -51,34 +57,35 @@ export const authSlice = createSlice({
   initialState: initialStateAuth,
   reducers: {
     setUser: (state, action: PayloadAction<ParamSetUser>) => {
-      state.nome = action.payload.data.nome
+      if (action.payload.data === undefined) return
+      console.error("setting user")
+      state.name = action.payload.data.name
       state.uid = action.payload.uid
-      state.sedi = action.payload.data.sedi
-      state.ruolo = action.payload.data.ruolo
+      state.locations = action.payload.data.locations
+      state.role = action.payload.data.role ?? ""
       saveToStorage('user', state)
     },
-    setAdmin: (state, action: PayloadAction<boolean>) => {
-      state.admin = action.payload
-      saveToStorage('admin', action.payload)
+    setNameUserLocal: (state, action: PayloadAction<string>) => {
+      state.name = action.payload
+      saveToStorage('user', state)
     },
-    setDistrettiAdmin: (state, action: PayloadAction<string[]>) => {
-      state.distretti = action.payload
-      saveToStorage('distretti_admin', action.payload)
+    setSelectedDistrict: (state, action: PayloadAction<string>) => {
+      state.selectedDistrict = action.payload
+      saveToStorage('user', state)
     },
-    clearUserAndAdmin: (state) => {
-      //state = {...emptyState} Non funziona
-      state.nome = emptyState.nome
+    clearUserInfo: (state) => {
+      state = {...emptyState} // TODO: Test this
+      /* state.name = emptyState.name
       state.uid = emptyState.uid
-      state.sedi = emptyState.sedi
-      state.ruolo = emptyState.ruolo
-      state.admin = emptyState.admin
+      state.locations = emptyState.locations
+      state.role = emptyState.role
+      state.districts = emptyState.districts */
       saveToStorage('user', emptyState)
-      saveToStorage('admin', emptyState.admin)
     }
   }
 })
 
 // Action creators are generated for each case reducer function
-export const { setUser, setAdmin, setDistrettiAdmin, clearUserAndAdmin } = authSlice.actions
+export const { setUser, setNameUserLocal, clearUserInfo, setSelectedDistrict } = authSlice.actions
 
 export default authSlice.reducer

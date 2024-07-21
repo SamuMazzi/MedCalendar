@@ -3,8 +3,8 @@ import datetime
 from typing import List
 
 from models.enums import Roles
-from models.medico import Medico
-from models.sede import Sede, create_calendar_turni_from_data, parse_turno_to_datetime
+from models.medico import Doctor
+from models.sede import Sede, create_calendar_turni_from_data, parse_shift_to_datetime
 
 
 def print_statistics_pre_start():
@@ -13,7 +13,7 @@ def print_statistics_pre_start():
     print('Ci sono ' + str(len(Storage.all_medici) - Storage.convenzionati_da_soddisfare - Storage.incaricati_da_soddisfare) + ' sostituti')
 
 
-def calculate_how_may_doctors_da_soddisfare(all_medici: List[Medico]):
+def calculate_how_may_doctors_da_soddisfare(all_medici: List[Doctor]):
     for med in all_medici:
         if med.ruolo == Roles.conv24:
             Storage.convenzionati_da_soddisfare += 1
@@ -44,11 +44,11 @@ def get_turni_effettivi():
                 continue
             if len(medici_liberi) == 0:
                 continue
-            elif len(medici_liberi) + len(turni_occ) <= sede.medici_per_turno:
-                tot_turni += sede.medici_per_turno + len(medici_liberi) - len(turni_occ)  # da testare con 18 dic-20:00
+            elif len(medici_liberi) + len(turni_occ) <= sede.doctors_for_shift:
+                tot_turni += sede.doctors_for_shift + len(medici_liberi) - len(turni_occ)  # da testare con 18 dic-20:00
                 continue  # TODO: Da capire bene questo if
             else:
-                tot_turni += sede.medici_per_turno
+                tot_turni += sede.doctors_for_shift
         Storage.turni_non_riempibili = (i*4) - (tot_turni + Storage.tot_turni_occ_a_priori)  # hardcode del 4, debug
 
     turni_riempibili_e_riempiti = tot_turni + Storage.tot_turni_occ_a_priori
@@ -60,7 +60,7 @@ def translate_turni(disp, year, month):
     for fascia, giorni in disp.items():
         for day in giorni:
             d = datetime.datetime(year, month, day)
-            out.append(parse_turno_to_datetime(d, fascia))
+            out.append(parse_shift_to_datetime(d, fascia))
     return out
 
 
@@ -73,10 +73,10 @@ def init_storage(data):
         s = Sede(sede['nome'], sede['medici_per_turno'], calendar_sede)
         sedi.append(s)
         total_calendar_turni.extend([turno for turno in calendar_sede if turno not in total_calendar_turni])
-    if isinstance(data['medici'][0], Medico):  # debug
+    if isinstance(data['medici'][0], Doctor):  # debug
         all_medici = data['medici']
     else:
-        all_medici = [Medico(info['id'], info['nome'], info['ruolo'], translate_turni(info['disponibilita'], data['year'], data['month']), info['sedi']) for info in data['medici']]
+        all_medici = [Doctor(info['id'], info['nome'], info['ruolo'], translate_turni(info['disponibilita'], data['year'], data['month']), info['sedi']) for info in data['medici']]
     Storage.calendar_turni = list(set(list(total_calendar_turni)))  # Lista con tutti i turni, ripetuti solo una volta
     Storage.calendar_turni.sort()
     Storage.all_medici = all_medici
@@ -100,8 +100,8 @@ def reset_storage():
 
 class Storage:
     calendar_turni: List[datetime.datetime] = []
-    all_medici: List[Medico] = []
-    original_all_medici: List[Medico] = []  # Non saranno intaccati dalle modifiche durante il processo
+    all_medici: List[Doctor] = []
+    original_all_medici: List[Doctor] = []  # Non saranno intaccati dalle modifiche durante il processo
     sedi: List[Sede] = []
     convenzionati_da_soddisfare = 0
     incaricati_da_soddisfare = 0

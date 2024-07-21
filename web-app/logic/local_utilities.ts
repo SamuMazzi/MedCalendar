@@ -1,5 +1,3 @@
-import { getAllMediciServer, MedicoInterface, shouldLoadOnlineMedici } from "./server/firestore/firestore"
-
 export type MesiType = string[] //Record<number, string>
 export const mesi: MesiType = [
     'Gennaio',
@@ -16,8 +14,10 @@ export const mesi: MesiType = [
     'Dicembre'
 ]
 
-export const keyLocalMedici = 'medici'
-const keyLocalDistretto = 'distretto'
+export function generateColorRole(number: number){
+    const hue = number * 137.508; // use golden angle approximation
+    return `hsl(${hue},58%,75%)`;
+}
 
 const giorni_settimana = ['Domenica', 'Lunedì', 'Martedì', 'Mercoledì', 'Giovedì', 'Venerdì', 'Sabato']
 export const getGiornoSettimana = (timestamp: number, day: number) => {
@@ -67,37 +67,6 @@ export const getFromStorage = (key: string) => {
         }
     }
     return null;
-}
-
-export const getLocalDistretti = (admin = false) => {
-    let out: string[] = []
-    const key = admin ? 'distretti_admin' : 'distretti'
-    return getFromStorage(key) || out
-}
-
-export const getLocalActualDistretto = () => {
-    const out: string = getFromStorage(keyLocalDistretto)
-    return out ?? undefined
-}
-
-export const setLocalActualDistretto = (distr: string) => {
-    saveToStorage(keyLocalDistretto, distr)
-}
-
-export const getMedici = async () => {
-    const distretto = getLocalActualDistretto()
-    const localMedici: Record<string, MedicoInterface> = getFromStorage(keyLocalMedici);
-    const shouldLoadOnlineDoctors = await shouldLoadOnlineMedici(distretto)
-    let out;
-    if (localMedici === null || shouldLoadOnlineDoctors) {
-        const onlineMedici: Record<string, MedicoInterface> = await getAllMediciServer(distretto);
-        saveToStorage(keyLocalMedici, onlineMedici)
-        saveToStorage('lastTimeModifyDoctors', Date.now())
-        out = onlineMedici
-    } else {
-        out = localMedici
-    }
-    return out
 }
 
 export const validateEmail = (email: string) => {

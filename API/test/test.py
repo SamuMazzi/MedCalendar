@@ -5,7 +5,7 @@ from main import execute_schedule
 from models.sede import Sede
 from models.storage import Storage
 from models.turno import InfoCombinationTurno
-from models.medico import Medico
+from models.medico import Doctor
 from test.mock_medici import dataMock, data_medici_mock_febbraio_23
 from utilities import check_if_skip
 
@@ -18,6 +18,7 @@ class TestFindSoluzione(unittest.TestCase):
         # data_to_use['medici'] = read_dati('assets/gennaio23.xlsx')
         cls.data = data_to_use
         cls.best_sol = execute_schedule(data_to_use)[2]  # TODO Aggiungi test anche su response
+        assert cls.best_sol is not None
         cls.conteggio_turni_per_medico = {}
         cls.month_calendar = {}
         cls.medici_of_best_sol = []
@@ -35,15 +36,21 @@ class TestFindSoluzione(unittest.TestCase):
         cls.medici_of_best_sol = set(cls.medici_of_best_sol)
 
     def test_solution_is_not_empty(self):
+        self.assertIsNotNone(self.best_sol)
+        assert self.best_sol
         self.assertGreater(len(self.best_sol.sedi), 0)
 
     def test_month_calendar_is_not_empty(self):
+        self.assertIsNotNone(self.best_sol)
+        assert self.best_sol
         sede: Sede
         for sede in self.best_sol.sedi:
             self.assertGreater(len(sede.month_calendar.keys()), 0)
         print('Okay conteggio month')
 
     def test_medici_sono_nella_loro_sede(self):
+        self.assertIsNotNone(self.best_sol)
+        assert self.best_sol
         for sede in self.best_sol.sedi:
             for date_day, turno in sede.month_calendar.items():  # TODO Aggiungere test che siano SOLO nella loro sede
                 for med in turno.turni_occupati:
@@ -60,12 +67,14 @@ class TestFindSoluzione(unittest.TestCase):
                 else:
                     self.conteggio_turni_per_medico[med] += 1
 
-        med: Medico
+        med: Doctor
         for med, num_turni in self.conteggio_turni_per_medico.items():
-            self.assertGreaterEqual(med.n_turni_max, num_turni, 'Problama turni per il medico: ' + med.nome)
+            self.assertGreaterEqual(med.n_shifts_max, num_turni, 'Problama turni per il medico: ' + med.nome)
         print('Okay medici ora non superate')
 
     def test_generici(self):
+        self.assertIsNotNone(self.best_sol)
+        assert self.best_sol
         self.assertGreaterEqual(self.best_sol.medici_soddisfatti,
                                 self.best_sol.convenzionati_soddisfatti + self.best_sol.incaricati_soddisfatti)
         # self.assertEqual(self.best_sol.medici_soddisfatti, self.best_sol.convenzionati_soddisfatti + self.best_sol.incaricati_soddisfatti + self.best_sol.sostituti_soddisfatti)
@@ -81,6 +90,8 @@ class TestFindSoluzione(unittest.TestCase):
             print('Okay numero turni')
 
     def med_in_altra_sede(self, med, date_turno):
+        self.assertIsNotNone(self.best_sol)
+        assert self.best_sol
         for sede in self.best_sol.sedi:
             if med in sede.get_medici_occupati_per_turno(date_turno):
                 return True
@@ -88,7 +99,10 @@ class TestFindSoluzione(unittest.TestCase):
 
     def test_Check_medici_non_inseribili_in_ulteriori_posizioni(self):
         """Controlla per ogni medico che non possa essere inserito in nessun'altra posizione"""
-        med: Medico   # self.data['medici']
+        self.assertIsNotNone(self.best_sol)
+        assert self.best_sol
+
+        med: Doctor   # self.data['medici']
         for med in self.medici_of_best_sol:
             sede: Sede
             for sede in self.best_sol.sedi:

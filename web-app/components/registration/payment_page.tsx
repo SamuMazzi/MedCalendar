@@ -1,21 +1,16 @@
 import { PayPalButtons, PayPalScriptProvider } from '@paypal/react-paypal-js'
 import Typography from '@mui/material/Typography'
-import IconButton from '@mui/material/IconButton'
 import Box from '@mui/material/Box';
 import { useAppSelector } from '../../logic/redux/store';
-import VisibilityRoundedIcon from '@mui/icons-material/VisibilityRounded';
-import VisibilityOffRoundedIcon from '@mui/icons-material/VisibilityOffRounded';
-import { useState } from 'react';
 import Grid from '@mui/material/Grid';
-import { InfoPricingPlan } from '../../logic/redux/configuration_distretto_slice';
+import { InfoPricingPlan } from '../../logic/redux/configuration_district_slice';
 
 export default function PayPage() {
     const info = useAppSelector(state => state.configurationDistr)
-    const [showPassword, setShowPassword] = useState(false)
 
     return (
         <PayPalScriptProvider options={{ 
-            "client-id": "AQaoOgbWf8AHUhXNuJrI1FFvKlLYGjfeKOYjBOHObYm9FD36N8ebG--d2cumIr6z1jUAzvxdGr_DPO8U", 
+            clientId: "AQaoOgbWf8AHUhXNuJrI1FFvKlLYGjfeKOYjBOHObYm9FD36N8ebG--d2cumIr6z1jUAzvxdGr_DPO8U", 
             currency: 'EUR', intent: 'subscription', vault: true
         }}>
             <Grid container direction="column" justifyContent="center" alignItems="center" sx={{pt: 3}}>
@@ -26,23 +21,16 @@ export default function PayPage() {
                     <Typography style={{fontWeight: 'bold'}} sx={{pr: 1}}>Distretto:</Typography>
                     <Typography>{info.name}</Typography>
                 </Box>
-                <Box display="flex" alignItems="center">
-                    <Typography style={{fontWeight: 'bold'}} sx={{pr: 1}}>Password:</Typography>
-                    <Typography>{(showPassword ? info.password : '*********')} </Typography>
-                    <IconButton onClick={() => setShowPassword((val) => !val)}>
-                        {showPassword ? <VisibilityOffRoundedIcon /> : <VisibilityRoundedIcon />}
-                    </IconButton>
-                </Box>
                 <Box display="flex">
                     <Typography style={{fontWeight: 'bold'}} sx={{pr: 1}}>Sedi (N° medici per turno): </Typography>
-                    <Typography>{info.sedi.map((s) => s.nome + " (" + s.medici_per_turno + ")").join(', ')}</Typography>
+                    <Typography>{info.locations.map((s) => s.name + " (" + s.doctors_for_shift + ")").join(', ')}</Typography>
                 </Box>
-                {info.extraTurni && <>
+                {info.extraShifts && <>
                     <Typography>Giorni extra</Typography>
                 </>}
                 <Box display="flex" sx={{pb: 1}}>
                     <Typography style={{fontWeight: 'bold'}} sx={{pr: 1}}>Medici:</Typography>
-                    <Typography>{Object.keys(info.medici).length}</Typography>
+                    <Typography>{Object.keys(info.locations).length}</Typography>
                 </Box>
                 <Box display="flex" sx={{pb: 1}}>
                     <Typography style={{fontWeight: 'bold'}} sx={{pr: 1}}>Piano:</Typography>

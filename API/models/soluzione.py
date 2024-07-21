@@ -1,5 +1,5 @@
 from typing import List
-from API.models.sede import Sede
+from models.sede import Sede
 
 
 class Soluzione:

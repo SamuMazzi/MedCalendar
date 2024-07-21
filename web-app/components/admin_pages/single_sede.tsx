@@ -7,7 +7,7 @@ import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import DeleteIcon from '@mui/icons-material/DeleteRounded';
 import { useAppSelector, useAppDispatch } from '../../logic/redux/store'
-import { changeNumMediciPerTurnoSede, changeNomeSede, deleteSede } from '../../logic/redux/configuration_distretto_slice'
+import { changeNumDoctorsForShiftInLocation, changeNameLocation, deleteLocationFromDistrict } from '../../logic/redux/configuration_district_slice'
 import IconButton from '@mui/material/IconButton'
 
 interface SingleSedeProps {
@@ -17,28 +17,28 @@ interface SingleSedeProps {
 export default function SingleSede(props: SingleSedeProps) {
     const configurationDistrettoState = useAppSelector(state => state.configurationDistr)
     const dispatch = useAppDispatch()
-    const mediciPerTurno = configurationDistrettoState.sedi[props.index].medici_per_turno
+    const mediciPerTurno = configurationDistrettoState.locations[props.index].doctors_for_shift
 
-    const changeNome = (val: string) => {
+    const changeName = (val: string) => {
         dispatch(
-            changeNomeSede({
+            changeNameLocation({
                 index: props.index,
-                nome: val
+                name: val
             })
         )
     }
 
-    const setMedPerTurno = (num: number) => {
+    const setDoctorsForShift = (num: number) => {
         dispatch(
-            changeNumMediciPerTurnoSede({
+            changeNumDoctorsForShiftInLocation({
                 index: props.index,
-                medici_per_turno: num
+                doctors_for_shift: num
             })
         )
     }
 
-    const handleDeleteSede = () => {
-        dispatch(deleteSede(props.index))
+    const handleDeletelocation = () => {
+        dispatch(deleteLocationFromDistrict(props.index))
     }
   
     return (
@@ -58,10 +58,10 @@ export default function SingleSede(props: SingleSedeProps) {
           <Grid item>
             <TextField 
                 style={{display: 'inline-block'}} 
-                value={configurationDistrettoState.sedi[props.index].nome}
+                value={configurationDistrettoState.locations[props.index].name}
                 inputProps={{min: 0, style: { textAlign: 'center', fontWeight: "bold" }}}
                 variant="standard"
-                onChange={(event) => changeNome(event.target.value)}
+                onChange={(event) => changeName(event.target.value)}
             />
           </Grid>
           
@@ -70,17 +70,17 @@ export default function SingleSede(props: SingleSedeProps) {
                 <Typography>
                     Medici per turno
                 </Typography>
-                <IconButton onClick={() => setMedPerTurno(mediciPerTurno - 1)}>
+                <IconButton onClick={() => setDoctorsForShift(mediciPerTurno - 1)}>
                     <RemoveIcon fontSize="small"/>
                 </IconButton>
                     <Typography>{mediciPerTurno}</Typography>
-                <IconButton onClick={() => setMedPerTurno(mediciPerTurno + 1)}>
+                <IconButton onClick={() => setDoctorsForShift(mediciPerTurno + 1)}>
                     <AddIcon fontSize="small"/>
                 </IconButton>
             </Box>
           </Grid>
           <Grid item>
-            <IconButton onClick={handleDeleteSede}>
+            <IconButton onClick={handleDeletelocation}>
                 <DeleteIcon />
             </IconButton>
           </Grid>

@@ -78,79 +78,34 @@ export default function SelectDistretto(props: ParamSelectDistretto) {
 
 
 import Grid from '@mui/material/Grid'
-import CircularProgress from '@mui/material/CircularProgress'
-import Typography from '@mui/material/Typography'
-import { useEffect, useState } from 'react';
 import { useAppSelector } from '../logic/redux/store';
-import { NewListDropdown } from './general/form_dropdown';
-import { getAllDistretti } from '../logic/server/firestore/distretti';
-import { getLocalDistretti } from '../logic/local_utilities';
+import { Dropdown } from 'primereact/dropdown';
 
-interface ParamSelectDistretto {
-    distretto: string | undefined,
-    setDistretto: (arg0: string) => void
+interface ParamSelectDistrict {
+    district: string | undefined,
+    setDistrict: (arg0: string) => void
 }
 
-export default function SelectDistretto(props: ParamSelectDistretto) {
+export default function SelectDistrict(props: ParamSelectDistrict) {
     const authState = useAppSelector(state => state.auth);
-    const [ distrettiMedico, setDistrettiMedico ] = useState<string[]>([]);
-    const [ distrettiAdmin, setDistrettiAdmin ] = useState<string[]>([]);
-    const [ allDistretti, setAllDistretti ] = useState<string[]>([]);
-    const [ loading, setLoading ] = useState(false);
 
-    const getDistretti = async () => {
-        setLoading(true)
-        let distretti = getLocalDistretti()
-        // let distretti_admin = getLocalDistretti(true)
-        if(!distretti || distretti.length === 0) {  // || !distretti_admin || distretti_admin.length === 0
-            /* if(!distretti || distretti.length === 0) {
-                //TODO: Va cambiata logica qua
-                //distretti = ['Sassuolo']
-                distretti = await getDistrettiForMedico(authState.uid);
-                saveToStorage('distretti', distretti)
-                setDistrettiMedico(distretti) 
-                setAllDistretti(distretti)
-            }
-            if(authState.admin && (!distretti_admin || distretti_admin.length === 0)) {
-                console.log('ecco2')
-                //distretti = ['Sassuolo']
-                distretti_admin = await getDistrettiForAdmin(authState.uid)
-                saveToStorage('distretti_admin', distretti_admin)
-                setDistrettiAdmin(distretti)
-            } */
-            distretti = await getAllDistretti()
-        }
-        setAllDistretti(distretti)
-        setLoading(false)
+    const userDistricts = authState.districts.map((district) => ({ label: district, value: district }))
+    const ownedDistricts = authState.ownedDistricts.map((district) => ({ label: district, value: district }))
+
+    const options = []
+    if (userDistricts.length > 0) {
+        options.push({label: "Utente", items: userDistricts})
     }
-    
-    useEffect(() => {
-        getDistretti();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
-
-    const renderDistretti = () => {
-        if(loading) return <CircularProgress />
-        if(!loading && !allDistretti) {
-            return (
-            <Typography>
-              Nessun distretto associato a questo utente
-            </Typography>)
-        } 
-        return (
-            <NewListDropdown
-                label="Distretto"
-                onChangeFn={(event) => props.setDistretto(event.target.value)}
-                value={props.distretto}
-                inputList={allDistretti}
-                data-cy="select_distretto"
-            />
-        )
+    if (ownedDistricts.length > 0) {
+        options.push({label: "Amministratore", items: ownedDistricts})
     }
 
     return (
         <Grid item>
-            {renderDistretti()}
+            <Dropdown value={props.district} onChange={(e) => props.setDistrict(e.value)} options={options} optionLabel="label" 
+                optionGroupLabel="label" optionGroupChildren="items"  // optionGroupTemplate={groupedItemTemplate} 
+                className="w-full md:w-14rem" placeholder="Distretto" emptyFilterMessage={<span>Nessun risultato</span>}
+                emptyMessage={<span>Nessun risultato</span>} />
         </Grid>
     )
 }

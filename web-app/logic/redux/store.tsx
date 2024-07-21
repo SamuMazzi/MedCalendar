@@ -1,20 +1,18 @@
 import { configureStore } from '@reduxjs/toolkit'
 import turnoReducer from './turni_slice'
 import authReducer from './auth_slice'
-import configurationDistrettoReducer from './configuration_distretto_slice'
+import configurationDistrictReducer from './configuration_district_slice'
 import schedulerReducer from './scheduler_slice'
 import settingsReducer from './settings_slice'
-import mediciAdminReducer from './medici_admin'
 import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux'
 
 export const store = configureStore({
   reducer: {
     turni: turnoReducer,
     auth: authReducer,
-    configurationDistr: configurationDistrettoReducer,
+    configurationDistr: configurationDistrictReducer,
     scheduler: schedulerReducer,
     settings: settingsReducer,
-    mediciAdmin: mediciAdminReducer
   },
   devTools: process.env.NODE_ENV !== 'production',
 })

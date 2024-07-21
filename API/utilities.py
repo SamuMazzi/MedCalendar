@@ -1,14 +1,14 @@
 import datetime
 from typing import List
 
-from models.medico import Medico
+from models.medico import Doctor
 from models.storage import Storage
 
 # Probabilmente da creare classe Rules
 from models.turno import InfoCombinationTurno
 
 
-def count_turni_occupati_in_combinazione(info_combinations_for_turno, combination: List[Medico]):
+def count_turni_occupati_in_combinazione(info_combinations_for_turno, combination: List[Doctor]):
     nuovi_turni_occupati = 0
     for i in range(len(combination)):
         if info_combinations_for_turno.nuovo[i] is True and combination[i] is not None:
@@ -44,7 +44,7 @@ def are_there_duplicates(combination):
     return out
 
 
-def med_non_puo_fare_piu_turni(med: Medico | None):
+def med_non_puo_fare_piu_turni(med: Doctor | None):
     return med is not None and med.n_turni_per_soddisfatto == 0
 
 
@@ -56,5 +56,5 @@ def is_nuovo_medico_e_non_puo_fare_turni(combination, info):
     return False
 
 
-def check_if_skip(combination: List[Medico], info: InfoCombinationTurno, turno: datetime.datetime):
+def check_if_skip(combination: List[Doctor], info: InfoCombinationTurno, turno: datetime.datetime):
     return is_nuovo_medico_e_non_puo_fare_turni(combination, info) or is_medico_in_24_ore_prec_o_succ(combination, turno)

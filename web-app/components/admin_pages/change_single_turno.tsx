@@ -10,7 +10,7 @@ import { NewListDropdown } from '../general/form_dropdown';
 import MessageSnackbar from '../snackbar/message_snackbar';
 import DeleteIcon from '@mui/icons-material/DeleteForeverRounded';
 import { fromTurnoToDate, parseDateToTurno } from '../../logic/local_utilities';
-import { addSpecialTurnoServer, getSpecialTurniServer, removeSpecialTurnoServer } from '../../logic/server/firestore/distretti';
+import { addSpecialTurnoServer, getSpecialTurniServer, removeSpecialTurnoServer } from '../../logic/server/firestore/districts';
 import List from '@mui/material/List';
 import IconButton from '@mui/material/IconButton';
 import ListItem from '@mui/material/ListItem';
@@ -20,19 +20,19 @@ import Card from '@mui/material/Card';
 import { turni_disp } from './create_configuration_admin';
 import useUser from '../../logic/hooks/use_user';
 
-interface PropsHandlerSpecialTurni {
-  specialTurni?: Date[]
+interface PropsHandlerSpecialShifts {
+  specialShifts?: Date[]
 }
 
 //TODO: Gestire special turni -> creare callback per registrarli su configurationDistretto (o farlo direttamente da qua, ma si rischia)
 
 
-export default function HandlerSpecialTurni(props: PropsHandlerSpecialTurni) {
+export default function HandlerSpecialTurni(props: PropsHandlerSpecialShifts) {
   const [_, distretto] = useUser()
-  const tmpMode = props.specialTurni !== undefined
+  const tmpMode = props.specialShifts !== undefined
   const [messageSnackbar, setMessageSnackbar] = useState("")
   const [loading, setLoading] = useState(false)
-  const [daySelected, setDaySelected] = useState(dayjs())
+  const [daySelected, setDaySelected] = useState(new Date())
   const [turnoFrom, setTurnoFrom] = useState("")
   const [turnoTo, setTurnoTo] = useState("")
   const [specialTurni, setSpecialTurni] = useState<Date[] | undefined>()
@@ -71,7 +71,7 @@ export default function HandlerSpecialTurni(props: PropsHandlerSpecialTurni) {
     setMessageError("")
     setLoading(true)
     try {
-      const dateTurno = fromTurnoToDate(daySelected.toDate(), turnoFrom + '-' + turnoTo)
+      const dateTurno = fromTurnoToDate(daySelected, turnoFrom + '-' + turnoTo)
       if(!tmpMode) {
         addSpecialTurnoServer(dateTurno, distretto!)
       }
@@ -97,7 +97,7 @@ export default function HandlerSpecialTurni(props: PropsHandlerSpecialTurni) {
           </Typography>
           <Box display='flex' alignItems="center">
             <Typography textAlign='center' sx={{pr: 2}}>
-              {'Giorno: ' + daySelected.format('DD/MM/YYYY')}
+              {'Giorno: ' + dayjs(daySelected).format('DD/MM/YYYY')}
             </Typography>
             <CalendarSelectSingleDay daySelected={daySelected} onChangeDate={setDaySelected}/>
           </Box>

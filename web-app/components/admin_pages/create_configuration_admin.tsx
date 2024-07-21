@@ -6,10 +6,9 @@ import AddIcon from '@mui/icons-material/AddRounded';
 import DeleteIcon from '@mui/icons-material/DeleteRounded';
 import SingleSede from './single_sede';
 import MessageSnackbar from '../snackbar/message_snackbar';
-import { setConfigurationDistrettoMese } from '../../logic/server/firestore/distretti'
 import { useState, useEffect } from 'react'
 import { useAppSelector, useAppDispatch } from '../../logic/redux/store'
-import { addSede, changeFasciaTurnoDistretto, TurnoDistretto } from '../../logic/redux/configuration_distretto_slice'
+import { addLocationToDistrict, changeShiftDistrict, DistrictShift } from '../../logic/redux/configuration_district_slice'
 import Head from 'next/head';
 import { AppFirebaseError } from '../../logic/server/firebase';
 import { setMessageError } from '../../logic/redux/settings_slice';
@@ -21,7 +20,7 @@ import ToggleButton from '@mui/material/ToggleButton'
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
 import { NewListDropdown } from '../general/form_dropdown';
-import { uploadConfigurationDistretto } from '../../logic/server/firestore/firestore';
+import { uploadConfigurationDistrict } from '../../logic/server/firestore/firestore';
 import useUser from '../../logic/hooks/use_user';
 
 const days = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
@@ -62,21 +61,21 @@ export const turni_disp = [
 export default function ConfigurationAdmin(props: PropsPageStepper) {
   //TODO: Numero massimo di turni notturni per mese
   //TODO: distanza temporale minima fra turni (diurni/notturni)
-  const configurationDistretto = useAppSelector(state => state.configurationDistr)
+  const configurationDistrict = useAppSelector(state => state.configurationDistr)
   const dispatch = useAppDispatch()
   const [ loading, setLoading ] = useState(false)
   const [ isOpenSnackbar, setIsOpenSnackbar ] = useState(false)
   const [messageSnackbar, setMessageSnackbar] = useState("")
   const [user] = useUser()
 
-  const _editTurno = (newTurno: TurnoDistretto, index?: number) => {
-    const newSt = [...configurationDistretto.turni]
+  const _editTurno = (newTurno: DistrictShift, index?: number) => {
+    const newSt = [...configurationDistrict.shifts]
     if (index !== undefined) {
       newSt[index] = newTurno
     } else {
       newSt.push(newTurno)
     }
-    dispatch(changeFasciaTurnoDistretto(newSt))
+    dispatch(changeShiftDistrict(newSt))
   }
 
   const changeDaysTurno = (
@@ -84,23 +83,23 @@ export default function ConfigurationAdmin(props: PropsPageStepper) {
     newDays: string[],
     index: number
   ) => {
-      const newTurno: TurnoDistretto = {
-          ...configurationDistretto.turni[index],
+      const newTurno: DistrictShift = {
+          ...configurationDistrict.shifts[index],
           daysOfWeek: newDays.map(val => days.indexOf(val))
       }
       _editTurno(newTurno, index)
   };
 
-  const changeFasciaTurno = (val: string, index: number, mode: keyof TurnoDistretto) => {
-    const newTurno: TurnoDistretto = {
-      ...configurationDistretto.turni[index],
+  const changeFasciaTurno = (val: string, index: number, mode: keyof DistrictShift) => {
+    const newTurno: DistrictShift = {
+      ...configurationDistrict.shifts[index],
       [mode]: val
     }
     _editTurno(newTurno, index)
   }
 
   const deleteTurno = (index: number) => {
-    dispatch(changeFasciaTurnoDistretto(configurationDistretto.turni.filter((val: any, i) => i !== index)))
+    dispatch(changeShiftDistrict(configurationDistrict.shifts.filter((val: any, i) => i !== index)))
   }
 
   const addNewTurno = () => {
@@ -117,30 +116,30 @@ export default function ConfigurationAdmin(props: PropsPageStepper) {
     setIsOpenSnackbar(true)
   }
   const validateConfiguration = () => {
-    if(configurationDistretto.sedi.length <= 0) {
+    if(configurationDistrict.locations.length <= 0) {
       showError("Inserisci almeno una sede")
       return false
     }
-    for(const sede of configurationDistretto.sedi) {
-      if(!sede.nome) {
+    for(const sede of configurationDistrict.locations) {
+      if(!sede.name) {
         showError("Il nome di una sede non può essere vuoto")
         return false
       }
-      if(sede.medici_per_turno <= 0) {
-        showError("La sede " + sede.nome + " deve avere almeno un medico per turno.")
+      if(sede.doctors_for_shift <= 0) {
+        showError("La sede " + sede.name + " deve avere almeno un medico per turno.")
         return false
       }
     }
-    if(configurationDistretto.turni.length <= 0) {
+    if(configurationDistrict.shifts.length <= 0) {
       showError("Inserisci almeno un turno")
       return false
     }
-    for(const turno of configurationDistretto.turni) {
-      if(turno.daysOfWeek.length <= 0) {
+    for(const shift of configurationDistrict.shifts) {
+      if(shift.daysOfWeek.length <= 0) {
         showError("Ogni turno necessita di essere applicato ad almeno un giorno")
         return false
       }
-      if(turno.from === turno.to) {
+      if(shift.from === shift.to) {
         showError("Un turno non può iniziare e finire nello stesso momento")
         return false
       }
@@ -152,7 +151,7 @@ export default function ConfigurationAdmin(props: PropsPageStepper) {
     setLoading(true)
     try {
       if(validateConfiguration()) {
-        await uploadConfigurationDistretto(configurationDistretto, user.uid)
+        await uploadConfigurationDistrict(configurationDistrict, user.uid)
         //TODO: Save local
         props.nextPage()
       }
@@ -167,19 +166,21 @@ export default function ConfigurationAdmin(props: PropsPageStepper) {
     }
   }
   
-  const addNewSede = async () => {
-    //* Crea std sede
-    const newIndex = configurationDistretto.sedi.length
-    dispatch(addSede({
+  /**
+   * Create a standard location (sede)
+   */
+  const addNewLocation = async () => {
+    const newIndex = configurationDistrict.locations.length
+    dispatch(addLocationToDistrict({
       index: newIndex,
-      nome: "Sede "+newIndex.toString(),
-      medici_per_turno: 1,
+      name: "Sede " + newIndex.toString(),
+      doctors_for_shift: 1,
     }))
   }
 
   useEffect(() => {
-    if(configurationDistretto.sedi.length === 0) {
-      addNewSede()
+    if(configurationDistrict.locations.length === 0) {
+      addNewLocation()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
@@ -205,14 +206,14 @@ export default function ConfigurationAdmin(props: PropsPageStepper) {
           sx={{mb: 3}}
         >  
         {
-          configurationDistretto.sedi.map((val, index) => {
+          configurationDistrict.locations.map((val, index) => {
             return (
               <SingleSede key={index} index={index}/>
             )
           })
         }
           <Grid item>
-              <IconButton onClick={addNewSede}>
+              <IconButton onClick={addNewLocation}>
                   <AddIcon/>
               </IconButton>
           </Grid>
@@ -221,14 +222,14 @@ export default function ConfigurationAdmin(props: PropsPageStepper) {
         <TitleSection title="Imposta i turni" description='Inserisci i turni del tuo distretto (saranno comuni fra tutte le sedi)'/> 
         <List>
           {
-            configurationDistretto.turni.map((infoTurno, index) => (
+            configurationDistrict.shifts.map((infoShift, index) => (
               <ListItem key={index} alignItems="center">
                 <IconButton onClick={() => deleteTurno(index)}>
                   <DeleteIcon />
                 </IconButton>
                 <ToggleButtonGroup
                   sx={{mx: 1}}
-                  value={infoTurno.daysOfWeek.map(val => days[val])}
+                  value={infoShift.daysOfWeek.map(val => days[val])}
                   onChange={(event, newDays: string[]) => changeDaysTurno(event, newDays, index)}
                 >
                   {
@@ -241,7 +242,7 @@ export default function ConfigurationAdmin(props: PropsPageStepper) {
                 <NewListDropdown
                   label="Dalle"
                   width={100}
-                  value={infoTurno.from}
+                  value={infoShift.from}
                   inputList={turni_disp}
                   onChangeFn={(event) => changeFasciaTurno(event.target.value, index, 'from')}
                 />
@@ -251,7 +252,7 @@ export default function ConfigurationAdmin(props: PropsPageStepper) {
                 <NewListDropdown
                   label="Alle"
                   width={100}
-                  value={infoTurno.to}
+                  value={infoShift.to}
                   inputList={turni_disp}
                   onChangeFn={(event) => changeFasciaTurno(event.target.value, index, 'to')}
                 />
@@ -265,7 +266,7 @@ export default function ConfigurationAdmin(props: PropsPageStepper) {
         <Divider flexItem />
         <TitleSection title="Modifiche ai turni" description='Qui puoi inserire degli specifici turni extra dovuti a vari eventi in quella zona (non preoccuparti se ti dimentichi qualcosa, potrai aggiungerli o rimuoverli in futuro)'/>
         <Grid item sx={{ py: 2 }}>
-          <HandlerSpecialTurni specialTurni={[]} />
+          <HandlerSpecialTurni specialShifts={[]} />
         </Grid>
         <Grid item width="100%" display="flex" justifyContent="flex-end">
             <Button

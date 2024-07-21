@@ -2,25 +2,25 @@ import { useEffect, useState } from "react"
 import { capitalizeFirstLetter } from "../local_utilities"
 import { setMessageError } from "../redux/settings_slice"
 import { useAppDispatch, useAppSelector } from "../redux/store"
-import { handleSede } from "../redux/turni_slice"
+import { handleLocation } from "../redux/turni_slice"
 import { AppFirebaseError } from "../server/firebase"
-import { getInfoSediDistretto } from "../server/firestore/distretti"
-import { RemoteSediInfo } from "../server/firestore/firestore"
+import { getInfoSediDistretto } from "../server/firestore/districts"
+import { RemoteLocationInfo } from "../server/firestore/firestore"
 
-export default function useSediDoctor(distretto: string | undefined): [RemoteSediInfo | undefined, boolean] {
+export default function useLocationsDoctor(distretto: string | undefined): [RemoteLocationInfo | undefined, boolean] {
     const [loading, setLoading] = useState(true)
     //const [error, setError] = useState("")
-    const [infoSedi, setInfoSedi] = useState<RemoteSediInfo>()
+    const [infoLocations, setInfoLocations] = useState<RemoteLocationInfo>()
     const dispatch = useAppDispatch()
-    const predefinedSediUser = useAppSelector((state) => state.auth.sedi)
+    const predefinedLocationUser = useAppSelector((state) => state.auth.locations)
 
-    const setPredefinedSedi = (remoteSedi: string[]) => {
-        if (predefinedSediUser.length > 0) {
+    const setPredefinedLocations = (remoteSedi: string[]) => {
+        if (predefinedLocationUser !== undefined && predefinedLocationUser.length > 0) {
           const normalizedSedi = remoteSedi.map(el => el.toLowerCase())
-          const normalizedPredefinedSedi = predefinedSediUser.map(el => el.toLowerCase())
+          const normalizedPredefinedSedi = predefinedLocationUser.map(el => el.toLowerCase())
           const out = normalizedPredefinedSedi.filter(el => normalizedSedi.includes(el)).map(el => capitalizeFirstLetter(el))
           if(out.length > 0) {
-            dispatch(handleSede(out))
+            dispatch(handleLocation(out))
           }
         } 
     }
@@ -31,13 +31,13 @@ export default function useSediDoctor(distretto: string | undefined): [RemoteSed
                 dispatch(setMessageError("Nessuna sede trovata"))
                 return
             }
-            const data: RemoteSediInfo | undefined = await getInfoSediDistretto(distretto)
+            const data: RemoteLocationInfo | undefined = await getInfoSediDistretto(distretto)
             if (data === undefined) {
                 dispatch(setMessageError("Nessuna sede trovata"))
                 return
             }
-            setInfoSedi(data)
-            setPredefinedSedi(Object.keys(data.sedi))
+            setInfoLocations(data)
+            setPredefinedLocations(Object.keys(data.locations))
         } catch(error: unknown) {
           if (error instanceof AppFirebaseError) {
             dispatch(setMessageError(error.message))
@@ -57,5 +57,5 @@ export default function useSediDoctor(distretto: string | undefined): [RemoteSed
       // eslint-disable-next-line react-hooks/exhaustive-deps
       }, [])
 
-      return [infoSedi, loading]
+      return [infoLocations, loading]
 }

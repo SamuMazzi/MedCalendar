@@ -7,16 +7,17 @@ import TableResult from '../components/admin_pages/table_result';
 import CircleIcon from '@mui/icons-material/Circle';
 import Greetings from '../components/general/greetings';
 import { useAppDispatch, useAppSelector } from '../logic/redux/store';
-import { populateScheduler, setMeseAndAnno } from '../logic/redux/scheduler_slice';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/router'
-import { getDataDistrettoToSendAPI, uploadConfigurazioneMediciDistretto } from '../logic/server/firestore/distretti'
+import { populateScheduler, SchedulingDataFromAPI, setMonthAndYear } from '../logic/redux/scheduler_slice';
+import { useState } from 'react';
+import { getDataDistrettoToSendAPI, uploadSchedulingDoctors } from '../logic/server/firestore/districts'
 import { setMessageError } from '../logic/redux/settings_slice';
 import ExportExcel from '../components/admin_pages/excel_export'
 import Head from 'next/head'
 import { AppFirebaseError } from '../logic/server/firebase'
 import { SelectMeseCalendar } from '../components/calendar'
 import { getDisponibilitaMeseDistretto } from '../logic/server/firestore/firestore'
+import useInfoDistrict from '../logic/hooks/use_info_district'
+import { generateColorRole } from '../logic/local_utilities'
 
 interface PropsTitleOfPage {
   title: string,
@@ -38,9 +39,9 @@ function TitleOfPage(props: PropsTitleOfPage) {
 }
 
 interface PropsInfoTable {
-  legendaRuoli: Record<string, string>
-  dettagli: boolean
-  setDettagli: (arg0: boolean) => void
+  colorsRoles: Record<string, string>
+  details: boolean
+  setDetails: (arg0: boolean) => void
 }
 
 function InfoTable(props: PropsInfoTable) {
@@ -53,11 +54,11 @@ function InfoTable(props: PropsInfoTable) {
             <Typography style={{ fontWeight: 'bold' }}>RUOLI</Typography>
           </Grid>
           {
-            Object.keys(props.legendaRuoli).map((ruolo) =>
-              <Grid item key={ruolo} sx={{ mt: 1 }}>
+            Object.keys(props.colorsRoles).map((role) =>
+              <Grid item key={role} sx={{ mt: 1 }}>
                 <Grid container direction="row" alignItems="center">
-                  <CircleIcon style={{ color: props.legendaRuoli[ruolo] }} sx={{ mr: 1 }} />
-                  <Typography>{ruolo}</Typography>
+                  <CircleIcon style={{ color: props.colorsRoles[role] }} sx={{ mr: 1 }} />
+                  <Typography>{role}</Typography>
                 </Grid>
               </Grid>
             )
@@ -71,8 +72,8 @@ function InfoTable(props: PropsInfoTable) {
           </Grid>
           <Grid item>
             <Switch
-              checked={props.dettagli}
-              onChange={(event) => { props.setDettagli(event.target.checked) }}
+              checked={props.details}
+              onChange={(event) => { props.setDetails(event.target.checked) }}
               inputProps={{ 'aria-label': 'controlled' }}
               />
           </Grid>
@@ -90,21 +91,23 @@ export default function PianificazioneTurniPage() {
   const dataScheduler = useAppSelector(state => state.scheduler)
   const [ loadingTurni, setLoadingTurni ] = useState(false)
   const [ dettagli, setDettagli] = useState(false)
-  const [ turniUploaded, setTurniUploaded ] = useState(false)
+  const [ shiftsUploaded, setShiftsUploaded ] = useState(false)
   const [ dataSent, setDataSent ] = useState(false)
   const [ nMedici, setNMedici ] = useState(0)
   const dispatch = useAppDispatch()
-  const distretto = useAppSelector(state => state.settings.distretto)
-  const legendaRuoli: Record<string, string> = {
-    'Incaricato': '#77BA84',
-    'Sostituto': '#EDC272',
-    'Titolare': '#729DED'
+  const district = useAppSelector(state => state.auth.selectedDistrict)
+  const [infoDistrict, error, loading] = useInfoDistrict(district)
+  const colorsRoles: Record<string, string> = {}
+  if(infoDistrict) {
+    Object.keys(infoDistrict.roles).forEach((role, index) => {
+      colorsRoles[role] = generateColorRole(index)
+    })
   }
 
   const getTurniMedici = async () => {
     if(yearData === 0) return
     try {
-      const dataMedici: any = await getDisponibilitaMeseDistretto(distretto!, yearData, monthData)
+      const dataMedici: any = await getDisponibilitaMeseDistretto(district, yearData, monthData)
       const listMedici = getListMediciFromData(dataMedici)
       setNMedici(listMedici ? listMedici.length : 0)
     } catch (error: unknown) {
@@ -127,10 +130,10 @@ export default function PianificazioneTurniPage() {
     return listOut
   }
 
-  const sendDataPianificazione = async () => {
+  const sendSchedulingData = async () => {
     setLoadingTurni(true)
     try {
-      await uploadConfigurazioneMediciDistretto(distretto!, dataScheduler)
+      await uploadSchedulingDoctors(district, dataScheduler)
       setDataSent(true)
     } catch(error: unknown) {
       if (error instanceof AppFirebaseError) {
@@ -146,7 +149,7 @@ export default function PianificazioneTurniPage() {
   const pianificaTurni = async () => {
     setLoadingTurni(true)
     try {
-      const data_disp = await getDataDistrettoToSendAPI(distretto!, yearData, monthData)
+      const data_disp = await getDataDistrettoToSendAPI(district, yearData, monthData)
       await callApi(data_disp)
     } catch (e) {
       console.log(e)
@@ -155,6 +158,7 @@ export default function PianificazioneTurniPage() {
     }
   }
 
+  // TODO: Define types
   const callApi = async (data_to_send: any) => {
     const debugUrlApi = "http://127.0.0.1:8080"
     const urlProductionApi ="https://europe-west1-programmazione-turni-gm.cloudfunctions.net/schedule_from_data"
@@ -169,10 +173,10 @@ export default function PianificazioneTurniPage() {
         },
         body: JSON.stringify(data_to_send)
       })
-      const jsonData = await res.json()
+      const jsonData: SchedulingDataFromAPI | any = await res.json() // any if there's an error
       if(res.status >= 200 && res.status < 215) {
         dispatch(populateScheduler(jsonData))
-        setTurniUploaded(true)
+        setShiftsUploaded(true)
       } else {
         dispatch(setMessageError('Errore: ' + jsonData['message']))
       }
@@ -203,7 +207,7 @@ export default function PianificazioneTurniPage() {
           <Grid item>
             <TitleOfPage
               title="Pianifica i turni" 
-              distretto={distretto!} 
+              distretto={district} 
                   //* Dovrebbe dirti che c'è gente
                   description={""
                     /**!turniUploaded && yearData !== 0 ? "Per " + mesi[dateData.getMonth()+1] + " " + dateData.getFullYear() +  " hanno inserito le loro disponibilità " + nMedici + (nMedici !== 1 ? " medici" : " medico") : "" */}
@@ -211,12 +215,14 @@ export default function PianificazioneTurniPage() {
             <Grid item sx={{pt: 3}}>
               <Typography sx={{pb: 1}} style={{fontWeight: 'bold'}}>Seleziona il mese</Typography>
               <SelectMeseCalendar timestamp_mese={yearData === 0 ? undefined : dateData.getTime()} onChange={(newVal) => {
-                if(newVal !== null && (newVal.month() !== monthData || newVal.year() !== yearData)) {
-                  dispatch(setMeseAndAnno({
-                    month: newVal.month(),
-                    year: newVal.year()
-                  }))
-                  getTurniMedici()
+                if (newVal !== null && newVal !== undefined) {
+                  if((newVal.getMonth() !== monthData || newVal.getFullYear() !== yearData)) {
+                    dispatch(setMonthAndYear({
+                      month: newVal.getMonth(),
+                      year: newVal.getFullYear()
+                    }))
+                    getTurniMedici()
+                  }
                 }
               }}/>
             </Grid>
@@ -226,10 +232,10 @@ export default function PianificazioneTurniPage() {
                     variant="contained"
                     component="label"
                     disabled={loadingTurni}
-                    onClick={turniUploaded ? sendDataPianificazione : pianificaTurni} 
+                    onClick={shiftsUploaded ? sendSchedulingData : pianificaTurni} 
                   >
                     {
-                      turniUploaded ? "Conferma i turni" : "Pianifica i turni"
+                      shiftsUploaded ? "Conferma i turni" : "Pianifica i turni"
                     }
                 </Button>
                 {
@@ -244,13 +250,13 @@ export default function PianificazioneTurniPage() {
             </Grid>
           </Grid>
           {
-            turniUploaded &&
-            <InfoTable legendaRuoli={legendaRuoli} dettagli={dettagli} setDettagli={setDettagli}/>
+            shiftsUploaded &&
+            <InfoTable colorsRoles={colorsRoles} details={dettagli} setDetails={setDettagli}/>
           }
         </Grid>
       </Grid>
       {
-        turniUploaded && <TableResult dettagli={dettagli}/>
+        shiftsUploaded && <TableResult dettagli={dettagli}/>
       }
     </Grid>}
     </>

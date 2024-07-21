@@ -16,7 +16,7 @@ import CircleIcon from '@mui/icons-material/Circle';
 import Button from '@mui/material/Button'
 import { useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../../logic/redux/store'
-import { getAllTurni, InfoMedico, SchedulerState, swapMediciInTurno } from '../../logic/redux/scheduler_slice'
+import { getAllShifts, InfoDoctor, SchedulerState, swapMediciInTurno } from '../../logic/redux/scheduler_slice'
 import { getGiornoSettimana } from '../../logic/local_utilities'
 import ListItemIcon from '@mui/material/ListItemIcon'
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
@@ -52,13 +52,13 @@ function TableCellMedici(props: PropsTableCellMedici) {
   return (
     <TableCell width="10%">
       <Grid container direction="column" sx={{maxWidth: 250}}>
-      {Array.from(Array(props.formatted_data['med_per_turno'][props.sede])).map((x, index) => {
-        const medici_in_turno: string[] = props.formatted_data['turni'][props.sede][props.turno] !== undefined ? props.formatted_data['turni'][props.sede][props.turno] : []
-        let medico: InfoMedico | undefined = undefined
-        let id_medico: string | undefined
+      {Array.from(Array(props.formatted_data['doctors_for_shift'][props.sede])).map((x, index) => {
+        const medici_in_turno: string[] = props.formatted_data['shifts'][props.sede][props.turno] !== undefined ? props.formatted_data['shifts'][props.sede][props.turno] : []
+        let medico: InfoDoctor | undefined = undefined
+        let id_doctor: string | undefined
         if (index < medici_in_turno.length) {
-          id_medico = medici_in_turno[index]
-          medico = props.formatted_data['medici_mod'][id_medico]
+          id_doctor = medici_in_turno[index]
+          medico = props.formatted_data['mod_doctors'][id_doctor]
         }
 
         return (
@@ -76,7 +76,7 @@ function TableCellMedici(props: PropsTableCellMedici) {
               color: 'black',
               textTransform: 'none'
             }}
-            onClick={() => props.onClick(props.sede, props.turno, id_medico)}
+            onClick={() => props.onClick(props.sede, props.turno, id_doctor)}
           >
             <div style={{
               display: 'flex',
@@ -86,7 +86,7 @@ function TableCellMedici(props: PropsTableCellMedici) {
                 medico ?
                   <>
                     <Typography style={{ whiteSpace: "pre-line" }} align="left">{getInfoTextMedico(medico)}</Typography>
-                    <CircleIcon fontSize="small" sx={{ ml: 1 }} style={{ color: getColorRole(medico.ruolo) }} />
+                    <CircleIcon fontSize="small" sx={{ ml: 1 }} style={{ color: getColorRole(medico.role) }} />
                     {
                       medico.n_turni_per_soddisfatto < 0 && //TODO: Estendere warning ad altri casi
                       <Tooltip title="Questo medico non soddisfa tutte le regole">
@@ -118,6 +118,10 @@ const styleModal = {
     p: 4,
 };
 
+
+/**
+ * Table showing the result of the scheduling algorithm with the possibility for the user to modify it
+ */
 export default function TableResult(props: PropsTableResult) {
     const formatted_data = useAppSelector(state => state.scheduler)
     const [ openModal, setOpenModal ] = useState(false)
@@ -125,7 +129,7 @@ export default function TableResult(props: PropsTableResult) {
     const [ idMedicoSel, setIdMedicoSel ] = useState<string | undefined>("")
     const [turnoSel, setTurnoSel] = useState<string | undefined>("")
     const [sedeSel, setSedeSel] = useState<string | undefined>("")
-    const listTurni = getAllTurni(formatted_data)
+    const listTurni = getAllShifts(formatted_data)
     const dispatch = useAppDispatch()
 
     const swapMeds = (med_in: string | undefined) => {
@@ -138,7 +142,7 @@ export default function TableResult(props: PropsTableResult) {
     }
 
     const isMedicoInThisTurno = (id_med: string, turno: string) => {
-      const turni_per_sede = formatted_data['turni']
+      const turni_per_sede = formatted_data['shifts']
       for (const sede of Object.keys(turni_per_sede)) {
         if (turni_per_sede[sede][turno] !== undefined && turni_per_sede[sede][turno].includes(id_med)) {
           return true
@@ -147,16 +151,16 @@ export default function TableResult(props: PropsTableResult) {
       return false
     }
 
-    const openModalMedico = (sede: string, turno: string, id_selected_medico: string | undefined) => {
-        const medici = Object.keys(formatted_data['medici_orig']).filter((id_med: string) => {
-            if (id_selected_medico !== undefined && id_selected_medico === id_med) return false
-            const tmp_medico = formatted_data['medici_orig'][id_med]
-            if (tmp_medico.disponibilita.includes(turno) && !isMedicoInThisTurno(id_med, turno)) return true
+    const openModalMedico = (location: string, shift: string, id_selected_doctor: string | undefined) => {
+        const medici = Object.keys(formatted_data['original_doctors']).filter((id_doctor: string) => {
+            if (id_selected_doctor !== undefined && id_selected_doctor === id_doctor) return false
+            const tmp_medico = formatted_data['original_doctors'][id_doctor]
+            if (tmp_medico.availability.includes(shift) && !isMedicoInThisTurno(id_doctor, shift)) return true
             return false
         })
-        setIdMedicoSel(id_selected_medico)
-        setTurnoSel(turno)
-        setSedeSel(sede)
+        setIdMedicoSel(id_selected_doctor)
+        setTurnoSel(shift)
+        setSedeSel(location)
         setFilteredMedici(medici)
         setOpenModal(true)
     };
@@ -200,7 +204,7 @@ export default function TableResult(props: PropsTableResult) {
                     {getTextTurno(turno)}
                   </TableCell>
                   {
-                    Object.keys(formatted_data['turni']).map((sede: string) => 
+                    Object.keys(formatted_data['shifts']).map((sede: string) => 
                       <TableCellMedici key={sede} onClick={openModalMedico} formatted_data={formatted_data} sede={sede} turno={turno} dettagli={props.dettagli}/>
                     )
                   }
@@ -228,8 +232,8 @@ export default function TableResult(props: PropsTableResult) {
                               setSedeSel(undefined)
                               setOpenModal(false)
                           }}>
-                            <ListItemIcon><CircleIcon style={{ color: getColorRole(formatted_data['medici_mod'][id_med].ruolo)}}/></ListItemIcon>
-                            <ListItemText primary={formatted_data['medici_mod'][id_med].nome} secondary={"Turni rimanenti: " + formatted_data['medici_mod'][id_med].n_turni_per_soddisfatto} />
+                            <ListItemIcon><CircleIcon style={{ color: getColorRole(formatted_data['mod_doctors'][id_med].role)}}/></ListItemIcon>
+                            <ListItemText primary={formatted_data['mod_doctors'][id_med].name} secondary={"Turni rimanenti: " + formatted_data['mod_doctors'][id_med].n_turni_per_soddisfatto} />
                           </ListItemButton>
                           </ListItem>
                       )

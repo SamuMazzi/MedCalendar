@@ -2,25 +2,25 @@ import { useState } from 'react'
 import Grid from '@mui/material/Grid'
 import Button from '@mui/material/Button'
 import Typography from '@mui/material/Typography'
-import GruppoTurni from './gruppo_turni';
+import GroupShifts from './gruppo_turni';
 import { useAppSelector } from '../../logic/redux/store'
 import MessageSnackbar from '../snackbar/message_snackbar'
 
-export interface PropsDisponibilita {
+export interface PropsAvailability {
     changeMod: Function
 }
 
-export default function ModuleDisponibilita(props: PropsDisponibilita) {
+export default function ModuleDisponibilita(props: PropsAvailability) {
     const generalState = useAppSelector((state) => state.turni)
-    const distretto = useAppSelector(state => state.settings.distretto)
+    const district = useAppSelector(state => state.auth.selectedDistrict)
     const [messageSnackbar, setMessageSnackbar] = useState("");
 
     const handleSubmit = () => {
-        if (generalState.sedi.length === 0) {
+        if (generalState.locations.length === 0) {
             setMessageSnackbar('Devi selezionare almeno una sede');
-        } else if (Object.values(generalState.disponibilita).length === 0) {
+        } else if (Object.values(generalState.availability).length === 0) {
             setMessageSnackbar('Devi selezionare almeno una disponibilità');
-        } else if (generalState.oreMassime <= 0) {
+        } else if (generalState.max_hours <= 0) {
             setMessageSnackbar('Inserisci un numero valido per i turni massimi');
         } else {
             props.changeMod()
@@ -40,12 +40,12 @@ export default function ModuleDisponibilita(props: PropsDisponibilita) {
                             Raccolta disponibilità
                         </Typography>
                         <Typography variant="h6" component="h6" sx={{ textAlign: { xs: "center", lg: "left" } }}>
-                            {"DISTRETTO: " + (distretto?.toUpperCase())}
+                            {"DISTRETTO: " + (district.toUpperCase())}
                         </Typography>
 
                     </Grid>
                     <Grid item>
-                        <GruppoTurni distretto={distretto} />
+                        <GroupShifts district={district} />
                     </Grid>
                     <Grid item>
                         <Button variant="contained" onClick={handleSubmit} style={{ width: '100px' }}>

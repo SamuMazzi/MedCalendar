@@ -5,7 +5,7 @@ from openpyxl import load_workbook, Workbook
 from openpyxl.styles import PatternFill, Border, Side
 
 from models.enums import Roles
-from models.medico import Medico
+from models.medico import Doctor
 from models.soluzione import Soluzione
 
 
@@ -21,7 +21,7 @@ def is_weekend(day: datetime.datetime):
     return False
 
 
-def get_color_from_role(med: Medico):
+def get_color_from_role(med: Doctor):
     if med.ruolo.lower() == Roles.conv24:
         return PatternFill(start_color='FFb1f4ff',
                            end_color='FFb1f4ff',
@@ -59,11 +59,11 @@ def write_soluzione(sol: Soluzione, filename: str):
     for i in range(len(sol.sedi)):
         sede = sol.sedi[i]
         ws.cell(row=1, column=2 + i + incremental_pad).value = str(sede.nome)
-        incremental_pad += (sede.medici_per_turno - 1)
+        incremental_pad += (sede.doctors_for_shift - 1)
         count_row = 2
         for date_turno, turno in sede.month_calendar.items():
             for j in range(len(turno.turni_occupati)):
-                med: Medico = turno.turni_occupati[j]
+                med: Doctor = turno.turni_occupati[j]
                 med_cell = ws.cell(row=count_row, column=count_col + i + j)
                 med_cell.value = med.nome
                 # med_cell.fill = get_color_from_role(med)
@@ -123,6 +123,9 @@ def parse_sedi(sedi: str):
 def read_dati(filename: str):
     wb = load_workbook(filename)
     ws = wb.active
+    if ws is None:
+        print("Errore nel caricamento del file")
+        return
 
     medici = []
     for i in range(2, 1000):  # iterate over medici
@@ -130,20 +133,29 @@ def read_dati(filename: str):
         if nome is None:
             break
         cognome = ws.cell(row=i, column=3).value
-        ruolo = parse_ruolo(ws.cell(row=i, column=4).value)
-        turni_max = ws.cell(row=i, column=6).value
-        sedi_disp = parse_sedi(ws.cell(row=i, column=7).value)
+        cell_role = ws.cell(row=i, column=4).value
+        assert isinstance(cell_role, str)
+        ruolo = parse_ruolo(cell_role)
+        assert ruolo is not None
+        max_shifts = ws.cell(row=i, column=6).value
+        assert isinstance(max_shifts, int)
+        cell_locations = ws.cell(row=i, column=7).value
+        assert isinstance(cell_locations, str)
+        sedi_disp = parse_sedi(cell_locations)
 
-        med: Medico = Medico(str(i), nome + ' ' + cognome, ruolo, [], sedi_disp, n_turni_max=turni_max)
+        assert isinstance(nome, str)
+        assert isinstance(cognome, str)
+
+        med: Doctor = Doctor(str(i), f"{nome} {cognome}", ruolo, [], sedi_disp, n_shifts_max=max_shifts)
         all_disp = []
         mode = 'night'
         for j in range(8, 47):
             el = ws.cell(row=i, column=j).value
             header_cell = ws.cell(row=1, column=j).value
-            if type(el) is datetime.datetime:
+            if isinstance(el, datetime.datetime):
                 all_disp.append(datetime.datetime(el.year, el.month, el.day, hour=20 if mode == 'night' else 8,
                                                   minute=8 if mode == 'night' else 20))  # debug
-            elif header_cell is not None and header_cell.startswith('INDICA UNA'):
+            elif header_cell is not None and isinstance(header_cell, str) and header_cell.startswith('INDICA UNA'):
                 mode = 'day'
         med.disponibilita = all_disp
         medici.append(med)

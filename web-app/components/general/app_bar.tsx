@@ -91,10 +91,10 @@ export function MedAppBar() {
                 }}
               >
                 <Typography style={{ fontWeight: "bold", display: 'inline-block', whiteSpace: 'pre-line', fontSize: 20 }} sx={{px: 2, pt: 1}}>
-                  {user.nome ? user.nome : (user.admin ? 'Amministratore' : '')}
+                  {user.name}
                 </Typography>
                 {
-                  fbUser != null && user.admin && <MenuItem sx={{textAlign:'left'}}>
+                  fbUser != null && <MenuItem sx={{textAlign:'left'}}>
                     <Typography textAlign='left' style={{ fontSize: 14, fontWeight: 400 }} sx={{px: 2, pt: 1}}>
                       {"Email: " + fbUser.email}
                     </Typography>

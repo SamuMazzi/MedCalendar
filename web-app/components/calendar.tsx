@@ -1,19 +1,15 @@
-import { useState } from 'react';
 import dayjs, { Dayjs } from 'dayjs';
 import IconButton from '@mui/material/IconButton';
 import EventIcon from '@mui/icons-material/Event';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { PickersDay } from '@mui/x-date-pickers/PickersDay';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { useAppDispatch, useAppSelector }  from '../logic/redux/store'
-import { handleDisponibilita } from '../logic/redux/turni_slice'
-import 'dayjs/locale/it';
-import TextField from '@mui/material/TextField';
+import { setNewAvailabilityDoctor } from '../logic/redux/turni_slice'
+import { Calendar } from 'primereact/calendar';
+import { Nullable } from 'primereact/ts-helpers';
+        
 
 interface PropsSelectMeseCalendar {
   timestamp_mese: number | undefined,
-  onChange: (arg0: dayjs.Dayjs | null) => void
+  onChange: (arg0: Nullable<Date | undefined>) => void
   /**
    * Numero di mesi di scarto che ci possono essere. Es: 2 -> posso scegliere questo mese e i 2 dopo al max
    */
@@ -21,112 +17,82 @@ interface PropsSelectMeseCalendar {
 }
 
 export function SelectMeseCalendar(props: PropsSelectMeseCalendar) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [anchorEl, setAnchorEl] = useState(null);
   const maxDate = props.maxDate ? dayjs(new Date()).add(props.maxDate, 'M') : undefined
-  const views: any[] = maxDate?.year() === dayjs(props.timestamp_mese).year() ? ['month'] : ['year', 'month']
   
-  const handleClick = (event: any) => {
-    setIsOpen((isOpen) => !isOpen);
-    setAnchorEl(event.currentTarget);
-  }
-
   return (
-    <LocalizationProvider adapterLocale={'it'} dateAdapter={AdapterDayjs}>
-      <DatePicker
-        inputFormat="YYYY MMMM"
-        disableMaskedInput
-        views={views}
-        maxDate={maxDate}
-        renderInput={(params) => !props.timestamp_mese ? <IconButton onClick={handleClick}>
-          <EventIcon/>
-        </IconButton> : <TextField {...params}
-          onClick={handleClick}
-          label="" 
-          placeholder='Mese' 
-          InputProps={{
-            endAdornment: (
-              <IconButton>
-                <EventIcon />
-              </IconButton>
-            ),
-          }}
-        />}
-        InputProps={{
-          placeholder: "Placeholder"
-        }}
-        value={props.timestamp_mese ? dayjs(props.timestamp_mese) : undefined}
-        onChange={props.onChange}
-        PopperProps={{
-          placement: "bottom-end",
-          anchorEl: anchorEl
-        }}
-        // minDate={dayjs(new Date())}
-        closeOnSelect={true}
-        open={isOpen}
-        onClose={() => setIsOpen(false)}
-        />
-    </LocalizationProvider>
+    (<Calendar
+        dateFormat="MM yy"
+        view="month"
+        locale='it'
+        showIcon
+        placeholder='Mese'
+        maxDate={maxDate?.toDate()}
+        value={props.timestamp_mese ? dayjs(props.timestamp_mese).toDate() : undefined}
+        onChange={(event) => props.onChange(event.value)}
+        minDate={new Date()}
+      />)
   );
 }
 
 export interface PropsCalendar {
-  fasciaTurno: string
+  shift: string
+  /**
+   * It seems they are the selectable weekdays -> inform better about 0-7
+   */
   selectableDays?: number[]
   extraDays?: Date[]
 }
 
 export function PersonalCalendar(props: PropsCalendar) {
-  const giorniSelezionati = useAppSelector((state) => state.turni.disponibilita[props.fasciaTurno])
-  const timestamp_mese = useAppSelector((state) => state.turni.timestamp_mese)
+  let tmpSelectedDays = useAppSelector((state) => state.turni.availability[props.shift])
+  const selectedDays: Date[] = tmpSelectedDays !== undefined && tmpSelectedDays !== null ? tmpSelectedDays.map(v => new Date(v)) : []
+  const timestamp_month = useAppSelector((state) => state.turni.timestamp_month)
+  const date_month = timestamp_month !== undefined ? new Date(timestamp_month) : undefined
   const dispatch = useAppDispatch()
-  const [isOpen, setIsOpen] = useState(false);
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [selected, setSelected] = useState<any>(null);
 
-  const handleBugClick = async () => {
-    setSelected(dayjs(timestamp_mese!))
-    await new Promise(r => setTimeout(r, 1));
-    setSelected(null)
+  const getFilteredDaysInMonth = (month: number, year: number) => {
+    var date = new Date(year, month, 1);
+    var days = [];
+    while (date.getMonth() === month) {
+      if (props.selectableDays?.includes(date.getDay()) || props.extraDays?.some(v => dayjs(v).isSame(date, 'day'))) {
+        days.push(new Date(date));
+      }
+      date.setDate(date.getDate() + 1);
+    }
+    return days;
   }
 
-  const handleClick = (event: any) => {
-    setIsOpen((isOpen) => !isOpen);
-    setAnchorEl(event.currentTarget);
-    handleBugClick()
-  }
-
-  const handleDaySelected = (newDate: Dayjs) => {
-    const day: number = newDate.date();
-    dispatch(handleDisponibilita({
-      fasciaTurno: props.fasciaTurno,
-      giorno: day
+  const handleDaySelected = (newDates: Date[]) => {
+    dispatch(setNewAvailabilityDoctor({
+      shift: props.shift,
+      days: newDates.map(v => v.getTime())
     }));
   }
 
   return (
-    <LocalizationProvider adapterLocale='it' dateAdapter={AdapterDayjs}>
-      <DatePicker
-        value={selected}        
-        onChange={(newValue) => {
-          if(newValue !== null) {
-            handleDaySelected(newValue);
+    (
+      <Calendar
+        locale="it"
+        value={selectedDays}
+        onChange={(e) => {
+          if(e.value !== undefined && e.value !== null) {
+            handleDaySelected(e.value);
           }
         }}
-        PopperProps={{
-          placement: "bottom-end",
-          anchorEl: anchorEl
-        }}
-        maxDate={timestamp_mese !== undefined ? dayjs(timestamp_mese).endOf('month') : undefined}
-        minDate={timestamp_mese !== undefined ? dayjs(timestamp_mese).startOf('month') : undefined}
-        closeOnSelect={false}
-        shouldDisableMonth={timestamp_mese !== undefined ? (date) => date.month() !== dayjs(timestamp_mese).month() : undefined}
-        shouldDisableDate={(date) => !props.selectableDays?.includes(date.day()) && !props.extraDays?.some(v => dayjs(v).isSame(date, 'day'))}
-        showDaysOutsideCurrentMonth={timestamp_mese === undefined}
-        open={isOpen}
-        disableHighlightToday={true}
-        onClose={() => setIsOpen(false)}
-        renderInput={({
+        onClearButtonClick={() => handleDaySelected([])}
+        maxDate={timestamp_month !== undefined ? dayjs(timestamp_month).endOf('month').toDate() : undefined}
+        minDate={timestamp_month !== undefined ? dayjs(timestamp_month).startOf('month').toDate() : undefined}
+        viewDate={date_month}
+        enabledDates={date_month !== undefined ? getFilteredDaysInMonth(date_month.getMonth(), date_month.getFullYear()) : undefined}
+        showOtherMonths={timestamp_month === undefined}
+        showButtonBar
+        selectionMode='multiple'
+        dateFormat='d'
+        showIcon
+        inputClassName='p-inputtext-sm'
+        inputStyle={{ width: 1 }}
+        style={{ width: '100%', borderRadius: 100, color: 'black' }}
+        /*renderInput={({
           ref,
           inputProps,
           disabled,
@@ -142,51 +108,30 @@ export function PersonalCalendar(props: PropsCalendar) {
             <IconButton onClick={handleClick}>
               <EventIcon fontSize="large"/>
             </IconButton>
-          </div>)}
-        renderDay={(day, _value, DayComponentProps) => {
-          const isSelected = !DayComponentProps.outsideCurrentMonth && (giorniSelezionati !== undefined && giorniSelezionati.includes(day.date()));
-          //*: Fai colore select un po' sfumato (opacità?)
-          return <PickersDay {...DayComponentProps} selected={isSelected}/>;
-        }}
-      />
-    </LocalizationProvider>
+          </div>)}*/
+        />)
   );
 }
 
 interface PropsCalendarSelectSingleDay {
-  daySelected: Dayjs
-  onChangeDate: (arg0: Dayjs) => void
+  daySelected: Date
+  onChangeDate: (arg0: Date) => void
 }
 
 export function CalendarSelectSingleDay(props: PropsCalendarSelectSingleDay) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [anchorEl, setAnchorEl] = useState(null);
-
-  const handleClick = (event: any) => {
-    setIsOpen((isOpen) => !isOpen);
-    setAnchorEl(event.currentTarget);
-  }
-
-  const handleDaySelected = (newDate: Dayjs) => {
+  const handleDaySelected = (newDate: Date) => {
     props.onChangeDate(newDate)
   }
 
   return (
-    <LocalizationProvider adapterLocale='it' dateAdapter={AdapterDayjs}>
-      <DatePicker
-        value={props.daySelected}        
-        onChange={(newValue) => {
-          if(newValue !== null) {
-            handleDaySelected(newValue);
+    (<Calendar
+        value={props.daySelected}
+        onChange={(e) => {
+          if(e.value !== undefined && e.value !== null) {
+            handleDaySelected(e.value);
           }
         }}
-        PopperProps={{
-          placement: "bottom-end",
-          anchorEl: anchorEl
-        }}
-        open={isOpen}
-        onClose={() => setIsOpen(false)}
-        renderInput={({
+        /*renderInput={({
           ref,
           inputProps,
           disabled,
@@ -202,8 +147,7 @@ export function CalendarSelectSingleDay(props: PropsCalendarSelectSingleDay) {
             <IconButton onClick={handleClick}>
               <EventIcon fontSize="large"/>
             </IconButton>
-          </div>)}
-      />
-    </LocalizationProvider>
+          </div>)}*/
+    />)
   );
 }

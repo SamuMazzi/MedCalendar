@@ -1,39 +1,53 @@
-import { createSlice } from '@reduxjs/toolkit'
+import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import assert from 'assert'
 
 export interface SchedulerState {
     year: number,
     month: number,
     head: string[],
-    turni: Record<string, Record<string, string[]>>, // sede -> data -> [id occupati]
-    med_per_turno: Record<string, number>,
-    medici_orig: Record<string, InfoMedico>,
-    medici_mod: Record<string, InfoMedico>,
+    shifts: Record<string, Record<string, string[]>>, // sede -> data -> [id occupati]
+    doctors_for_shift: Record<string, number>,
+    original_doctors: Record<string, InfoDoctor>,
+    mod_doctors: Record<string, InfoDoctor>,
+}
+
+export interface SchedulingDataFromAPI {
+    locations: Record<string, {
+      shifts: Record<string, string[]>  // shift -> [doctor1, doctor2, ...]
+      doctors_for_shift: number
+    }>,
+    doctors: Record<string, any> // doctor -> {id, locations, role, name, max_hours, availability}
+    busy_shifts: number,
+    tot_shifts: number,
+    non_fillable_shifts: number,
+    placeable_shifts: number,
+    year: number,
+    month: number
 }
 
 const initialState: SchedulerState = {
     year: 0,
     month: 0,
     head: [],
-    turni: {},
-    med_per_turno: {},
-    medici_orig: {}, //* Qui ci sarà una copia dei medici
-    medici_mod: {} //* Qui verranno fatte le modifiche ai medici, sarà quasi sicuramente necessario creare un reducer per gestire tutte le info   
+    shifts: {},
+    doctors_for_shift: {},
+    original_doctors: {}, //* Qui ci sarà una copia dei medici
+    mod_doctors: {} //* Qui verranno fatte le modifiche ai medici, sarà quasi sicuramente necessario creare un reducer per gestire tutte le info   
 }
 
-export interface InfoMedico {
-    nome: string,
-    ruolo: string,
-    disponibilita: string[],
+export interface InfoDoctor {
+    name: string,
+    role: string,
+    availability: string[],
     n_turni_per_soddisfatto: number,
-    n_turni_max: number,
-    sedi: string[]
+    n_shifts_max: number,
+    locations: string[]
 }
 
-export const getAllTurni = (formatted_data: SchedulerState) => {
+export const getAllShifts = (formatted_data: SchedulerState) => {
     const list_turni: string[] = []
-    Object.keys(formatted_data.turni).forEach((sede: string) => {
-        Object.keys(formatted_data.turni[sede]).forEach(turno => {
+    Object.keys(formatted_data.shifts).forEach((sede: string) => {
+        Object.keys(formatted_data.shifts[sede]).forEach(turno => {
             if(!list_turni.includes(turno)) {
                 list_turni.push(turno)
             }
@@ -43,12 +57,12 @@ export const getAllTurni = (formatted_data: SchedulerState) => {
     return list_turni
 }
 
-const insertMedicoInTurno = (state: SchedulerState, sede: string, turno: string, id_med: string) => {
-    let medici_in_turno = state.turni[sede][turno]
+const insertMedicoInTurno = (state: SchedulerState, location: string, shift: string, id_doctor: string) => {
+    let medici_in_turno = state.shifts[location][shift]
     if (medici_in_turno === undefined) {
-        state.turni[sede][turno] = [id_med] //Testare se si può sostituire con variabile
+        state.shifts[location][shift] = [id_doctor] //Testare se si può sostituire con variabile
     } else {
-        medici_in_turno.push(id_med)
+        medici_in_turno.push(id_doctor)
     }
 }
 
@@ -58,55 +72,55 @@ const clearState = (state: SchedulerState) => {
     state.year = initialState.year
     state.month = initialState.month
     state.head = initialState.head
-    state.turni = initialState.turni
-    state.med_per_turno = initialState.med_per_turno
-    state.medici_mod = initialState.medici_mod
-    state.medici_orig = initialState.medici_orig
+    state.shifts = initialState.shifts
+    state.doctors_for_shift = initialState.doctors_for_shift
+    state.mod_doctors = initialState.mod_doctors
+    state.original_doctors = initialState.original_doctors
 }
 
 const updateNumTurniDisponibiliMedico = (state: SchedulerState, id_med: string | undefined, n: number) => {
     if (id_med === undefined) return
-    state.medici_mod[id_med].n_turni_per_soddisfatto += n
+    state.mod_doctors[id_med].n_turni_per_soddisfatto += n
 }
 
 export const scheduler_slice = createSlice({
     name: 'scheduler_slice',
     initialState: initialState,
     reducers: {
-        populateScheduler: (state, action) => {
+        populateScheduler: (state, action: PayloadAction<SchedulingDataFromAPI>) => {
             //state = {...initialState} // Clear state //! Non funziona, da un sacco di problemi
             clearState(state)
             const input = action.payload
-            const sedi_input = input['sedi']
+            const sedi_input = input['locations']
             state.year = input['year']
             state.month = input['month']
-            state.medici_orig = input['medici']
-            state.medici_mod = JSON.parse(JSON.stringify(input['medici']))
-            Object.keys(input['sedi']).forEach((sede: string) => {
-                const medici_per_turno = sedi_input[sede]['medici_per_turno']
-                state.head = [...state.head, sede]
-                state.med_per_turno = {...state.med_per_turno, [sede]: medici_per_turno}
-                state.turni = {...state.turni, [sede]: {}}
-                Object.keys(sedi_input[sede]['turni']).forEach((turno: string) => {
-                    const medici_in_turno: string[] = sedi_input[sede]['turni'][turno]
-                    medici_in_turno.forEach((id_med) => {
-                        updateNumTurniDisponibiliMedico(state, id_med, -1)
-                        insertMedicoInTurno(state, sede, turno, id_med)
+            state.original_doctors = input['doctors']
+            state.mod_doctors = JSON.parse(JSON.stringify(input['doctors']))
+            Object.keys(input['locations']).forEach((location: string) => {
+                const doctors_for_shift = sedi_input[location]['doctors_for_shift']
+                state.head = [...state.head, location]
+                state.doctors_for_shift = {...state.doctors_for_shift, [location]: doctors_for_shift}
+                state.shifts = {...state.shifts, [location]: {}}
+                Object.keys(sedi_input[location]['shifts']).forEach((turno: string) => {
+                    const doctors_in_shift: string[] = sedi_input[location]['shifts'][turno]
+                    doctors_in_shift.forEach((id_doctor) => {
+                        updateNumTurniDisponibiliMedico(state, id_doctor, -1)
+                        insertMedicoInTurno(state, location, turno, id_doctor)
                     })
                 })
             })
             //* Serve per mettere i giorni anche in cui non ci sono medici
-            Object.keys(input['sedi']).forEach((sede: string) => {
-                Object.keys(sedi_input[sede]['turni']).forEach((turno: string) => {
-                    if(state.turni[sede][turno] === undefined)
-                        state.turni[sede][turno] = []
+            Object.keys(input['locations']).forEach((location: string) => {
+                Object.keys(sedi_input[location]['shifts']).forEach((turno: string) => {
+                    if(state.shifts[location][turno] === undefined)
+                        state.shifts[location][turno] = []
                 })
             })
         },
         swapMediciInTurno: (state, action) => {
             const data = action.payload
             assert(!(data.med_in === undefined && data.med_out === undefined), "Almeno uno dei due valori non deve essere undefined")
-            const meds_disp = state['turni'][data.sedeSel][data.turnoSel]
+            const meds_disp = state['shifts'][data.sedeSel][data.turnoSel]
             updateNumTurniDisponibiliMedico(state, data.med_in, -1)
             updateNumTurniDisponibiliMedico(state, data.med_out, 1)
             if (data.med_out !== undefined && data.med_in !== undefined) {
@@ -115,7 +129,7 @@ export const scheduler_slice = createSlice({
                 meds_disp.push(data.med_in)
             } else if (data.med_in !== undefined) {
                 if(!meds_disp) {
-                    state['turni'][data.sedeSel][data.turnoSel] = [data.med_in]
+                    state['shifts'][data.sedeSel][data.turnoSel] = [data.med_in]
                 } else {
                     meds_disp.push(data.med_in)
                 }
@@ -124,7 +138,7 @@ export const scheduler_slice = createSlice({
                 meds_disp.splice(index, 1)
             }
         },
-        setMeseAndAnno: (state, action) => {
+        setMonthAndYear: (state, action: PayloadAction<{month: number, year: number}>) => {
             state.month = action.payload.month ? action.payload.month : state.month
             state.year = action.payload.year ? action.payload.year : state.year
         }
@@ -132,6 +146,6 @@ export const scheduler_slice = createSlice({
 })
 
 // Action creators are generated for each case reducer function
-export const { populateScheduler, swapMediciInTurno, setMeseAndAnno } = scheduler_slice.actions
+export const { populateScheduler, swapMediciInTurno, setMonthAndYear } = scheduler_slice.actions
 
 export default scheduler_slice.reducer

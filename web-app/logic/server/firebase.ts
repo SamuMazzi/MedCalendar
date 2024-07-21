@@ -101,8 +101,12 @@ export class AppFirebaseError extends Error {
         message = "Connessione assente, riprovare"
         break;
       }
+      case (AuthErrorCodes.INVALID_CONTINUE_URI): {
+        message = "Si è verificato un errore con il link, riprovare."
+        break;
+      }
       default: {
-        console.log(code)
+        console.error(code)
         message = "Si è verificato un errore, riprovare"
         break;
       }

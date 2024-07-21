@@ -33,22 +33,26 @@ export function RouteGuard(props: PropsRouteGuard) {
     }, [user, fbUser, fbLoading]);
 
     function authCheck(url: string) {
+        // TODO: Fix this
         if (fbLoading) {
             return
         }
-        const normal_user = fbUser !== null
-        const admin_user = user.admin
         // redirect to login page if accessing a private page and not logged in 
-        const publicPaths = [Routes.Login, Routes.Register];
+        const publicPaths = [Routes.Login, Routes.Register, Routes.SignInConfirm, Routes.CompleteRegistration];
         const path = url.split('?')[0];
-        if (distretto === undefined && !publicPaths.some((el) => path.includes(el))) {
+        if (fbUser !== null && user.name === "" && !path.endsWith(Routes.CompleteRegistration)) {
+            router.push({
+                pathname: Routes.CompleteRegistration,
+                query: { returnUrl: router.asPath }
+            })
+        } else if (distretto === undefined && !publicPaths.some((el) => path.includes(el))) {
             logout()
             setAuthorized(false)
             router.push({
                 pathname: Routes.Login,
                 query: { returnUrl: router.asPath }
             })
-        } else if (!normal_user && !publicPaths.some((el) => path.includes(el))) {
+        } else if (!publicPaths.some((el) => path.includes(el))) {
             if (user.uid.length > 0) {
                 logout() //legacy -> if user was logged in standard way, so only locale, without signInAnonym, logout so everything is cleared
             }
@@ -58,7 +62,7 @@ export function RouteGuard(props: PropsRouteGuard) {
                 query: { returnUrl: router.asPath }
             })
             //* condizione sui distretti deve ancora essere testata
-        } else if (!admin_user && path.includes('_admin')) { //* (distretto && authState.distretti.includes(distretto)) 
+        } else if (path.includes('_admin')) { //* (distretto && authState.distretti.includes(distretto)) 
             setAuthorized(false);
             router.back()
         } else {

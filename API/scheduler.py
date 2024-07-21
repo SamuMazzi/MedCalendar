@@ -1,8 +1,7 @@
-from typing import List
-
+from models.soluzione import Soluzione
 from models.enums import *
 from models.find_solution import FindSolution
-from models.medico import Medico, real_update_sodd
+from models.medico import Doctor, real_update_sodd
 from models.sede import Sede
 from models.storage import Storage, init_storage, get_turni_effettivi
 from models.turno import Turno
@@ -14,7 +13,7 @@ from utilities import is_medico_in_24_ore_prec_o_succ, med_non_puo_fare_piu_turn
 
 def set_medici_disponibili():
     for sede in Storage.sedi:
-        Sede.tot_medici_per_turno += sede.medici_per_turno
+        Sede.tot_doctors_for_shift += sede.doctors_for_shift
         sede.set_medici_disponibili_per_mese_curr(Storage.all_medici)
 
 
@@ -22,7 +21,7 @@ def set_default_medici():
     turni_posizionati_a_prescindere = 0
     sodd = [0, 0, 0]
     for turno in Storage.calendar_turni:
-        sedi_turni_liberi_per_turno = {}
+        sedi_turni_liberi_per_turno: dict[str, list[Doctor]] = {}
         medici_gia_occupati_per_turno = []
         for i in range(len(Storage.sedi)):
             for sede in Storage.sedi:
@@ -30,7 +29,7 @@ def set_default_medici():
                 medici_match_rules = [med for med in medici_disp if not is_medico_in_24_ore_prec_o_succ([med], turno) and not med_non_puo_fare_piu_turni(med)]
                 med_occupati_per_turno = sede.get_medici_occupati_per_turno(turno)
                 # Setta medici obbligati
-                if 0 < len(medici_match_rules) <= sede.medici_per_turno - len(med_occupati_per_turno):
+                if 0 < len(medici_match_rules) <= sede.doctors_for_shift - len(med_occupati_per_turno):
                     for med in medici_match_rules:
                         turni_posizionati_a_prescindere += setta_single_default_medico(med, sede, turno, sodd)
                     medici_gia_occupati_per_turno.extend(medici_match_rules)
@@ -61,7 +60,7 @@ def setta_default_medici_in_un_turno_fra_le_sedi(sedi_turni_liberi_per_turno, tu
     medici_disp = list(medici_disp_per_sede)[0]  # Prendo la prima lista, tanto sono tutte uguali
     i = 0
     for sede in Storage.sedi:
-        for j in range(sede.medici_per_turno):
+        for j in range(sede.doctors_for_shift):
             if i >= len(medici_disp):
                 break
             turni_posizionati_a_prescindere += setta_single_default_medico(medici_disp[i], sede, turno, sodd)
@@ -69,13 +68,13 @@ def setta_default_medici_in_un_turno_fra_le_sedi(sedi_turni_liberi_per_turno, tu
     return turni_posizionati_a_prescindere
 
 
-def sedi_hanno_stessi_medici_liberi_per_turno(medici_per_turno_per_sede: dict):
+def sedi_hanno_stessi_medici_liberi_per_turno(medici_per_turno_per_sede: dict[str, list[Doctor]]):
     """Per ora controlla solo che il numero di medici totale liberi per quel turno sia minore o uguale al numero
     massimo, nel caso li posiziona.
     In futuro si può pensare di ampliarlo per fare in modo che possa prenderne
     solo una sotto-porzione"""
     num_medici_disp_in_sede = [len(list_medici) for list_medici in medici_per_turno_per_sede.values()]
-    if len(num_medici_disp_in_sede) == 0 or max(num_medici_disp_in_sede) > Sede.tot_medici_per_turno:
+    if len(num_medici_disp_in_sede) == 0 or max(num_medici_disp_in_sede) > Sede.tot_doctors_for_shift:
         return False
     for medici_per_turno in medici_per_turno_per_sede.values():
         # TODO: Non sono sicuro che questo abbia senso
@@ -97,15 +96,15 @@ class MainHandler:
         self.find_sol = FindSolution(Storage.all_medici)
         return self.find_sol
 
-    def update_with_new_docs(self, list_docs: List[Medico]):
+    def update_with_new_docs(self, list_docs: list[Doctor]):
         for sede in Storage.sedi:
             sede.clear_medici_disponibili()
             sede.set_medici_disponibili_per_mese_curr(list_docs)
 
-        self.find_sol.medici = list_docs
+        self.find_sol.doctors = list_docs
 
 
-def copy_sol_in_new_sedi(best_sol):  # Non dovrebbe servire ma a causa di un bug è cosi
+def copy_sol_in_new_sedi(best_sol: Soluzione):  # Non dovrebbe servire ma a causa di un bug è cosi
     for best_sede in best_sol.sedi:
         for sede in Storage.sedi:
             if sede.nome == best_sede.nome:
@@ -115,7 +114,7 @@ def copy_sol_in_new_sedi(best_sol):  # Non dovrebbe servire ma a causa di un bug
                         sede.month_calendar[turno].turni_occupati = meds.turni_occupati
 
 
-def handle_new_round(main_handler, best_sol, medici):
+def handle_new_round(main_handler: MainHandler, best_sol: Soluzione, medici: list[Doctor]):
     best_sol.reset_best_sol_found()
     best_sol.reset_sol_found()
     if best_sol.turni_occupati == Storage.tot_turni:
@@ -126,7 +125,7 @@ def handle_new_round(main_handler, best_sol, medici):
     return False
 
 
-def filter_by_role(list_medici: List[Medico], roles: list):
+def filter_by_role(list_medici: list[Doctor], roles: list):
     return [med for med in list_medici if med.ruolo.lower() in roles]
 
 

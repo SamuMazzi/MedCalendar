@@ -2,7 +2,7 @@ import copy
 import itertools
 from typing import List
 
-from models.medico import Medico
+from models.medico import Doctor
 from models.soluzione import Soluzione
 from models.storage import Storage
 from models.turno import get_all_medici_disp_per_turno, set_combinazione_turno
@@ -10,8 +10,8 @@ from utilities import count_turni_occupati_in_combinazione, check_if_skip, are_t
 
 
 class FindSolution:
-    def __init__(self, medici: List[Medico], sol: Soluzione | None = None):
-        self.medici = medici
+    def __init__(self, doctors: List[Doctor], sol: Soluzione | None = None):
+        self.doctors = doctors
         self.sol = sol if sol is not None else Soluzione()
 
     def check_sol(self, turni_occupati: int, doc_soddisfatti: int, conv_sodd: int, inc_sodd: int):
@@ -48,13 +48,13 @@ class FindSolution:
         # turn the set into a list (as requested)
         return list(seen_twice)
 
-    def recursive_fn(self, s, mode, turni_occupati, conv_sodd, inc_sodd, doc_sodd):
+    def recursive_fn(self, s: int, mode, turni_occupati, conv_sodd, inc_sodd, doc_sodd):
         if s == len(Storage.calendar_turni):
             return self.handle_last_round(turni_occupati, doc_sodd, conv_sodd, inc_sodd, mode)
         turno = Storage.calendar_turni[s]
         info_combination = get_all_medici_disp_per_turno(Storage.sedi, turno)
         # TODO: Risolvi bug per cui alcuni giorni proprio non venivano fuori
-        #TODO: Aggiungi test per cui non ci siano più medici di quelli possibili per turno
+        # TODO: Aggiungi test per cui non ci siano più medici di quelli possibili per turno
         # TODO: Serve una funzione che in un certo giorno ti dica quanti turni mancano al giorno finale
         all_comb = list(itertools.product(*info_combination.combinations))
         all_comb = [list(comb) for comb in all_comb if not are_there_duplicates(comb)]
@@ -62,7 +62,6 @@ class FindSolution:
         if len(all_comb) == 0:
             return self.handle_empty_container_turno(s, turni_occupati, doc_sodd, conv_sodd, inc_sodd, mode)
 
-        combination: List[Medico]
         for combination in all_comb:
             if check_if_skip(combination, info_combination, turno):
                 continue

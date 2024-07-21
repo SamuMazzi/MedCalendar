@@ -6,7 +6,7 @@ import TableBody from '@mui/material/TableBody';
 import TableCell from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
-import TablePagination from '@mui/material/TablePagination';
+// import TablePagination from '@mui/material/TablePagination';
 import TableRow from '@mui/material/TableRow';
 import TableSortLabel from '@mui/material/TableSortLabel';
 import Toolbar from '@mui/material/Toolbar';
@@ -18,12 +18,12 @@ import Tooltip from '@mui/material/Tooltip';
 import DeleteIcon from '@mui/icons-material/Delete';
 import FilterListIcon from '@mui/icons-material/FilterList';
 import { visuallyHidden } from '@mui/utils';
-import { MedicoInterface } from '../logic/server/firestore/firestore';
+import { DoctorInterface } from '../logic/server/firestore/firestore';
 import { GenericAlertDialog } from './general/alert_dialog';
-import { FormSingleMedico } from '../pages/modify_doctors_admin';
+import { FormSingleDoctor } from '../pages/modify_doctors_admin';
 import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import { useAppDispatch, useAppSelector } from '../logic/redux/store';
-import { removeMedicoDistrettoSlice, setMedicoDistrettoSlice } from '../logic/redux/configuration_distretto_slice';
+import { removeDoctorFromDistrictSlice, setDoctorOfDistrictSlice } from '../logic/redux/configuration_district_slice';
 import AddIcon from '@mui/icons-material/AddRounded';
 
 function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
@@ -52,23 +52,23 @@ function getComparator<Key extends keyof any>(
 
 interface HeadCell {
   disablePadding: boolean;
-  id: keyof MedicoInterface;
+  id: keyof DoctorInterface;
   label: string;
 }
 
 const headCells: readonly HeadCell[] = [
   {
-    id: 'nome',
+    id: 'name',
     disablePadding: true,
     label: 'Nome',
   },
   {
-    id: 'ruolo',
+    id: 'role',
     disablePadding: false,
     label: 'Ruolo',
   },
   {
-    id: 'sedi',
+    id: 'locations',
     disablePadding: false,
     label: 'Sedi',
   },
@@ -81,7 +81,7 @@ const headCells: readonly HeadCell[] = [
 
 interface EnhancedTableProps {
   numSelected: number;
-  onRequestSort: (event: React.MouseEvent<unknown>, property: keyof MedicoInterface) => void;
+  onRequestSort: (event: React.MouseEvent<unknown>, property: keyof DoctorInterface) => void;
   onSelectAllClick: (event: React.ChangeEvent<HTMLInputElement>) => void;
   order: Order;
   orderBy: string;
@@ -92,7 +92,7 @@ function EnhancedTableHead(props: EnhancedTableProps) {
   const { onSelectAllClick, order, orderBy, numSelected, rowCount, onRequestSort } =
     props;
   const createSortHandler =
-    (property: keyof MedicoInterface) => (event: React.MouseEvent<unknown>) => {
+    (property: keyof DoctorInterface) => (event: React.MouseEvent<unknown>) => {
       onRequestSort(event, property);
     };
 
@@ -144,12 +144,12 @@ function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
 
   const onDelete = () => {
     for(const d of props.docs_selected) {
-      dispatch(removeMedicoDistrettoSlice(d))
+      dispatch(removeDoctorFromDistrictSlice(d))
     }
   }
 
-  const handleCreateMedico = async (med: MedicoInterface) => {
-    dispatch(setMedicoDistrettoSlice(med))
+  const handleCreateMedico = async (med: DoctorInterface) => {
+    dispatch(setDoctorOfDistrictSlice(med))
     setShowModalCreateDoc(false)
   }
 
@@ -206,7 +206,7 @@ function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
       <GenericAlertDialog 
         open={showModalCreateDoc} 
         onClose={() => setShowModalCreateDoc(false)} 
-        content={<FormSingleMedico onSetMedico={handleCreateMedico}/>}
+        content={<FormSingleDoctor onSetDoctor={handleCreateMedico}/>}
       />
     </Toolbar>
   );
@@ -214,20 +214,22 @@ function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
 
 export default function EnhancedTable() {
   const [order, setOrder] = React.useState<Order>('asc');
-  const [orderBy, setOrderBy] = React.useState<keyof MedicoInterface>('nome');
+  const [orderBy, setOrderBy] = React.useState<"name" | "role">('name');
   const [selected, setSelected] = React.useState<string[]>([]);
   const [page, setPage] = React.useState(0);
   const [rowsPerPage, setRowsPerPage] = React.useState(5);
-  const doctors = useAppSelector(state => state.configurationDistr.medici)
+  const doctors = useAppSelector(state => state.configurationDistr.doctors)
   const rows = Object.keys(doctors).map(k => doctors[k])
 
   const handleRequestSort = (
     event: React.MouseEvent<unknown>,
-    property: keyof MedicoInterface,
+    property: keyof DoctorInterface,
   ) => {
     const isAsc = orderBy === property && order === 'asc';
     setOrder(isAsc ? 'desc' : 'asc');
-    setOrderBy(property);
+    if (property === "name" || property === "role") {
+      setOrderBy(property);
+    }
   };
 
   const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -284,7 +286,7 @@ export default function EnhancedTable() {
             <TableBody>
               {rows.slice().sort(getComparator(order, orderBy))
                 .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
-                .map((doctor, index) => {
+                .map((doctor) => {
                   const isItemSelected = isSelected(doctor.email);
 
                   return (
@@ -309,7 +311,7 @@ export default function EnhancedTable() {
 }
 
 interface ParamsRowTabelDoctor {
-  doc: MedicoInterface
+  doc: DoctorInterface
   isSelected: boolean
   onSelect: (arg0: string) => void
 }
@@ -325,12 +327,12 @@ const RowTableDoctor = (props: ParamsRowTabelDoctor) => {
   }
 
   const handleDelete = async (idDoc: string) => {
-    dispatch(removeMedicoDistrettoSlice(idDoc))
+    dispatch(removeDoctorFromDistrictSlice(idDoc))
     setShowModal(false)
   }
 
-  const handleSetMedico = async (med: MedicoInterface) => {
-    dispatch(setMedicoDistrettoSlice(med))
+  const handleSetMedico = async (med: DoctorInterface) => {
+    dispatch(setDoctorOfDistrictSlice(med))
     setShowModal(false)
   }
 
@@ -358,19 +360,19 @@ const RowTableDoctor = (props: ParamsRowTabelDoctor) => {
           <IconButton>
             <EditRoundedIcon onClick={editDoctor} />
           </IconButton>
-          {props.doc.nome}
+          {props.doc.name}
         </TableCell>
-        <TableCell align="left">{props.doc.ruolo}</TableCell>
-        <TableCell align="left">{props.doc.sedi.join(', ')}</TableCell>
+        <TableCell align="left">{props.doc.role}</TableCell>
+        <TableCell align="left">{props.doc.locations?.join(', ')}</TableCell>
         <TableCell align="left">{props.doc.email}</TableCell>
       </TableRow>
       <GenericAlertDialog open={showModal} onClose={() => setShowModal(false)}
       content={
         <>
-            <FormSingleMedico 
-            medico={props.doc} 
+            <FormSingleDoctor 
+            doctor={props.doc} 
             onDelete={handleDelete}
-            onSetMedico={handleSetMedico}/>
+            onSetDoctor={handleSetMedico}/>
         </>
       }/>
     </>

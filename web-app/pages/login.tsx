@@ -1,35 +1,23 @@
-import AdminLogin from '../components/login/admin_login';
-import MedicoLogin from '../components/login/medico_login';
 import Grid from '@mui/material/Grid';
 import Typography from '@mui/material/Typography';
-import Button from '@mui/material/Button';
 import Head from 'next/head';
 import DecorationImage from '../components/general/decoration_image';
 import React from 'react';
-import SelectDistretto from '../components/select_distretto';
-import IconButton from '@mui/material/IconButton';
-import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
-import Slide from '@mui/material/Slide';
 import Box from '@mui/material/Box';
-import { useAppDispatch, useAppSelector } from '../logic/redux/store';
-import { setDistrettoSlice } from '../logic/redux/settings_slice';
-import { setLocalActualDistretto } from '../logic/local_utilities';
-import Link from 'next/link';
-import { Routes } from '../logic/Routes';
+import { useRef, useState } from "react";
+import { sendSignInEmailWithLink, signInWithGoogle } from "../logic/server/auth";
+import Divider from "@mui/material/Divider";
+import TextField from "@mui/material/TextField";
+import { Toast } from "primereact/toast";
+import Avatar from "@mui/material/Avatar";
+import { useRouter } from "next/router";
+import { AppFirebaseError } from '../logic/server/firebase';
+import FormHelperText from '@mui/material/FormHelperText';
+import FormControl from '@mui/material/FormControl';
+import { Button } from 'primereact/button';
+// TODO: Pagina pubblica per vedere tabella
 
-export async function getStaticProps() {
-  return {
-    props: {
-      secret: process.env.KEY_WEBSITE
-    }
-  }
-}
-
-export default function FormLogin(props: any) {
-    const [ adminMode, setAdminMode ] = React.useState(false);
-    const [ selectDistrettoMode, setSelectDistrettoMode ] = React.useState(true)
-    const distretto = useAppSelector(state => state.settings.distretto)
-
+export default function FormLogin(props: any) {    
     return (
     <Grid 
         container
@@ -44,54 +32,17 @@ export default function FormLogin(props: any) {
         <Grid item
           sx={{ pl: { xs: 0, md: "23%", lg: "25%" }, pt: { xs: 0, md: 7, lg: 8 } }}
         >
-          {
-              selectDistrettoMode ?
-              <Box sx={{ height: 180 }}>
-                <Box sx={{ maxWidth: `3000` }}>
-                  <Slide direction="right" in={selectDistrettoMode} mountOnEnter unmountOnExit>
-                    <Box>
-                      <SelectDistrettoLogin setSelectMode={setSelectDistrettoMode}/>
-                    </Box>
-                  </Slide>
-                </Box>
-              </Box> :
-              <Box sx={{ height: 400 }}>
-                <Slide direction="left" in={!selectDistrettoMode} mountOnEnter unmountOnExit>
-                  <Box>
-                    <Grid container direction='column'>
-                      <Grid item>
-                        <IconButton onClick={() => setSelectDistrettoMode(true)}>
-                          <ArrowBackRoundedIcon />
-                        </IconButton>
-                      </Grid>
-                      {adminMode &&
-                        <Typography style={{ fontWeight: 300 }} variant="h5" component="h5" sx={{ mb: 1 }}>
-                          Amministrazione
-                        </Typography>
-                      }
-                      <Typography style={{ fontWeight: 900 }} variant="h3" component="h3" sx={{ mb: '20px' }}>
-                        Accedi
-                      </Typography>
-                      {adminMode ? <AdminLogin /> : <MedicoLogin server_psw={props.secret} />}
-                    </Grid>
-                    {/*
-                      <Button onClick={() => setAdminMode(oldVal => !oldVal)} sx={{
-                          "& .MuiTouchRipple-root span": {
-                            backgroundColor: 'transparent',
-                          },
-                        }} data-cy="change_mod_login">
-                          <Typography sx={{ pt: 1 }} style={{ textDecoration: 'underline', color: 'black', textTransform: 'none' }}>
-                            {!adminMode ? "Sei un amministratore? Clicca qua" : "Sei un medico? Clicca qua"}
-                          </Typography>
-                      </Button>
-                      */
-                    }
-                  </Box>
-                </Slide>
-              </Box> 
-            }
+          <Box>
+            <Grid container direction='column'>
+              <Typography style={{ fontWeight: 900 }} variant="h3" component="h3" sx={{ mb: '20px' }}>
+                Accedi
+              </Typography>
+              <DivLogin />
+            </Grid>
+          </Box>
           </Grid>
-          <Grid item
+          {/*
+            <Grid item
             style={{
                 position: 'absolute',
                 bottom: 55,
@@ -100,43 +51,128 @@ export default function FormLogin(props: any) {
           >
             <Typography component={Link} href={Routes.Register} sx={{fontSize: {xs: 12, md: 15}}}>Sei un amministratore e vuoi usufruire del servizio? Clicca qui</Typography>
           </Grid>
+          */}
           <DecorationImage path="/grafiche/img_login.webp" width={1000} height={390.63} position="right" priority/>
         </Grid>
   )
 }
 
-interface PropsSelectDistrettoLogin {
-  setSelectMode: (arg0: boolean) => void
+function DivLogin() {
+    const [email, setEmail] = useState<string>("");
+    const [helperText, setHelperText] = useState("");
+    const [loadingLogin, setLoadingLogin] = useState(false);
+    const toast = useRef<any>(null);
+    const router = useRouter();
+    const { returnUrl } = router.query;
+
+    const handleSignError = (error: any) => {
+        if (error instanceof AppFirebaseError) {
+            setHelperText(error.message);
+        } else {
+            setHelperText("Errore nell'invio dell'email, riprovare")
+        }
+    }
+
+    const handleButtonGoogle = async () => {
+        setLoadingLogin(true)
+        try {
+            await signInWithGoogle()
+            if (returnUrl && !returnUrl.includes('login') && !returnUrl.includes('_admin')) {
+                router.replace(Array.isArray(returnUrl) ? returnUrl.at(0)! : returnUrl)
+            } else {
+                router.replace('/')
+            }
+        } catch (error) {
+            handleSignError(error)
+        } finally {
+            setLoadingLogin(false)
+        }
+    }
+
+    const showMessageLinkSent = () => {
+        if (toast.current !== null) {
+            toast.current.show({ severity: 'success', summary: 'Email inviata!', detail: 'Controlla la tua mail e clicca sul link per accedere', life: 3000 });
+        }
+    };
+
+    const handleSubmit = async () => {
+        setHelperText("")
+
+        if (!email || !email.includes('@')) {
+            setHelperText("Inserisci una mail valida")
+            return;
+        }
+        try {
+            setLoadingLogin(true)
+            await sendSignInEmailWithLink(email);
+            showMessageLinkSent()
+        } catch(e: any) {
+            handleSignError(e)
+        } finally {
+            setLoadingLogin(false)
+        }
+    }    
+
+    return (
+        <>
+        <Grid item sx={{pb: 1}}>
+            <TextField 
+                label="Email"
+                fullWidth
+                value={email}
+                helperText={helperText}
+                onChange={(e) => setEmail(e.target.value)}
+            />
+        </Grid>
+        <Grid item>
+            <Toast ref={toast} />
+            <Button
+                label="Accedi"
+                rounded
+                loading={loadingLogin}
+                onClick={handleSubmit}
+            />
+        </Grid>
+        <Grid item width={250} sx={{my: 1}}>
+            <Divider>
+                <Typography color="grey">
+                    Oppure
+                </Typography>
+            </Divider>
+        </Grid>
+        <Grid item>
+            <Button outlined onClick={handleButtonGoogle} disabled={loadingLogin}
+                icon={<Avatar src="logoGoogle.png" sx={{height: 30, width: 30, mr: 1}} />} 
+                className="h-11">
+                Registrati con Google
+            </Button>
+        </Grid>
+        </>
+    )
 }
 
-function SelectDistrettoLogin(props: PropsSelectDistrettoLogin) {
-  const distretto = useAppSelector(state => state.settings.distretto)
-  const dispatch = useAppDispatch()
+interface PropsFormTextField {
+  value: string,
+  placeholder: string,
+  onChangeFn: (arg0: string) => void,
+  helperText: string,
+  password?: boolean
+}
 
-  const handleSetDistretto = (newDistretto: string) => {
-    dispatch(setDistrettoSlice(newDistretto))
-    setLocalActualDistretto(newDistretto)
-    props.setSelectMode(false)
-  }
+export function FormTextField(props: PropsFormTextField) {
   return (
-    <>
-      <Grid item>
-        <Typography style={{ fontWeight: 700 }} variant="h4" component="h4" sx={{ mb: '20px' }}>
-          Scegli il distretto
-        </Typography>
-      </Grid>
-      <Grid item>
-        <SelectDistretto distretto={distretto} setDistretto={handleSetDistretto}/>
-      </Grid>
-      <Grid item>
-        <Button style={{textTransform: 'none'}} 
-          sx={{mt: 1}} variant="contained" 
-          onClick={() => props.setSelectMode(false)} 
-          disabled={distretto === ''}
-        >
-          Continua
-        </Button>
-      </Grid>
-    </>
+      <FormControl>
+          <TextField
+              value={props.value}
+              label=""
+              placeholder={props.placeholder}
+              onChange={(event) => props.onChangeFn(event.target.value)}
+              type={props.password ? "password" : undefined}
+              variant='outlined'
+              error={props.helperText !== ""}
+              style={{ width: "230px" }}
+          />
+          <FormHelperText error>{props.helperText}</FormHelperText>
+      </FormControl>
   )
 }

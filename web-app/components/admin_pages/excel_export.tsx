@@ -3,7 +3,7 @@ import Button from '@mui/material/Button'
 import FileSaver from 'file-saver'
 import { write, utils, read } from 'xlsx' //Capire perchè non ti installa la 0.19.1
 import Tooltip from '@mui/material/Tooltip'
-import { getAllTurni, SchedulerState } from '../../logic/redux/scheduler_slice'
+import {    getAllShifts, SchedulerState } from '../../logic/redux/scheduler_slice'
 import { getGiornoSettimana } from '../../logic/local_utilities'
 import Typography from '@mui/material/Typography'
 
@@ -125,16 +125,16 @@ interface PropsExportExcel {
 const ExportExcel = (props: PropsExportExcel) => {
     const getTurni = () => {
         const turniOut: string[] = []
-        for (const sede of Object.keys(props.excelData.turni)) {
-            const turni = Object.keys(props.excelData.turni[sede])
+        for (const sede of Object.keys(props.excelData.shifts)) {
+            const turni = Object.keys(props.excelData.shifts[sede])
             turni.forEach((turno: string) => turniOut.includes(turno) ? null : turniOut.push(turno))
         }
         return turniOut.sort()
     }
     const getMaxMedPerTurno = () => {
         let max = 0
-        for (const sede of Object.keys(props.excelData.turni)) {
-            const med_per_turno = props.excelData.med_per_turno[sede]
+        for (const sede of Object.keys(props.excelData.shifts)) {
+            const med_per_turno = props.excelData.doctors_for_shift[sede]
             if (med_per_turno > max) {
                 max = med_per_turno
             }
@@ -152,7 +152,7 @@ const ExportExcel = (props: PropsExportExcel) => {
     }
 
     const formatDataProgrammazione = () => {
-        const sedi = Object.keys(props.excelData.turni)
+        const sedi = Object.keys(props.excelData.shifts)
         const maxMedPerTurno = getMaxMedPerTurno();
         const listTurni = getTurni()
         const data: Record<string, string>[] = []
@@ -162,12 +162,12 @@ const ExportExcel = (props: PropsExportExcel) => {
                     'Turno': getTextTurno(turno)
                 }
                 for(const sede of sedi) {
-                    const valTurniSede = props.excelData.turni[sede]
+                    const valTurniSede = props.excelData.shifts[sede]
                     if (!Object.keys(valTurniSede).includes(turno)) continue
-                    if (props.excelData.med_per_turno[sede] > i) {
+                    if (props.excelData.doctors_for_shift[sede] > i) {
                         if (valTurniSede[turno].length > i) {
                             const id_med = valTurniSede[turno][i]
-                            tmpTurno[sede] = props.excelData['medici_mod'][id_med].nome
+                            tmpTurno[sede] = props.excelData['mod_doctors'][id_med].name
                         } else {
                             tmpTurno[sede] = "Vuoto"
                         }
@@ -181,7 +181,7 @@ const ExportExcel = (props: PropsExportExcel) => {
 
     const fixedHeader = ['Nome', 'Ruolo', 'N° turni', 'Sedi', 'Disponibilità']
     const getHeader = () => {
-        const allTurni = getAllTurni(props.excelData)
+        const allTurni = getAllShifts(props.excelData)
         const head = [...fixedHeader, ...allTurni]
         return head
     }
@@ -192,15 +192,15 @@ const ExportExcel = (props: PropsExportExcel) => {
         const header = getHeader()
         out.push(header)
         const allTurni = header.slice(offset)
-        for (const id_med of Object.keys(props.excelData.medici_orig)) {
-            const med = props.excelData.medici_orig[id_med]
-            if (med.disponibilita.length === 0) {
+        for (const id_med of Object.keys(props.excelData.original_doctors)) {
+            const med = props.excelData.original_doctors[id_med]
+            if (med.availability.length === 0) {
                 continue
             }
-            const tmp: (string | number | null)[] = [med.nome, med.ruolo, med.n_turni_per_soddisfatto, med.sedi.join(', '), null, ...(new Array(allTurni.length).fill(null))]
+            const tmp: (string | number | null)[] = [med.name, med.role, med.n_turni_per_soddisfatto, med.locations.join(', '), null, ...(new Array(allTurni.length).fill(null))]
             //tmp.push(med.disponibilita.map(disp => disp.replace('T', ' Turno ').replace(':00', '').replace(':', '-')).join(', ')
             allTurni.forEach((turno, index) => {
-                med.disponibilita.forEach((dispMedico) => {
+                med.availability.forEach((dispMedico) => {
                     if(turno === dispMedico) {
                         tmp.splice(offset+index, 1, 'x')
                     }

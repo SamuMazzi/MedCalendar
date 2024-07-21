@@ -1,26 +1,35 @@
-import { StateTurno } from "../../redux/turni_slice";
+import { StateShift } from "../../redux/turni_slice";
 import { SchedulerState } from "../../redux/scheduler_slice";
-import { setDoc, doc, arrayRemove, arrayUnion, serverTimestamp, collection, getDocs, query, collectionGroup, where, getDoc, Timestamp } from "firebase/firestore";
+import { setDoc, doc, arrayRemove, arrayUnion, serverTimestamp, collection, getDocs, query, collectionGroup, where, getDoc, Timestamp, FieldValue } from "firebase/firestore";
 import { getLocalLastOreMaxSet } from "../../local_utilities";
-import { getKeyMese, firestore, handleFirebaseError, RemoteSediInfo, getFirestoreDocInfoSedi, getFirestoreDocInfoMedici, firestore_configDefinitivaDistrettoKey, firestore_disponibilitaSedeKey, firestore_distrettiCollectionKey, firestore_infoCollectionKey, firestore_oreMaxMedicoKey, firestore_sediMedicoKey, getDisponibilitaMeseDistretto } from "./firestore";
+import { getKeyMonth, firestore, handleFirebaseError, RemoteLocationInfo, getFirestoreDocInfoSedi, getFirestoreDocInfoMedici, firestore_configDefinitivaDistrettoKey, firestore_disponibilitaSedeKey, firestore_distrettiCollectionKey, firestore_infoCollectionKey, firestore_oreMaxMedicoKey, firestore_sediMedicoKey, getDisponibilitaMeseDistretto } from "./firestore";
+
+export interface InfoRemoteDistrict {
+    locations: string[]
+    name: string
+    owners: string[]
+    doctors: string[]
+    roles: Record<string, string>
+    create_at: FieldValue
+}
 
 /**
  * 
- * @param mese Data del giorno 3 del mese designato
- * @param distretto Distretto per firestore
- * @param sedi Ancora da definire bene
+ * @param month Data del giorno 3 del mese designato
+ * @param district Distretto per firestore
+ * @param locations Ancora da definire bene
  */
-export const setConfigurationDistrettoMese = async (mese: Date, distretto: string, sedi: any[]) => {
-    const firestoreKeyMese = getKeyMese(mese)
-    const out: Record<any, any> = {}
-    sedi.forEach(val => {
-        out[val.nome] = {
-            medici_per_turno: val.medici_per_turno,
-            turni: val.fasce_turno
+export const setMonthConfigurationDistrict = async (month: Date, district: string, locations: any[]) => {
+    const firestoreKeyMese = getKeyMonth(month)
+    const out: Record<string, any> = {}
+    locations.forEach(val => {
+        out[val.name] = {
+            doctors_for_shifts: val.doctors_for_shifts,
+            shifts: val.shifts
         }
     })
     try {
-        await setDoc(getFirestoreDocInfoSedi(distretto), {
+        await setDoc(getFirestoreDocInfoSedi(district), {
             [firestoreKeyMese]: out,
         })
     } catch (error: unknown) {
@@ -28,11 +37,11 @@ export const setConfigurationDistrettoMese = async (mese: Date, distretto: strin
     }
 }
 
-export const setDisponibilitaMeseMedico = async (distretto: string, id: string, info: StateTurno) => {  
-    const key_mese = getKeyMese(new Date(info.timestamp_mese!))
+export const setAvailabilityMonthDoctor = async (distretto: string, id: string, info: StateShift) => {  
+    const key_mese = getKeyMonth(new Date(info.timestamp_month!))
     const data: Record<string, any> = {}
-    Object.keys(info.disponibilita).forEach((turno) => {
-        info.disponibilita[turno].forEach(giorno => data[giorno] = { [turno]: arrayUnion(id) })
+    Object.keys(info.availability).forEach((shift) => {
+        info.availability[shift].forEach(day => data[day] = { [shift]: arrayUnion(id) })
     })
     const futures = []
 
@@ -42,8 +51,8 @@ export const setDisponibilitaMeseMedico = async (distretto: string, id: string, 
         //if (lastOreMaxSet === null || lastOreMaxSet !== info.oreMassime) { //TODO: Aggiungi logica di cache anche per sedi
             futures.push(setDoc(getFirestoreDocInfoMedici(distretto), { 
                 [id]: {
-                    [firestore_oreMaxMedicoKey]: info.oreMassime,
-                    [firestore_sediMedicoKey]: info.sedi
+                    [firestore_oreMaxMedicoKey]: info.max_hours,
+                    [firestore_sediMedicoKey]: info.locations
                 } 
             }, { merge: true }));
         //}
@@ -53,15 +62,33 @@ export const setDisponibilitaMeseMedico = async (distretto: string, id: string, 
     }
 }
 
-export const uploadConfigurazioneMediciDistretto = async (distretto: string, info: SchedulerState) => {
-    const key_mese = getKeyMese(new Date(info.year, info.month, 3))
+/**
+ * Scheduling that'll be uploaded to the server for the corresponding district in the specified month
+ */
+export const uploadSchedulingDoctors = async (distric: string, info: SchedulerState) => {
+    const key_mese = getKeyMonth(new Date(info.year, info.month, 3))
     const data: Record<string, any> = {
         'create_at': serverTimestamp(),
-        'turni': info.turni,
-        'medici': info.medici_mod
+        'shifts': info.shifts,
+        'doctors': info.mod_doctors,
     }
     try {
-        await setDoc(doc(firestore, firestore_distrettiCollectionKey, distretto, firestore_configDefinitivaDistrettoKey, key_mese), data);
+        await setDoc(doc(firestore, firestore_distrettiCollectionKey, distric, firestore_configDefinitivaDistrettoKey, key_mese), data);
+    } catch (error: unknown) {
+        //console.log(error)
+        handleFirebaseError(error)
+    }
+}
+
+/**
+ * Get all the info regarding the district
+ * @param distric 
+ * @param info 
+ */
+export const getConfigurationDistrict = async (distric: string) => {
+    try {
+        const snap = await getDoc(doc(firestore, firestore_distrettiCollectionKey, distric));
+        return snap.data() as InfoRemoteDistrict
     } catch (error: unknown) {
         //console.log(error)
         handleFirebaseError(error)
@@ -86,6 +113,7 @@ export const getAllDistretti = async () => {
 }
 
 export const getDistrettiForMedico = async (id: string) => {
+    // TODO: Probabilmente è meglio cambiare logica qui, controllando la lista del singolo utente, in cui si vede in quali distretti è abilitato
     try {
         const queryDistretti = query(collectionGroup(firestore, firestore_infoCollectionKey), where('list', "array-contains", id));
         const querySnapshot = await getDocs(queryDistretti);
@@ -101,10 +129,15 @@ export const getDistrettiForMedico = async (id: string) => {
     }
 }
 
-export const getDistrettiForAdmin = async (id: string) => {
+/**
+ * Fetch from the database all the districts owned by the user
+ * @param id ID of the owner
+ * @returns 
+ */
+export const fetchDistrictsOwnedByUser = async (id: string) => {
     try {
         const collectionDistrettiRef = collection(firestore, firestore_distrettiCollectionKey);
-        const q = query(collectionDistrettiRef, where("admins", "array-contains", id));
+        const q = query(collectionDistrettiRef, where("owners", "array-contains", id));
         const querySnapshot = await getDocs(q);
         const outList = querySnapshot.docs.map((doc) => doc.id)
         return outList;
@@ -127,9 +160,9 @@ export const getInfoSediDistretto = async (distretto: string) => {
     try {
         const infoSediRef = getFirestoreDocInfoSedi(distretto)
         const snap = await getDoc(infoSediRef);
-        const out: RemoteSediInfo = {
-            sedi: snap.get('sedi'),
-            turni: snap.get('turni'),
+        const out: RemoteLocationInfo = {
+            locations: snap.get('locations'),
+            shifts: snap.get('shifts'),
             specialDays: snap.get('special_days')
         }
         return out
@@ -179,11 +212,11 @@ export const getDataDistrettoToSendAPI = async (distretto: string, anno: number,
         const infoSedi = (await getInfoSediDistretto(distretto))!
         const disponibilitaDoctors = await getDisponibilitaMeseDistretto(distretto, anno, mese)
         const mod_infoSedi = []
-        for (let sede of Object.keys(infoSedi.sedi)) {
+        for (const location of Object.keys(infoSedi.locations)) {
             const out: Record<string, any> = {}
-            out['nome'] = sede
-            out['medici_per_turno'] = infoSedi.sedi[sede].medici_per_turno
-            out['fasce_turno'] = infoSedi.turni
+            out['name'] = location
+            out['doctors_for_shift'] = infoSedi.locations[location].doctors_for_shift
+            out['shifts'] = infoSedi.shifts
             mod_infoSedi.push(out)
         }
         const docs = []
@@ -191,10 +224,10 @@ export const getDataDistrettoToSendAPI = async (distretto: string, anno: number,
             const outDoc: Record<string, any> = {}
             const infoDoc = infoMedici![doctor]
             outDoc['id'] = infoDoc['uid']
-            outDoc['sedi'] = infoDoc['sedi']
-            outDoc['ruolo'] = infoDoc['ruolo']
-            outDoc['nome'] = infoDoc['Nome'] + ' ' + infoDoc['Cognome']
-            outDoc['ore_max'] = infoDoc['ore_max']
+            outDoc['locations'] = infoDoc['locations']
+            outDoc['role'] = infoDoc['role']
+            outDoc['name'] = infoDoc['name']
+            outDoc['max_hours'] = infoDoc['max_hours']
             const dispDoc: Record<string, number[]> = {}
             for (const disp_giorno of Object.keys(disponibilitaDoctors!)) {
                 const turni_docs: Record<string, string[]> = disponibilitaDoctors![disp_giorno]
@@ -209,14 +242,14 @@ export const getDataDistrettoToSendAPI = async (distretto: string, anno: number,
                     }
                 }
             }
-            outDoc['disponibilita'] = dispDoc
+            outDoc['availability'] = dispDoc
             docs.push(outDoc)
         }
         const final_out = {
             'year': anno,
             'month': mese,
-            'sedi': mod_infoSedi,
-            'medici': docs
+            'locations': mod_infoSedi,
+            'doctors': docs
         }
         return final_out
     } catch (error: unknown) {
