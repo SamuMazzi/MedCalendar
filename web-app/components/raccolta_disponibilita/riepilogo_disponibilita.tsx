@@ -15,7 +15,7 @@ import Greetings from '../general/greetings';
 import CircularProgress from '@mui/material/CircularProgress'
 import { AppFirebaseError } from '../../logic/server/firebase'
 import { setMessageError } from '../../logic/redux/settings_slice'
-import { getGoodRuolo } from '../../logic/redux/auth_slice'
+import { getGoodRole } from '../../logic/redux/auth_slice'
 
 interface PropsTitleAndDescription {
     title: string,
@@ -42,7 +42,7 @@ export default function SummaryAvailability(props: PropsAvailability) {
     const stateTurni = useAppSelector(state => state.turni)
     const stateAuth = useAppSelector(state => state.auth)
     const textMese = mesi[new Date(stateTurni.timestamp_month!).getMonth()]
-    const descriptions = [(stateAuth ? stateAuth.name : "")!, getGoodRuolo(stateAuth), stateTurni.locations.join(', '), textMese, stateTurni.max_hours.toString()]
+    const descriptions = [(stateAuth ? stateAuth.name : "")!, getGoodRole(stateAuth), stateTurni.locations.join(', '), textMese, stateTurni.max_hours.toString()]
     const generalState = useAppSelector((state) => state.turni)
     const [loading, setLoading] = useState(false)
     const dispatch = useAppDispatch()

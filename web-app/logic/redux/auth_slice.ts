@@ -20,7 +20,12 @@ export interface ParamSetUser {
   data: DoctorInterface | undefined
 }
 
-export const getGoodRuolo = (user: StateAuth) => {
+/**
+ * Gives a more readable role
+ * @param user User with that role
+ * @returns 
+ */
+export const getGoodRole = (user: StateAuth) => {
   const role = user.role.toLowerCase()
   if(role.startsWith('titolare')) {
     return 'Titolare'
@@ -57,12 +62,13 @@ export const authSlice = createSlice({
   initialState: initialStateAuth,
   reducers: {
     setUser: (state, action: PayloadAction<ParamSetUser>) => {
-      if (action.payload.data === undefined) return
       console.error("setting user")
-      state.name = action.payload.data.name
       state.uid = action.payload.uid
-      state.locations = action.payload.data.locations
-      state.role = action.payload.data.role ?? ""
+      if (action.payload.data !== undefined) {
+        state.name = action.payload.data.name
+        state.locations = action.payload.data.locations
+        state.role = action.payload.data.role ?? ""
+      }
       saveToStorage('user', state)
     },
     setNameUserLocal: (state, action: PayloadAction<string>) => {
