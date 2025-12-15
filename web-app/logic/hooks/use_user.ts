@@ -11,8 +11,7 @@ export default function useUser(): [StateAuth, string | undefined, () => Promise
     const dispatch = useAppDispatch()
   
     const logout = async () => {
-      await logoutFirebase()      
-      console.error("Logout")
+      await logoutFirebase()
       dispatch(clearUserInfo())
     };
 

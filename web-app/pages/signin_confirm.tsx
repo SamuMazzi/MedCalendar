@@ -10,7 +10,6 @@ import { useRouter } from 'next/router';
 import { fetchUserOnLogin } from '../logic/server/firestore/doctors';
 import { useDispatch } from 'react-redux';
 import { AppFirebaseError } from '../logic/server/firebase';
-import { Routes } from '../logic/Routes';
 
 export default function SignInConfirmation() {
     const [ errorText, setErrorText ] = React.useState("")

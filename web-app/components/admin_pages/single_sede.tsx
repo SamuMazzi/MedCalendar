@@ -6,23 +6,22 @@ import TextField from '@mui/material/TextField'
 import AddIcon from '@mui/icons-material/Add';
 import RemoveIcon from '@mui/icons-material/Remove';
 import DeleteIcon from '@mui/icons-material/DeleteRounded';
-import { useAppSelector, useAppDispatch } from '../../logic/redux/store'
-import { changeNumDoctorsForShiftInLocation, changeNameLocation, deleteLocationFromDistrict } from '../../logic/redux/configuration_district_slice'
+import { useAppDispatch } from '../../logic/redux/store'
+import { changeNumDoctorsForShiftInLocation, changeNameLocation, deleteLocationFromDistrict, InfoLocation } from '../../logic/redux/configuration_district_slice'
 import IconButton from '@mui/material/IconButton'
 
-interface SingleSedeProps {
-    index: number
+interface SingleLocationProps {
+    location: InfoLocation
 }
 
-export default function SingleSede(props: SingleSedeProps) {
-    const configurationDistrettoState = useAppSelector(state => state.configurationDistr)
+export default function SingleLocation(props: SingleLocationProps) {
     const dispatch = useAppDispatch()
-    const mediciPerTurno = configurationDistrettoState.locations[props.index].doctors_for_shift
+    const doctors_for_shift = props.location.doctors_for_shift
 
     const changeName = (val: string) => {
         dispatch(
             changeNameLocation({
-                index: props.index,
+                id: props.location.id,
                 name: val
             })
         )
@@ -31,14 +30,14 @@ export default function SingleSede(props: SingleSedeProps) {
     const setDoctorsForShift = (num: number) => {
         dispatch(
             changeNumDoctorsForShiftInLocation({
-                index: props.index,
+                id: props.location.id,
                 doctors_for_shift: num
             })
         )
     }
 
     const handleDeletelocation = () => {
-        dispatch(deleteLocationFromDistrict(props.index))
+        dispatch(deleteLocationFromDistrict(props.location.id))
     }
   
     return (
@@ -58,7 +57,7 @@ export default function SingleSede(props: SingleSedeProps) {
           <Grid item>
             <TextField 
                 style={{display: 'inline-block'}} 
-                value={configurationDistrettoState.locations[props.index].name}
+                value={props.location.name}
                 inputProps={{min: 0, style: { textAlign: 'center', fontWeight: "bold" }}}
                 variant="standard"
                 onChange={(event) => changeName(event.target.value)}
@@ -70,11 +69,11 @@ export default function SingleSede(props: SingleSedeProps) {
                 <Typography>
                     Medici per turno
                 </Typography>
-                <IconButton onClick={() => setDoctorsForShift(mediciPerTurno - 1)}>
+                <IconButton onClick={() => setDoctorsForShift(doctors_for_shift - 1)}>
                     <RemoveIcon fontSize="small"/>
                 </IconButton>
-                    <Typography>{mediciPerTurno}</Typography>
-                <IconButton onClick={() => setDoctorsForShift(mediciPerTurno + 1)}>
+                    <Typography>{doctors_for_shift}</Typography>
+                <IconButton onClick={() => setDoctorsForShift(doctors_for_shift + 1)}>
                     <AddIcon fontSize="small"/>
                 </IconButton>
             </Box>

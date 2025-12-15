@@ -16,7 +16,7 @@ import AppSnackbar from '../components/snackbar/app_snackbar'
 import { MedAppBar } from '../components/general/app_bar'
 import { PrimeReactProvider } from 'primereact/api';
 import "primereact/resources/themes/lara-light-cyan/theme.css";
-import { locale, addLocale, updateLocaleOption, updateLocaleOptions, localeOption, localeOptions } from 'primereact/api';
+import { addLocale } from 'primereact/api';
 
 //-apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen,
 //Ubuntu, Cantarell, Fira Sans, Droid Sans, Helvetica Neue, sans - serif;

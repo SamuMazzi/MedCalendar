@@ -41,6 +41,7 @@ export interface InfoDoctor {
     availability: string[],
     n_turni_per_soddisfatto: number,
     n_shifts_max: number,
+    /** List of locations' ids */
     locations: string[]
 }
 

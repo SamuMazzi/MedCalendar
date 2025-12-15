@@ -12,6 +12,7 @@ import ArrowBackRoundedIcon from '@mui/icons-material/ArrowBackRounded';
 import Slide from '@mui/material/Slide';
 import Box from '@mui/material/Box';
 import { Routes } from '../logic/Routes';
+import { useRouter } from 'next/router';
 
 interface ChoiceParams {
   path: string
@@ -102,7 +103,7 @@ function ChoicesHomeDiv() {
         adminState &&
         <Grid item>
           <Grid container direction="row" justifyContent="center">
-            <ChoiceButton label="Aggiungi turni speciali" path='/configuration_turni_admin' />
+            <ChoiceButton label="Aggiungi turni speciali" path='/configuration_shifts_admin' />
             <ChoiceButton label="Pianifica turni per mese" path='/pianificazione_turni_admin' />
             <ChoiceButton label="Modifica medici distretto" path='/modify_doctors_admin' />
           </Grid>
@@ -122,7 +123,9 @@ interface PropsSelectDistrettoLogin {
 
 function SelectDistrictLogin(props: PropsSelectDistrettoLogin) {
   const infoAuth = useAppSelector(state => state.auth)
+  const districtInfo = useAppSelector(state => state.configurationDistr)
   const dispatch = useAppDispatch()
+  const router = useRouter()
 
   const handleSetDistretto = (newDistrict: string) => {
     dispatch(setSelectedDistrict(newDistrict))
@@ -131,19 +134,27 @@ function SelectDistrictLogin(props: PropsSelectDistrettoLogin) {
 
   if (infoAuth.districts.length === 0)
     return (
-      <>
-        <span>
-          Sembra che tu non sia registrato in nessun distretto...  
-          <br />
-          Aspetta il link da un amministratore
-          <br />
-          O crea il tuo distretto se vuoi usufruire del servizio
-        </span>
+      <div className="flex flex-col pt-40 justify-center">
+        <p className='text-lg font-bold text-center'>
+        Sembra che tu non sia registrato in nessun distretto...  
+        </p>
         <br />
-        <a href={Routes.Register} target="_blank" rel="noopener noreferrer" className="p-button font-bold">
-          Crea il distretto
-        </a>
-      </>
+        <p className='text-xl font-light text-center'>
+        Aspetta il link da un amministratore
+        </p>
+        <br />
+        <p className='mb-5 text-center'>
+        Oppure 
+        </p>
+        <p className='text-xl font-light text-center'>
+        Crea il tuo distretto se vuoi usufruire del servizio
+        </p>
+        <div className='text-center'>
+          <Button className="mt-7" onClick={() => router.push(Routes.Register)}>
+            {districtInfo.name !== "" ? "Continua il distretto" : "Crea il distretto"}
+          </Button>
+        </div>
+      </div>
     )
 
   return (

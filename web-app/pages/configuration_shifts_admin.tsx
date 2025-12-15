@@ -1,6 +1,6 @@
 import Grid from '@mui/material/Grid'
 import Head from 'next/head';
-import HandlerSpecialTurni from '../components/admin_pages/change_single_turno';
+import HandlerSpecialTurni from '../components/admin_pages/change_single_shift';
 
 export default function ConfigurationAdminPage() {
 

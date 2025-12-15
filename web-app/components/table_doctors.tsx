@@ -25,6 +25,7 @@ import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import { useAppDispatch, useAppSelector } from '../logic/redux/store';
 import { removeDoctorFromDistrictSlice, setDoctorOfDistrictSlice } from '../logic/redux/configuration_district_slice';
 import AddIcon from '@mui/icons-material/AddRounded';
+import { Dialog } from 'primereact/dialog';
 
 function descendingComparator<T>(a: T, b: T, orderBy: keyof T) {
   if (b[orderBy] < a[orderBy]) {
@@ -66,11 +67,6 @@ const headCells: readonly HeadCell[] = [
     id: 'role',
     disablePadding: false,
     label: 'Ruolo',
-  },
-  {
-    id: 'locations',
-    disablePadding: false,
-    label: 'Sedi',
   },
   {
     id: 'email',
@@ -191,7 +187,7 @@ function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
         </Tooltip>
       ) : (
         <>
-          <Tooltip title="Aggiungi medico">
+          <Tooltip title="Aggiungi un medico">
             <IconButton onClick={() => setShowModalCreateDoc(true)}>
               <AddIcon />
             </IconButton>
@@ -203,11 +199,9 @@ function EnhancedTableToolbar(props: EnhancedTableToolbarProps) {
           </Tooltip>
         </>
       )}
-      <GenericAlertDialog 
-        open={showModalCreateDoc} 
-        onClose={() => setShowModalCreateDoc(false)} 
-        content={<FormSingleDoctor onSetDoctor={handleCreateMedico}/>}
-      />
+      <Dialog header="Aggiungi un medico" visible={showModalCreateDoc} style={{ width: '50vw' }} onHide={() => setShowModalCreateDoc(false)}>
+        <FormSingleDoctor onSetDoctor={handleCreateMedico} showTitle={false}/>
+      </Dialog>
     </Toolbar>
   );
 }
@@ -363,7 +357,6 @@ const RowTableDoctor = (props: ParamsRowTabelDoctor) => {
           {props.doc.name}
         </TableCell>
         <TableCell align="left">{props.doc.role}</TableCell>
-        <TableCell align="left">{props.doc.locations?.join(', ')}</TableCell>
         <TableCell align="left">{props.doc.email}</TableCell>
       </TableRow>
       <GenericAlertDialog open={showModal} onClose={() => setShowModal(false)}

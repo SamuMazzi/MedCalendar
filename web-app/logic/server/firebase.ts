@@ -117,6 +117,7 @@ export class AppFirebaseError extends Error {
 }
 
 export const firebaseApp = initializeApp(firebaseConfig);
+
 /* const analytics = isSupported().then(yes => {
   if (yes) {
     initializeAnalytics(firebaseApp)

@@ -3,7 +3,7 @@ import { useAppDispatch, useAppSelector }  from '../logic/redux/store'
 import { setNewAvailabilityDoctor } from '../logic/redux/turni_slice'
 import { Calendar } from 'primereact/calendar';
 import { Nullable } from 'primereact/ts-helpers';
-        
+import styled from 'styled-components';
 
 interface PropsSelectMeseCalendar {
   timestamp_mese: number | undefined,
@@ -17,8 +17,14 @@ interface PropsSelectMeseCalendar {
 export function SelectMeseCalendar(props: PropsSelectMeseCalendar) {
   const maxDate = props.maxDate ? dayjs(new Date()).add(props.maxDate, 'M') : undefined
   
+  const CustomCalendar = styled(Calendar)`
+    .p-inputtext {
+        display: none;
+    }
+  `;
+
   return (
-    (<Calendar
+    (<CustomCalendar
         dateFormat="MM yy"
         view="month"
         locale='it'
@@ -67,9 +73,14 @@ export function PersonalCalendar(props: PropsCalendar) {
     }));
   }
 
+  const CustomCalendar = styled(Calendar)`
+    .p-inputtext {
+        display: none;
+    }
+  `;
+
   return (
-    (
-      <Calendar
+    (<CustomCalendar
         locale="it"
         value={selectedDays}
         onChange={(e) => {
@@ -85,10 +96,7 @@ export function PersonalCalendar(props: PropsCalendar) {
         showOtherMonths={timestamp_month === undefined}
         showButtonBar
         selectionMode='multiple'
-        dateFormat='d'
         showIcon
-        inputClassName='p-inputtext-sm'
-        inputStyle={{ width: 1 }}
         style={{ width: '100%', borderRadius: 100, color: 'black' }}
         /*renderInput={({
           ref,
@@ -123,29 +131,15 @@ export function CalendarSelectSingleDay(props: PropsCalendarSelectSingleDay) {
 
   return (
     (<Calendar
+        locale='it'
         value={props.daySelected}
         onChange={(e) => {
           if(e.value !== undefined && e.value !== null) {
             handleDaySelected(e.value);
           }
         }}
-        /*renderInput={({
-          ref,
-          inputProps,
-          disabled,
-          onChange,
-          value,
-          ...other
-        }) => (
-          <div ref={ref} style={{
-            display: 'flex',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-          }}>
-            <IconButton onClick={handleClick}>
-              <EventIcon fontSize="large"/>
-            </IconButton>
-          </div>)}*/
+        dateFormat="dd/mm/yy"
+        showIcon
     />)
   );
 }

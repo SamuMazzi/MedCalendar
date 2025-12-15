@@ -59,7 +59,7 @@ export const deleteSingleMedicoServer = async (id_med: string, distretto: string
     }
 }
 
-export const addBatchMedici = async (medici: Record<string, DoctorInterface>, distretto: string) => {
+export const addBatchDoctors = async (medici: Record<string, DoctorInterface>, distretto: string) => {
     const futures = []
     const infoMedici: Record<string, DoctorInterface> = {}
     const infoDocMedico = doc(firestore, firestore_distrettiCollectionKey, distretto, firestore_infoCollectionKey, firestore_infoMediciKey)
@@ -135,18 +135,19 @@ export const setNameUser = async (email: string, name: string) => {
  * @param email_user Email of the user we want to fetch data from
  * @returns 
  */
-export const fetchUserOnLogin = async (email_user: string) => {
+export const fetchUserOnLogin = async (email_user: string, display_name?: string): Promise<DoctorInterface> => {
+    let out: DoctorInterface = { email: email_user, name: display_name ?? "", role: "" }
     try {
         const documentDoctor = await getDoc(doc(firestore, firestore_usersKey, email_user))
         if (documentDoctor.exists()) {
-            return documentDoctor.data() as DoctorInterface
+            out = documentDoctor.data() as DoctorInterface
+        } else {
+            await createUser({ email: email_user, name: display_name ?? "", role: "" })
         }
-        // else
-        await createUser({ email: email_user, name: "", role: "" })
-        return undefined
     } catch (error: unknown) {
         handleFirebaseError(error)
     }
+    return out
 }
 
 export const setNameAndSurnameAfterRegistration = async (email_user: string, name: string, surname: string) => {

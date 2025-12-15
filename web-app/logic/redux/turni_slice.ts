@@ -58,7 +58,6 @@ export const turnoSlice = createSlice({
     setNewAvailabilityDoctor: (state, action: PayloadAction<ParamAvailabilityDoctor>) => {
       // assert(action.payload.days, "Shift is undefined")
       // TODO: Some little problem here
-      console.log("payload", action.payload.days)
       state.availability[action.payload.shift] = [...action.payload.days]
     },
     clearAvailability: (state) => {

@@ -3,7 +3,7 @@ import Button from '@mui/material/Button'
 import FileSaver from 'file-saver'
 import { write, utils, read } from 'xlsx' //Capire perchè non ti installa la 0.19.1
 import Tooltip from '@mui/material/Tooltip'
-import {    getAllShifts, SchedulerState } from '../../logic/redux/scheduler_slice'
+import { getAllShifts, SchedulerState } from '../../logic/redux/scheduler_slice'
 import { getGiornoSettimana } from '../../logic/local_utilities'
 import Typography from '@mui/material/Typography'
 

@@ -17,7 +17,7 @@ export interface StateAuth {
 
 export interface ParamSetUser {
   uid: string,
-  data: DoctorInterface | undefined
+  data: DoctorInterface
 }
 
 /**
@@ -62,13 +62,10 @@ export const authSlice = createSlice({
   initialState: initialStateAuth,
   reducers: {
     setUser: (state, action: PayloadAction<ParamSetUser>) => {
-      console.error("setting user")
       state.uid = action.payload.uid
-      if (action.payload.data !== undefined) {
-        state.name = action.payload.data.name
-        state.locations = action.payload.data.locations
-        state.role = action.payload.data.role ?? ""
-      }
+      state.name = action.payload.data.name
+      state.locations = action.payload.data.locations
+      state.role = action.payload.data.role ?? ""
       saveToStorage('user', state)
     },
     setNameUserLocal: (state, action: PayloadAction<string>) => {
@@ -77,6 +74,10 @@ export const authSlice = createSlice({
     },
     setSelectedDistrict: (state, action: PayloadAction<string>) => {
       state.selectedDistrict = action.payload
+      saveToStorage('user', state)
+    },
+    setOwnedDistricts: (state, action: PayloadAction<string[]>) => {
+      state.ownedDistricts = [...action.payload]
       saveToStorage('user', state)
     },
     clearUserInfo: (state) => {
@@ -92,6 +93,6 @@ export const authSlice = createSlice({
 })
 
 // Action creators are generated for each case reducer function
-export const { setUser, setNameUserLocal, clearUserInfo, setSelectedDistrict } = authSlice.actions
+export const { setUser, setNameUserLocal, setOwnedDistricts, clearUserInfo, setSelectedDistrict } = authSlice.actions
 
 export default authSlice.reducer

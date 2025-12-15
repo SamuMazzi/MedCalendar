@@ -1,7 +1,44 @@
 import { AppFirebaseError, firebaseApp } from "../firebase";
-import { getFirestore, doc, setDoc, getDoc, Timestamp, connectFirestoreEmulator } from 'firebase/firestore';
+import { getFirestore, doc, setDoc, getDoc, Timestamp, connectFirestoreEmulator, addDoc, collection, FieldValue, arrayUnion } from 'firebase/firestore';
 import { getFromStorage, getNumOreMaxByRole } from "../../local_utilities";
-import { DistrictState } from "../../redux/configuration_district_slice";
+import { DistrictState, InfoLocation } from "../../redux/configuration_district_slice";
+import { addBatchDoctors } from "./doctors";
+
+/*
+import { SendMailClient } from "zeptomail";
+
+const url = "api.zeptomail.com/";
+const token = "<Send mail token>";
+
+let client = new SendMailClient({url, token});
+
+client.mailBatchWithTemplate({
+    "template_key": "13ef.7f1073f65fbed762.k1.8cb00a20-52ff-11ef-bb3a-525400b65433.1912185c3c2",
+    "template_alias": "<template's alias>",
+    "from": {
+        "address": "no-reply@medscheduler.vercel.app",
+        "name": "Med Calender Team"
+    },
+    "to": [
+        {
+            "email_address": {
+                "address": "test1@example.com",
+                "name": "test1"
+            }
+        }
+    ],
+    "reply_to": [
+        {
+            "address": "test@example.com",
+            "name": "test"
+        }
+    ],
+    "client_reference": "<client reference>",
+    "mime_headers": {
+        "X-Test": "test"
+    }
+}).then((resp) => console.log("success")).catch((error) => console.log("error"));
+*/
 
 export const firestore = getFirestore(firebaseApp);
 if(process.env.NODE_ENV === 'test') {
@@ -131,34 +168,47 @@ export const getDisponibilitaMeseDistretto = async (distretto: string, year: num
     }
 }
 
-export const uploadConfigurationDistrict = async (district: DistrictState, uid: string) => {
-    const districtRef = doc(firestore, firestore_distrettiCollectionKey, district.name)
-    await setDoc(districtRef, {
-        admins: [uid],
+export const uploadConfigurationDistrict = async (district: DistrictState, email: string) => {
+    const districtRef = collection(firestore, firestore_distrettiCollectionKey)
+    const res = await addDoc(districtRef, {
+        admins: [email],
         [firestore_lastTimeModifyInfoDoctorsKey]: Timestamp.now() 
     })
-    // infoDistrict maybe?
-    const infoLocations: Record<string, any> = {
-        sedi: {},
-        special_days: [],
-        turni: {}
+
+    /** Add the district to the user */
+    const id_district = res.id
+    await setDoc(doc(firestore, firestore_usersKey, email), {owner_locations: arrayUnion(id_district)}, {merge: true})
+
+    const locations: Record<string, InfoLocation> = {}
+
+    for(const loc_id of Object.keys(district.locations)) {
+        const location = district.locations[loc_id]
+        locations[loc_id] = { id: loc_id, doctors_for_shift: location.doctors_for_shift, 
+            shifts: [], name: location.name }
     }
-    for(const location of district.locations) {
-        infoLocations['locations'][location.name] = { medici_per_turno: location.doctors_for_shift }
+
+    /** Set same shifts in all the locations. So far we'll use this. */
+    for(let i = 0; i < Object.keys(district.locations).length; i++) {
+        const t = district.locations[i]
+        locations[i].shifts = t.shifts
     }
-    if(district.extraShifts) {
-        //TODO: Check che timestamp non modifichi con fuso orario
-        infoLocations['special_days'] = district.extraShifts.map((t) => Timestamp.fromMillis(t.date_millis))
-    }
-    for(const t of district.shifts) {
-        const fascia = t.from + '-' + t.to
-        infoLocations['shifts'][fascia] = t.daysOfWeek.join(',')
+    const infoDistrict: Record<string, any> = {
+        // TODO: Change this
+        locations: locations,
     }
     const infoSediRef = doc(firestore, districtRef.path, 'info', 'info_locations')
-    await setDoc(infoSediRef, infoLocations)
+    await setDoc(infoSediRef, infoDistrict)
     const infoMedici: Record<string, any> = {}
+    
     for (const id_doc of Object.keys(district.doctors)) {
         const doc = district.doctors[id_doc]
         infoMedici[id_doc] = doc
-    }
+    } // TODO: è un bug questo? leftover?
+    await addBatchDoctors(infoMedici, id_district)
+    
+    return id_district
+}
+
+const sendInvitationEmails = async (users: string[]) => {
+
 }

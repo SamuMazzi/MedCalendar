@@ -2,14 +2,25 @@ import { StateShift } from "../../redux/turni_slice";
 import { SchedulerState } from "../../redux/scheduler_slice";
 import { setDoc, doc, arrayRemove, arrayUnion, serverTimestamp, collection, getDocs, query, collectionGroup, where, getDoc, Timestamp, FieldValue } from "firebase/firestore";
 import { getLocalLastOreMaxSet } from "../../local_utilities";
-import { getKeyMonth, firestore, handleFirebaseError, RemoteLocationInfo, getFirestoreDocInfoSedi, getFirestoreDocInfoMedici, firestore_configDefinitivaDistrettoKey, firestore_disponibilitaSedeKey, firestore_distrettiCollectionKey, firestore_infoCollectionKey, firestore_oreMaxMedicoKey, firestore_sediMedicoKey, getDisponibilitaMeseDistretto } from "./firestore";
+import { getKeyMonth, firestore, handleFirebaseError, RemoteLocationInfo, getFirestoreDocInfoSedi, getFirestoreDocInfoMedici, firestore_configDefinitivaDistrettoKey, 
+    firestore_disponibilitaSedeKey, firestore_distrettiCollectionKey, firestore_infoCollectionKey, firestore_oreMaxMedicoKey, firestore_sediMedicoKey, getDisponibilitaMeseDistretto } from "./firestore";
+import { InfoLocation, InfoRole, PricingPlan } from "../../redux/configuration_district_slice";
 
+/** WARNING: Pay attention to use this only where it's needed
+ * and use also `DistrictState` in redux
+ */
 export interface InfoRemoteDistrict {
-    locations: string[]
     name: string
+    /** Oppure qua solo string[] degli id da fetchare in un'altra collezione */
+    locations: Record<string, InfoLocation>
     owners: string[]
+    /** Only the IDs of the doctors, 
+     * we don't want to put too much stuff in the main document */
     doctors: string[]
-    roles: Record<string, string>
+    pricingPlan: PricingPlan
+    roles: Record<string, InfoRole>
+
+    last_modification: FieldValue
     create_at: FieldValue
 }
 
@@ -93,11 +104,6 @@ export const getConfigurationDistrict = async (distric: string) => {
         //console.log(error)
         handleFirebaseError(error)
     }
-}
-
-export const checkIfDistrettoExists = async (name: string) => {
-    const querySnapshot = await getDoc(doc(firestore, firestore_distrettiCollectionKey, name));
-    return querySnapshot.exists()
 }
 
 export const getAllDistretti = async () => {

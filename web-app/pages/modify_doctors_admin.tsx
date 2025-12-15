@@ -1,7 +1,6 @@
 import React from "react";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import Typography from "@mui/material/Typography";
-import TextField from "@mui/material/TextField";
 import Button from "@mui/material/Button";
 import Grid from "@mui/material/Grid";
 import Card from "@mui/material/Card";
@@ -11,7 +10,6 @@ import ListItemText from "@mui/material/ListItemText";
 import ListItemButton from "@mui/material/ListItemButton";
 import { DoctorInterface } from "../logic/server/firestore/firestore";
 import { addSingleMedico, deleteSingleMedicoServer, updateSingleMedico } from "../logic/server/firestore/doctors";
-import { NewListDropdown, NewMapDropdown } from "../components/general/form_dropdown";
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 import { validateEmail } from "../logic/local_utilities";
@@ -21,6 +19,8 @@ import List from "@mui/material/List";
 import assert from 'assert'
 import useInfoDistrict from "../logic/hooks/use_info_district";
 import { removeDoctorFromDistrictSlice, setDoctorOfDistrictSlice } from "../logic/redux/configuration_district_slice";
+import { Dropdown } from "primereact/dropdown";
+import { InputText } from "primereact/inputtext";
 
 /* const ruoli: Record<string, string> = {
     'Sostituto': 'Sostituto',
@@ -72,7 +72,7 @@ function DoctorItem(props: PropsDoctorItem) {
             <ListItemButton onClick={handleClick}>
                 <ListItemText 
                     primary={props.doc ? props.doc.name : "Nuovo medico"} 
-                    secondary={props.doc && props.doc.role ? infoDistrict.roles[props.doc.role] : "Clicca per aggiungere"}
+                    secondary={props.doc && props.doc.role ? infoDistrict.roles[props.doc.role].label : "Clicca per aggiungere"}
                     />
                 {open ? <ExpandLess /> : <ExpandMore />}
             </ListItemButton>
@@ -101,6 +101,7 @@ interface PropsFormSingleDoctor {
     doctor?: DoctorInterface
     onDelete?: (arg0: string) => Promise<void>
     onSetDoctor: (arg0: DoctorInterface) => Promise<void>
+    showTitle?: boolean
 }
 
 export function FormSingleDoctor(props: PropsFormSingleDoctor) {
@@ -110,7 +111,6 @@ export function FormSingleDoctor(props: PropsFormSingleDoctor) {
     const [loading, setLoading] = useState(false)
     const district = useAppSelector(state => state.auth.selectedDistrict)
     const [openDeleteDialog, setOpenDeleteDialog] = useState(false)
-    const locations = useAppSelector(state => state.configurationDistr.locations) //TODO: Da modificare per poter essere utilizzato anche solo nelle modifiche e non solo nella creazione
     const [infoDistrict, error, loadingDistrict] = useInfoDistrict(district)
     const roles = infoDistrict ? infoDistrict.roles : {}
 
@@ -134,7 +134,7 @@ export function FormSingleDoctor(props: PropsFormSingleDoctor) {
 
     const uploadMedico = async () => {
         setMessage("")
-        if (!doctor.name || !doctor.role || !doctor.email || doctor.locations?.length === 0) {
+        if (!doctor.name || !doctor.role || !doctor.email) {
             setMessage("Riempi tutti i campi")
             return
         } else if (!validateEmail(doctor.email)) {
@@ -150,65 +150,52 @@ export function FormSingleDoctor(props: PropsFormSingleDoctor) {
             setLoading(false)
         }
     }
-
+    const outRoles = Object.keys(roles).map((r) => {return {name: r, label: roles[r].label}})
     return (
         <>
         <Grid container spacing={2} alignItems="center" direction="column" sx={{py: 2}}>
             <Grid item>
                 <Typography variant="h6" component="h6">{
-                    props.doctor ? "" : "Aggiungi un medico"
+                    props.doctor || props.showTitle === false ? "" : "Aggiungi un medico"
                 }</Typography>
             </Grid>
             <Grid item>
-                <Grid container direction="row" spacing={2}>
-                    <Grid item>
-                        <TextField
-                            value={doctor.name}
-                            onChange={(event) => setDoctor({
-                                ...doctor,
-                                name: event.target.value
-                            })}
-                            label=""
-                            placeholder="Nome"
-                        />
-                    </Grid>
-                    <Grid item>
-                        <TextField
-                            value={doctor.email}
-                            onChange={(event) => setDoctor({
-                                ...doctor,
-                                email: event.target.value
-                            })}
-                            label=""
-                            placeholder="Email"
-                            disabled={props.doctor !== undefined}
-                        />
-                    </Grid>
-                </Grid>
+                <InputText
+                    value={doctor.name}
+                    onChange={(event) => setDoctor({
+                        ...doctor,
+                        name: event.target.value
+                    })}
+                    placeholder="Nome e cognome"
+                />
+            </Grid>
+            <Grid item>
+                <InputText
+                    value={doctor.email}
+                    onChange={(event) => setDoctor({
+                        ...doctor,
+                        email: event.target.value
+                    })}
+                    placeholder="Email"
+                    disabled={props.doctor !== undefined}
+                />
             </Grid>
             <Grid item>
                 <Grid container direction="row" spacing={2}>
                     <Grid item>
-                        <NewMapDropdown
-                            label="Ruolo"
-                            inputMap={roles}
+                        <Dropdown
+                            placeholder="Ruolo"
+                            options={outRoles}
+                            optionLabel="label"
+                            optionValue="name"
                             value={doctor.role}
-                            onChangeFn={(event) => setDoctor({
-                                ...doctor,
-                                role: event.target.value
-                            })}
-                        />
-                    </Grid>
-                    <Grid item>
-                        <NewListDropdown
-                            label="Sedi"
-                            value={doctor.locations}
-                            inputList={locations.map((s) => s.name)}
-                            multiple
-                            onChangeFn={(event) => setDoctor({
-                                ...doctor,
-                                locations: event.target.value
-                            })}
+                            onChange={(event) => {
+                                setDoctor({
+                                        ...doctor,
+                                        role: event.target.value
+                                    })
+                                }
+                            }
                         />
                     </Grid>
                 </Grid>

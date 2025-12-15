@@ -41,7 +41,7 @@ export function MedAppBar() {
       </Grid>
       <Grid item display="flex" alignItems="center">
           {
-            distretto !== undefined && <>
+            distretto !== undefined && user.districts.concat(user.ownedDistricts).includes(distretto) && <>
               <PlaceIcon />
               <Typography sx={{pr: 3, pl: 1}}>
                 {distretto}

@@ -1,13 +1,10 @@
-import Button from '@mui/material/Button'
 import Typography from '@mui/material/Typography'
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import dayjs from 'dayjs';
 import Container from '@mui/material/Container';
 import { setMessageError } from '../../logic/redux/settings_slice';
 import { AppFirebaseError } from '../../logic/server/firebase';
 import { CalendarSelectSingleDay } from '../calendar';
-import { NewListDropdown } from '../general/form_dropdown';
-import MessageSnackbar from '../snackbar/message_snackbar';
 import DeleteIcon from '@mui/icons-material/DeleteForeverRounded';
 import { fromTurnoToDate, parseDateToTurno } from '../../logic/local_utilities';
 import { addSpecialTurnoServer, getSpecialTurniServer, removeSpecialTurnoServer } from '../../logic/server/firestore/districts';
@@ -19,6 +16,9 @@ import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
 import { turni_disp } from './create_configuration_admin';
 import useUser from '../../logic/hooks/use_user';
+import { Dropdown } from 'primereact/dropdown';
+import { Button } from 'primereact/button';
+import { Toast } from 'primereact/toast';
 
 interface PropsHandlerSpecialShifts {
   specialShifts?: Date[]
@@ -30,22 +30,26 @@ interface PropsHandlerSpecialShifts {
 export default function HandlerSpecialTurni(props: PropsHandlerSpecialShifts) {
   const [_, distretto] = useUser()
   const tmpMode = props.specialShifts !== undefined
-  const [messageSnackbar, setMessageSnackbar] = useState("")
   const [loading, setLoading] = useState(false)
   const [daySelected, setDaySelected] = useState(new Date())
-  const [turnoFrom, setTurnoFrom] = useState("")
-  const [turnoTo, setTurnoTo] = useState("")
+  const [turnoFrom, setTurnoFrom] = useState<string | null>(null)
+  const [turnoTo, setTurnoTo] = useState<string | null>(null)
   const [specialTurni, setSpecialTurni] = useState<Date[] | undefined>()
+  const toast = useRef<any>(null);
 
   useEffect(() => {
     if (!tmpMode) {
-      getSpecialTurniServer(distretto!).then((res) => setSpecialTurni(res))
+      getSpecialTurniServer(distretto!).then((res) => {
+        setSpecialTurni(res)
+      })
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const showError = (msg: string) => {
-    setMessageSnackbar(msg)
+    if (toast.current !== null) {
+      toast.current.show({ severity: 'error', summary: 'Errore', detail: msg, life: 3000 });
+    }
   }
 
   const removeSpecialTurno = async (index: number) => {
@@ -71,6 +75,9 @@ export default function HandlerSpecialTurni(props: PropsHandlerSpecialShifts) {
     setMessageError("")
     setLoading(true)
     try {
+      if (turnoFrom === null || turnoTo === null) {
+        throw new Error("Seleziona un turno valido")
+      }
       const dateTurno = fromTurnoToDate(daySelected, turnoFrom + '-' + turnoTo)
       if(!tmpMode) {
         addSpecialTurnoServer(dateTurno, distretto!)
@@ -80,7 +87,7 @@ export default function HandlerSpecialTurni(props: PropsHandlerSpecialShifts) {
       if (e instanceof AppFirebaseError) {
         showError(e.message)
       } else {
-        showError(e.toString())
+        showError(e.toString().split("Error: ")[1])
       }
     } finally {
       setLoading(false)
@@ -96,25 +103,17 @@ export default function HandlerSpecialTurni(props: PropsHandlerSpecialShifts) {
               Aggiungi turno specifico
           </Typography>
           <Box display='flex' alignItems="center">
-            <Typography textAlign='center' sx={{pr: 2}}>
-              {'Giorno: ' + dayjs(daySelected).format('DD/MM/YYYY')}
-            </Typography>
             <CalendarSelectSingleDay daySelected={daySelected} onChangeDate={setDaySelected}/>
           </Box>
           <Container sx={{py: 1}}/>
-          <NewListDropdown
-              label="Dalle"
-              value={turnoFrom}
-              inputList={turni_disp}
-              onChangeFn={(event) => setTurnoFrom(event.target.value)}
-          />
-          <NewListDropdown
-              label="Alle"
-              value={turnoTo}
-              inputList={turni_disp}
-              onChangeFn={(event) => setTurnoTo(event.target.value)}
-          />
-          <Button variant="contained" onClick={() => addSpecialTurno()} disabled={loading}>
+          <Dropdown value={turnoFrom} onChange={(e) => setTurnoFrom(e.value)} 
+              options={turni_disp}
+              placeholder="Dalle" className="mr-2" />
+          <Dropdown value={turnoTo} onChange={(e) => setTurnoTo(e.value)} 
+              options={turni_disp}
+              placeholder="Alle" className="ml-2" />
+          <br />
+          <Button className="mt-3" onClick={() => addSpecialTurno()} loading={loading}>
             Aggiungi turno
           </Button>
         </Box>
@@ -132,6 +131,7 @@ export default function HandlerSpecialTurni(props: PropsHandlerSpecialShifts) {
                     specialTurni?.map((dateTurno, index) => {
                       const out = parseDateToTurno(dateTurno)
                       return (
+                        // FIXME: Fix this
                         <ListItem key={dateTurno.toISOString()} secondaryAction={
                           <IconButton edge="end" aria-label="delete" onClick={() => removeSpecialTurno(index)} disabled={loading}>
                                   <DeleteIcon />
@@ -146,7 +146,7 @@ export default function HandlerSpecialTurni(props: PropsHandlerSpecialShifts) {
             </Card>
           }
         </Box>
-        <MessageSnackbar isOpen={messageSnackbar !== ''} handleClose={() => setMessageError("")} message={messageSnackbar}/>
+        <Toast ref={toast} />
       </Box>
     </>
   )

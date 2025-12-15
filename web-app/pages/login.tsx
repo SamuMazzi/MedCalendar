@@ -15,6 +15,9 @@ import { AppFirebaseError } from '../logic/server/firebase';
 import FormHelperText from '@mui/material/FormHelperText';
 import FormControl from '@mui/material/FormControl';
 import { Button } from 'primereact/button';
+import { fetchUserOnLogin } from '../logic/server/firestore/doctors';
+import { useAppDispatch } from '../logic/redux/store';
+import { setUser } from '../logic/redux/auth_slice';
 // TODO: Pagina pubblica per vedere tabella
 
 export default function FormLogin(props: any) {    
@@ -64,6 +67,7 @@ function DivLogin() {
     const toast = useRef<any>(null);
     const router = useRouter();
     const { returnUrl } = router.query;
+    const dispatch = useAppDispatch();
 
     const handleSignError = (error: any) => {
         if (error instanceof AppFirebaseError) {
@@ -76,7 +80,12 @@ function DivLogin() {
     const handleButtonGoogle = async () => {
         setLoadingLogin(true)
         try {
-            await signInWithGoogle()
+            const user = await signInWithGoogle()
+            if (!user || !user.email) {
+                throw new Error("Utente non trovato")
+            }
+            const dataDoctor = await fetchUserOnLogin(user.email, user.displayName ?? "")
+            dispatch(setUser({ uid: user.email, data: dataDoctor}))
             if (returnUrl && !returnUrl.includes('login') && !returnUrl.includes('_admin')) {
                 router.replace(Array.isArray(returnUrl) ? returnUrl.at(0)! : returnUrl)
             } else {

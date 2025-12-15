@@ -1,10 +1,8 @@
 import Grid from '@mui/material/Grid'
-import Button from '@mui/material/Button'
 import Typography from '@mui/material/Typography'
-import CircularProgress from '@mui/material/CircularProgress'
 import AddIcon from '@mui/icons-material/AddRounded';
 import DeleteIcon from '@mui/icons-material/DeleteRounded';
-import SingleSede from './single_sede';
+import SingleLocation from './single_sede';
 import MessageSnackbar from '../snackbar/message_snackbar';
 import { useState, useEffect } from 'react'
 import { useAppSelector, useAppDispatch } from '../../logic/redux/store'
@@ -12,16 +10,18 @@ import { addLocationToDistrict, changeShiftDistrict, DistrictShift } from '../..
 import Head from 'next/head';
 import { AppFirebaseError } from '../../logic/server/firebase';
 import { setMessageError } from '../../logic/redux/settings_slice';
-import HandlerSpecialTurni from './change_single_turno';
+import HandlerSpecialTurni from './change_single_shift';
 import IconButton from '@mui/material/IconButton';
 import Divider from '@mui/material/Divider';
 import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import ToggleButton from '@mui/material/ToggleButton'
 import List from '@mui/material/List';
 import ListItem from '@mui/material/ListItem';
-import { NewListDropdown } from '../general/form_dropdown';
-import { uploadConfigurationDistrict } from '../../logic/server/firestore/firestore';
-import useUser from '../../logic/hooks/use_user';
+import { Button } from 'primereact/button';
+import { Dropdown } from 'primereact/dropdown';
+import { FloatLabel } from 'primereact/floatlabel';
+import { uniqueID } from '../../logic/local_utilities';
+
 
 const days = ['Lun', 'Mar', 'Mer', 'Gio', 'Ven', 'Sab', 'Dom'];
 
@@ -66,10 +66,13 @@ export default function ConfigurationAdmin(props: PropsPageStepper) {
   const [ loading, setLoading ] = useState(false)
   const [ isOpenSnackbar, setIsOpenSnackbar ] = useState(false)
   const [messageSnackbar, setMessageSnackbar] = useState("")
-  const [user] = useUser()
+  /** This "shifts" workaround is useful only now that we have a single shifts-set for the whole district */
+  const shifts = Object.keys(configurationDistrict.locations).length > 0 ? configurationDistrict.locations[Object.keys(configurationDistrict.locations)[0]].shifts : []
 
   const _editTurno = (newTurno: DistrictShift, index?: number) => {
-    const newSt = [...configurationDistrict.shifts]
+    // TODO: Probabilmente è da cambiare anche questo
+    // Si potrebbe avere una variabile locale qua che si applica a tutte le locations quando vai avanti
+    const newSt = [...shifts]
     if (index !== undefined) {
       newSt[index] = newTurno
     } else {
@@ -84,7 +87,7 @@ export default function ConfigurationAdmin(props: PropsPageStepper) {
     index: number
   ) => {
       const newTurno: DistrictShift = {
-          ...configurationDistrict.shifts[index],
+          ...shifts[index],
           daysOfWeek: newDays.map(val => days.indexOf(val))
       }
       _editTurno(newTurno, index)
@@ -92,20 +95,20 @@ export default function ConfigurationAdmin(props: PropsPageStepper) {
 
   const changeFasciaTurno = (val: string, index: number, mode: keyof DistrictShift) => {
     const newTurno: DistrictShift = {
-      ...configurationDistrict.shifts[index],
+      ...shifts[index],
       [mode]: val
     }
     _editTurno(newTurno, index)
   }
 
   const deleteTurno = (index: number) => {
-    dispatch(changeShiftDistrict(configurationDistrict.shifts.filter((val: any, i) => i !== index)))
+    dispatch(changeShiftDistrict(shifts.filter((val: any, i) => i !== index)))
   }
 
   const addNewTurno = () => {
     const newTurno = {
-      from: '08',
-      to: '20',
+      from: '',
+      to: '',
       daysOfWeek: []
     }
     _editTurno(newTurno)
@@ -116,25 +119,26 @@ export default function ConfigurationAdmin(props: PropsPageStepper) {
     setIsOpenSnackbar(true)
   }
   const validateConfiguration = () => {
-    if(configurationDistrict.locations.length <= 0) {
+    if(Object.keys(configurationDistrict.locations).length <= 0) {
       showError("Inserisci almeno una sede")
       return false
     }
-    for(const sede of configurationDistrict.locations) {
-      if(!sede.name) {
+    for(const location of Object.values(configurationDistrict.locations)) {
+      if(!location.name) {
         showError("Il nome di una sede non può essere vuoto")
         return false
       }
-      if(sede.doctors_for_shift <= 0) {
-        showError("La sede " + sede.name + " deve avere almeno un medico per turno.")
+      if(location.doctors_for_shift <= 0) {
+        showError("La sede " + location.name + " deve avere almeno un medico per turno.")
         return false
       }
     }
-    if(configurationDistrict.shifts.length <= 0) {
+    /** We check only locations[0] because at the beginning every location has the same shifts */
+    if(shifts.length <= 0) {
       showError("Inserisci almeno un turno")
       return false
     }
-    for(const shift of configurationDistrict.shifts) {
+    for(const shift of shifts) {
       if(shift.daysOfWeek.length <= 0) {
         showError("Ogni turno necessita di essere applicato ad almeno un giorno")
         return false
@@ -147,12 +151,10 @@ export default function ConfigurationAdmin(props: PropsPageStepper) {
     return true
   }
 
-  const creaConfiguration = async () => {
+  const goToNextPage = async () => {
     setLoading(true)
     try {
       if(validateConfiguration()) {
-        await uploadConfigurationDistrict(configurationDistrict, user.uid)
-        //TODO: Save local
         props.nextPage()
       }
     } catch (e: any) {
@@ -169,17 +171,18 @@ export default function ConfigurationAdmin(props: PropsPageStepper) {
   /**
    * Create a standard location (sede)
    */
-  const addNewLocation = async () => {
-    const newIndex = configurationDistrict.locations.length
+  const addNewLocation = () => {
+    const newIndex = Object.keys(configurationDistrict.locations).length
     dispatch(addLocationToDistrict({
-      index: newIndex,
+      id: uniqueID(),
       name: "Sede " + newIndex.toString(),
       doctors_for_shift: 1,
+      shifts: []
     }))
   }
 
   useEffect(() => {
-    if(configurationDistrict.locations.length === 0) {
+    if(Object.keys(configurationDistrict.locations).length === 0) {
       addNewLocation()
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -206,9 +209,9 @@ export default function ConfigurationAdmin(props: PropsPageStepper) {
           sx={{mb: 3}}
         >  
         {
-          configurationDistrict.locations.map((val, index) => {
+          Object.values(configurationDistrict.locations).map((val) => {
             return (
-              <SingleSede key={index} index={index}/>
+              <SingleLocation key={"single_location_" + val.id} location={val}/>
             )
           })
         }
@@ -222,8 +225,8 @@ export default function ConfigurationAdmin(props: PropsPageStepper) {
         <TitleSection title="Imposta i turni" description='Inserisci i turni del tuo distretto (saranno comuni fra tutte le sedi)'/> 
         <List>
           {
-            configurationDistrict.shifts.map((infoShift, index) => (
-              <ListItem key={index} alignItems="center">
+            shifts.map((infoShift, index) => (
+              <ListItem key={index} alignItems="center" sx={{my: 2}}>
                 <IconButton onClick={() => deleteTurno(index)}>
                   <DeleteIcon />
                 </IconButton>
@@ -236,31 +239,33 @@ export default function ConfigurationAdmin(props: PropsPageStepper) {
                     days.map((day) => <ToggleButton key={day} value={day}>{day}</ToggleButton>)
                   }
                 </ToggleButtonGroup>
-                <Typography sx={{pr: 1, pl: 2}}>
-                  Dalle
-                </Typography>
-                <NewListDropdown
-                  label="Dalle"
-                  width={100}
-                  value={infoShift.from}
-                  inputList={turni_disp}
-                  onChangeFn={(event) => changeFasciaTurno(event.target.value, index, 'from')}
-                />
-                <Typography sx={{px: 1}}>
-                  Alle
-                </Typography>
-                <NewListDropdown
-                  label="Alle"
-                  width={100}
-                  value={infoShift.to}
-                  inputList={turni_disp}
-                  onChangeFn={(event) => changeFasciaTurno(event.target.value, index, 'to')}
-                />
+                <br/>
+                <FloatLabel>
+                  <Dropdown
+                    className='mr-3'
+                    placeholder='Dalle'  // FIXME: Fix bug when you remove placeholder
+                    value={infoShift.from}
+                    options={turni_disp}
+                    onChange={(event) => changeFasciaTurno(event.target.value, index, 'from')}
+                    inputId={"dropdown_from_" + index}
+                  />
+                  <label htmlFor={"dropdown_from_" + index}>Dalle</label>
+                </FloatLabel>
+                <FloatLabel>
+                  <Dropdown
+                    placeholder='Alle'
+                    value={infoShift.to}
+                    options={turni_disp}
+                    onChange={(event) => changeFasciaTurno(event.target.value, index, 'to')}
+                    inputId={"dropdown_to_" + index}
+                  />
+                  <label htmlFor={"dropdown_to_" + index}>Alle</label>
+                </FloatLabel>
               </ListItem>
             ))
           }
         </List>
-        <Button sx={{mb: 2}} startIcon={<AddIcon/>} onClick={() => addNewTurno()} >
+        <Button className='mb-2' icon={<AddIcon/>} iconPos='left' onClick={() => addNewTurno()} >
           Aggiungi un turno
         </Button>
         <Divider flexItem />
@@ -270,16 +275,13 @@ export default function ConfigurationAdmin(props: PropsPageStepper) {
         </Grid>
         <Grid item width="100%" display="flex" justifyContent="flex-end">
             <Button
-              sx={{mr: 20}}
-              variant="contained"
-              onClick={creaConfiguration}
+              className="mr-20"
+              onClick={goToNextPage}
+              loading={loading}
             >
               Continua
             </Button>
         </Grid>
-        {
-          loading && <CircularProgress />
-        }
         <MessageSnackbar isOpen={isOpenSnackbar} handleClose={() => setIsOpenSnackbar(false)} message={messageSnackbar}/>
       </Grid>
     </>

@@ -1,21 +1,16 @@
 import Box from '@mui/material/Box'
 import Button from '@mui/material/Button'
-import Step from '@mui/material/Step'
-import StepButton from '@mui/material/StepButton'
-import Stepper from '@mui/material/Stepper'
 import { useState } from 'react'
 import EnhancedTable from '../components/table_doctors'
 import ConfigurationAdmin from '../components/admin_pages/create_configuration_admin'
 import { PagePlans } from '../components/registration/plans'
-import { RegisterDistrettoSection } from '../components/registration/register_section'
+import { RegisterDistrictSection } from '../components/registration/register_section'
 import { useAppDispatch, useAppSelector } from '../logic/redux/store'
 import { setMessageError } from '../logic/redux/settings_slice'
-import { addBatchMedici } from '../logic/server/firestore/doctors'
 import { AppFirebaseError } from '../logic/server/firebase'
 import PayPage from '../components/registration/payment_page'
-import { Chips } from "primereact/chips";
-import { setRolesDistrictSlice } from '../logic/redux/configuration_district_slice'
-import { generateColorRole } from '../logic/local_utilities'
+import { getFromStorage, saveToStorage } from '../logic/local_utilities'
+import { Steps } from 'primereact/steps'
 
 // #1a77d1
 // #64b5f4
@@ -25,7 +20,6 @@ import { generateColorRole } from '../logic/local_utilities'
 
 const AddDoctorsPage = (props: PropsPageStepper) => {
     const config_district = useAppSelector(state => state.configurationDistr)
-    const district = useAppSelector(state => state.auth.selectedDistrict)
     const dispatch = useAppDispatch()
 
     const handleContinua = async () => {
@@ -33,7 +27,6 @@ const AddDoctorsPage = (props: PropsPageStepper) => {
             return dispatch(setMessageError("Inserisci almeno un medico"))
         }
         try {
-            await addBatchMedici(config_district.doctors, district!)
             props.nextPage()
         } catch (e) {
             console.log(e)
@@ -45,23 +38,11 @@ const AddDoctorsPage = (props: PropsPageStepper) => {
         }
     }
 
-    const customChip = (item: string) => {
-        const index = config_district.roles.indexOf(item)
-        return (
-            <div color={generateColorRole(index)}>
-                <span>{item} ({index+1})</span>
-            </div>
-        );
-    };
-
     return (
         <Box>
             {
                 //TODO: Probably questo chips da cambiare con https://primereact.org/orderlist/#dragdrop
             }
-            <Chips value={config_district.roles} onChange={(e) => e.value && setRolesDistrictSlice(e.value)} allowDuplicate={false} 
-                itemTemplate={customChip} placeholder="Ruoli" 
-                tooltip="Da questa barra è possibile creare i ruoli ordinati in base alla priorità.\nQuando sarà poi calcolata la pianificazione si darà priorità alle persone con ruoli più alti" />
             <TableDoctors />
             <Button style={{position: 'absolute', right: 35}} variant="contained" onClick={handleContinua}>
                 Continua
@@ -83,16 +64,36 @@ interface PropsPageStepper {
 }
 
 export default function PageCreaTurni() {
-    const steps = ['Seleziona il piano', 'Registra il distretto', 'Pianifica i turni', 'Inserisci i medici', 'Paga']
-    const [step, setStep] = useState(0)
+    //TODO: Create a reset button
+    const [step, setStep] = useState<number>(getFromStorage("curr_page_registration") ?? 0)
     const nextPage = () => {
-        if(step < steps.length - 1) {
+        if(step < items.length - 1) {
             setStep(old => old + 1)
         }
+        saveToStorage("curr_page_registration", step+1)
     }
+
+    const items = [
+        {
+            label: 'Seleziona il piano',
+            // command: () => {}
+        },
+        {
+            label: "Registra il distretto"
+        },
+        {
+            label: "Pianifica i turni"
+        },
+        {
+            label: "Inserisci i medici"
+        },
+        {
+            label: "Paga"
+        },
+    ]
     const pages = [
         <PagePlans key="Page_plans" nextPage={nextPage} />, 
-        <RegisterDistrettoSection nextPage={nextPage} key="register_distretto_page" />, 
+        <RegisterDistrictSection nextPage={nextPage} key="register_distretto_page" />, 
         <ConfigurationAdmin key="configuration_page" nextPage={nextPage} />, 
         <AddDoctorsPage nextPage={nextPage} key="med_page"/>, 
         <PayPage key="pay_page"/>
@@ -101,15 +102,7 @@ export default function PageCreaTurni() {
     return (
         <Box minHeight="calc(100vh - 199px)">
             <Box style={{backgroundColor: 'white'}}>
-                <Stepper activeStep={step} alternativeLabel>
-                    {steps.map((label) => (
-                        <Step key={label}>
-                            <StepButton>
-                                {label}
-                            </StepButton>
-                        </Step>
-                    ))}
-                </Stepper>
+            <Steps model={items} readOnly activeIndex={step} onSelect={(e) => setStep(e.index)} />
                 {pages[step]}
             </Box>
         </Box>

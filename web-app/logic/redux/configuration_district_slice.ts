@@ -1,11 +1,15 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import { DoctorInterface } from '../server/firestore/firestore'
 import assert from 'assert'
-import { getFromStorage, saveToStorage } from '../local_utilities'
+import { getFromStorage, saveToStorage, uniqueID } from '../local_utilities'
 
-interface Location {
-    name: string,
-    doctors_for_shift: number,
+export interface InfoLocation {
+    id: string
+    name: string
+    doctors_for_shift: number
+    /** Shift mapped with the weekdays in which it's applied */
+    shifts: DistrictShift[]
+    extra_shifts?: SingleDistrictShift[]
 }
 
 export type PricingPlan = 'GM_Base' | 'Contattaci'
@@ -21,6 +25,11 @@ export const InfoPricingPlan: Record<PricingPlan, any> = {
     }
 }
 
+export interface InfoRole {
+    label: string
+    priority: number
+}
+
 interface HoursShift {
     from: string
     to: string
@@ -31,126 +40,118 @@ export interface DistrictShift extends HoursShift {
 }
 
 export interface SingleDistrictShift extends HoursShift {
-    date_millis: number //* Milliseconds since epoch of day
+    /** Milliseconds since epoch of day */
+    date_millis: number
+    id_shift: string
 }
 
 /**
  * Used for both creating a district and getting from firestore
  */
 export interface DistrictState {
-    name: string,
-    locations: Location[],
-    shifts: DistrictShift[],
-    doctors: Record<string, DoctorInterface> //?
-    extraShifts?: SingleDistrictShift[]
-    pricingPlan: PricingPlan
+    id_district: string
+    name: string
+    locations: Record<string, InfoLocation>
     owners: string[]
-    roles: string[]
-    // modifiche?: Record<string, string> //* Ancora da definire
-}
-
-export interface ParamLocation {
-    index: number,
-    name: string,
-    doctors_for_shift: number,
+    doctors: Record<string, DoctorInterface> //?
+    pricingPlan: PricingPlan
+    roles: Record<string, InfoRole>
 }
 
 interface ParamModifyLocation {
-    index: number,
+    id: string,
     name?: string,
     doctors_for_shift?: number,
 }
 
 interface ParamSetExtraShift {
     shift: SingleDistrictShift
-    index?: number
+    locations: string[]
+    id: number
 }
 
 const initialStateDistrict: DistrictState = getFromStorage('district')
 
 const initialState: DistrictState = {
+    id_district: initialStateDistrict?.id_district ?? "",
     name: initialStateDistrict?.name ?? "",
     locations: initialStateDistrict?.locations ?? [],
     doctors: initialStateDistrict?.doctors ?? {},
-    shifts: initialStateDistrict?.shifts ?? [],
     roles: initialStateDistrict?.roles ?? [],
     pricingPlan: initialStateDistrict?.pricingPlan ?? 'GM_Base',
     owners: initialStateDistrict?.owners ?? []
-}
-
-const checkIndex = (lenLocations: number, index: number) => {
-    if(lenLocations - 1 < index) {
-        throw "Errore nel trovare la sede"
-    }
 }
 
 export const configuration_districts_slice = createSlice({
     name: 'configuration_districts',
     initialState: initialState,
     reducers: {
-        addLocationToDistrict: (state, action: PayloadAction<ParamLocation>) => {
-            if(state.locations.some(location => location.name === action.payload.name)) {
+        addLocationToDistrict: (state, action: PayloadAction<InfoLocation>) => {
+            if(Object.values(state.locations).some(location => location.name === action.payload.name)) {
                 throw "Nome già utilizzato" //TODO: Creare custom exception
             }
-            const newSede: Location = {
-                name: action.payload.name,
-                doctors_for_shift: action.payload.doctors_for_shift,
-            }
-            state.locations = [...state.locations, newSede]
+            const newLocation: InfoLocation = action.payload
+            state.locations = {...state.locations, [newLocation.id]: newLocation}
             saveToStorage('district', state)
         },
-        deleteLocationFromDistrict: (state, action: PayloadAction<number>) => {
-            const index = action.payload
-            state.locations = state.locations!.filter((v, i) => i !== index)
+        deleteLocationFromDistrict: (state, action: PayloadAction<string>) => {
+            /** Delete location */
+            const new_locations = (({ [action.payload]: _, ...o }) => o)(state.locations) // remove b and c
+            state.locations = new_locations
             saveToStorage('district', state)
         },
         changeNameLocation: (state, action: PayloadAction<ParamModifyLocation>) => {
             assert(action.payload.name !== undefined, "Name location not defined")
-            const index = action.payload.index
-            checkIndex(state.locations.length, index)
-            state.locations[index].name = action.payload.name
+            state.locations[action.payload.id].name = action.payload.name
             saveToStorage('district', state)
         },
         changeNumDoctorsForShiftInLocation: (state, action: PayloadAction<ParamModifyLocation>) => {
             assert(action.payload.doctors_for_shift !== undefined, "Doctors for shift of location not defined")
-            const index = action.payload.index
-            checkIndex(state.locations.length, index)
-            state.locations[index].doctors_for_shift = action.payload.doctors_for_shift
+            state.locations[action.payload.id].doctors_for_shift = action.payload.doctors_for_shift
             saveToStorage('district', state)
         },
         changeShiftDistrict: (state, action: PayloadAction<DistrictShift[]>) => {
             //const index = action.payload.index
             const newShifts = action.payload
             //checkIndex(state.sedi.length, index)
-            state.shifts = [...newShifts]
+            Object.values(state.locations).forEach((location) => {
+                location.shifts = newShifts
+            })
+            state.locations = {...state.locations}
             saveToStorage('district', state)
         },
         setExtraShift: (state, action: PayloadAction<ParamSetExtraShift>) => {
-            const turno = action.payload.shift
-            const index = action.payload.index
-            if (index) {
-                const newExtraTurni = [...state.extraShifts!]
-                newExtraTurni[index] = turno
-                state.extraShifts = [...newExtraTurni]
-            }
-            if (state.extraShifts) {
-                state.extraShifts = [...state.extraShifts, turno]
-            } else {
-                state.extraShifts = [turno]
+            const shift = action.payload.shift
+            for(const location of action.payload.locations) {
+                const newExtraTurni = [...state.locations[location].extra_shifts ?? []]
+                const index = state.locations[location].extra_shifts?.findIndex((v) => v.id_shift === action.payload.id.toString())
+                if (index !== -1 && index !== undefined) {
+                    /** We're modifying an existing shift */
+                    newExtraTurni[index] = shift
+                } else {
+                    /** We're adding a new shift */
+                    newExtraTurni.push(shift)
+                }
+                state.locations[location].extra_shifts = [...newExtraTurni]
             }
             saveToStorage('district', state)
         },
-        removeExtraShift: (state, action: PayloadAction<number>) => {
-            const index = action.payload
-            state.extraShifts = state.extraShifts!.filter((v, i) => i !== index)
+        removeExtraShift: (state, action: PayloadAction<string>) => {
+            for(const location of Object.keys(state.locations)) {
+                state.locations[location].extra_shifts = state.locations[location].extra_shifts?.filter((v) => v.id_shift === action.payload.toString())
+            }
             saveToStorage('district', state)
         },
         setNameDistrictSlice: (state, action: PayloadAction<string>) => {
             state.name = action.payload
             saveToStorage('district', state)
         },
-        setRolesDistrictSlice: (state, action: PayloadAction<string[]>) => {
-            state.roles = [...action.payload]
+        setRolesDistrictSlice: (state, action: PayloadAction<Record<string, {label: string, priority: number}>>) => {
+            state.roles = {...action.payload}
+            saveToStorage('district', state)
+        },
+        setIdDistrictSlice: (state, action: PayloadAction<string>) => {
+            state.id_district = action.payload
             saveToStorage('district', state)
         },
         setDoctorOfDistrictSlice: (state, action: PayloadAction<DoctorInterface>) => {
@@ -174,7 +175,7 @@ export const configuration_districts_slice = createSlice({
 
 // Action creators are generated for each case reducer function
 export const { addLocationToDistrict, deleteLocationFromDistrict, changeNameLocation, setRolesDistrictSlice,
-    changeShiftDistrict, setDoctorOfDistrictSlice, changeNumDoctorsForShiftInLocation,
+    changeShiftDistrict, setDoctorOfDistrictSlice, changeNumDoctorsForShiftInLocation, setIdDistrictSlice,
     removeDoctorFromDistrictSlice, setPricingPlan, setNameDistrictSlice } = configuration_districts_slice.actions
 
 export default configuration_districts_slice.reducer
