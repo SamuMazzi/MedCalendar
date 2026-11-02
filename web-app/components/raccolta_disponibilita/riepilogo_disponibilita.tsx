@@ -136,15 +136,16 @@ interface PropsElementSingleTurno {
 }
 
 const ElementSingleTurno = (props: PropsElementSingleTurno) => {
-    const disp_medico = [...props.stateTurni.disponibilita[props.turno]].sort()
-    const textDescription = disp_medico.map(disp => getGiornoSettimana(props.stateTurni.timestamp_mese!, disp) + ' ' + disp).join("\n")
+    // availability holds timestamps: show day of month
+    const disp_medico = props.stateTurni.availability[props.turno].map((t: number) => new Date(t).getDate()).sort((a: number, b: number) => a - b)
+    const textDescription = disp_medico.map((disp: number) => getGiornoSettimana(props.stateTurni.timestamp_month!, disp) + ' ' + disp).join("\n")
     return (
         <>
             <Grid item>
                 <TitleAndDescription title={"Turno " + props.turno} description={textDescription} pb={1} />
             </Grid>
             {
-                (props.index !== Object.keys(props.stateTurni.disponibilita).length - 1) &&
+                (props.index !== Object.keys(props.stateTurni.availability).length - 1) &&
                 <Grid item sx={{ px: 6, pb: 2 }} >
                     <Divider orientation='vertical' />
                 </Grid>

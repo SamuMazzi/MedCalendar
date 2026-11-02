@@ -41,7 +41,10 @@ export const setAvailabilityMonthDoctor = async (distretto: string, id: string, 
     const key_mese = getKeyMonth(new Date(info.timestamp_month!))
     const data: Record<string, any> = {}
     Object.keys(info.availability).forEach((shift) => {
-        info.availability[shift].forEach(day => data[day] = { [shift]: arrayUnion(id) })
+        info.availability[shift].forEach(timestamp => {
+            const day = new Date(timestamp).getDate()
+            data[day] = { ...(data[day] ?? {}), [shift]: arrayUnion(id) }
+        })
     })
     const futures = []
 
