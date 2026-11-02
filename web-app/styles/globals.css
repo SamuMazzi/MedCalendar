@@ -24,3 +24,10 @@ a {
   color: inherit;
   text-decoration: none;
 }
+
+/* Availability calendars: show only a round calendar button */
+.calendar-icon-only .p-datepicker-trigger {
+  border-radius: 999px !important;
+  width: 52px;
+  height: 52px;
+}

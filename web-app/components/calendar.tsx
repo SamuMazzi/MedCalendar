@@ -87,9 +87,10 @@ export function PersonalCalendar(props: PropsCalendar) {
         selectionMode='multiple'
         dateFormat='d'
         showIcon
+        className='calendar-icon-only'
         inputClassName='p-inputtext-sm'
-        inputStyle={{ width: 1 }}
-        style={{ width: '100%', borderRadius: 100, color: 'black' }}
+        inputStyle={{ width: 0, minWidth: 0, padding: 0, border: 0, opacity: 0 }}
+        style={{ color: 'black' }}
         /*renderInput={({
           ref,
           inputProps,

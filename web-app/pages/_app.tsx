@@ -11,6 +11,7 @@ import "@fontsource/public-sans/700.css";
 import "@fontsource/public-sans/400.css";
 import "@fontsource/public-sans/300.css";
 import Head from 'next/head'
+import Box from '@mui/material/Box'
 import Footer from '../components/general/footer'
 import AppSnackbar from '../components/snackbar/app_snackbar'
 import { MedAppBar } from '../components/general/app_bar'
@@ -291,9 +292,13 @@ export default function App({ Component, pageProps }: AppProps) {
       <ThemeProvider theme={theme}>
         <Provider store={store}>
           <RouteGuard>
-            <MedAppBar />
-            <Component {...pageProps} />
-            <Footer/>
+            <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+              <MedAppBar />
+              <Box component="main" sx={{ flex: 1 }}>
+                <Component {...pageProps} />
+              </Box>
+              <Footer/>
+            </Box>
             <AppSnackbar />
           </RouteGuard>
         </Provider>
