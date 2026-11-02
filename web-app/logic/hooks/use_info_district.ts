@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react"
 import { AppFirebaseError } from "../server/firebase"
 import { getConfigurationDistrict, InfoRemoteDistrict } from "../server/firestore/districts"
-import { getFromStorage } from "../local_utilities"
 
 export default function useInfoDistrict(distretto: string | undefined): [InfoRemoteDistrict | undefined, string, boolean] {
     const [loading, setLoading] = useState(true)
@@ -14,12 +13,7 @@ export default function useInfoDistrict(distretto: string | undefined): [InfoRem
                 setError("Nessuna sede trovata")
                 return
             }
-            if (getFromStorage("district") !== null) {
-                setInfoDistrict(getFromStorage("district"))
-                setLoading(false)
-                setError("")
-                return
-            }
+            // 'district' in storage is the registration draft (DistrictState), not the remote info: always fetch
             
             const data = await getConfigurationDistrict(distretto)
             if (data === undefined) {
