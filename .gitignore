@@ -2,3 +2,17 @@ web-app/.env
 ./venv
 .idea
 .vercel
+
+# Real personal data (doctors' names, e-mails, schedules) must never be committed
+*.xlsx
+*.csv
+web-app/cypress/e2e/Tests/backup.json
+web-app/privateAssets/
+API/test/aa.json
+API/test/aab.json
+API/test/test_data.json
+API/test/mock_medici.py
+API/test/Schermata*
+*firebase-debug.log
+__pycache__/
+*.pyc
