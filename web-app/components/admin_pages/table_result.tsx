@@ -6,6 +6,7 @@ import TableRow from '@mui/material/TableRow'
 import TableCell from '@mui/material/TableCell'
 import TableBody from '@mui/material/TableBody'
 import Modal from '@mui/material/Modal'
+import Fade from '@mui/material/Fade'
 import Box from '@mui/material/Box'
 import List from '@mui/material/List'
 import ListItem from '@mui/material/ListItem'
@@ -209,9 +210,11 @@ export default function TableResult(props: PropsTableResult) {
             </TableBody>
           </Table>
           <Modal
+            closeAfterTransition
             open={openModal}
             onClose={() => setOpenModal(false)}
           >
+              <Fade in={openModal} timeout={200}>
               <Box sx={styleModal}>
               <Typography variant="h6" component="h6" style={{fontWeight: 'bold'}}>
                   Cambio turno
@@ -250,6 +253,7 @@ export default function TableResult(props: PropsTableResult) {
                   }
               </List>
               </Box>
+              </Fade>
           </Modal>
         </TableContainer>
     )
