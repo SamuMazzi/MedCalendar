@@ -13,7 +13,7 @@ function isInstanceOfAuthError(error: any): error is AuthError {
 
 export const fbAuth = getAuth(firebaseApp);
 if(process.env.NODE_ENV === 'test') {
-    connectAuthEmulator(fbAuth, 'localhost:9099');
+    connectAuthEmulator(fbAuth, 'http://127.0.0.1:9099');
 }
 
 export const sendSignInEmailWithLink = async (email: string) => {

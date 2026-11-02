@@ -47,7 +47,7 @@ def get_all_medici_disp_per_turno(sedi: list[Any], turno: datetime.datetime):
 
     for sede in sedi:
         medici_gia_assegnati = sede.get_medici_occupati_per_turno(turno)
-        n_medici_necessari = sede.medici_per_turno - len(medici_gia_assegnati)
+        n_medici_necessari = sede.doctors_for_shift - len(medici_gia_assegnati)
         medici_disp_per_turno = copy_list(sede.get_medici_disp_per_turno(turno))
 
         # TODO Forse deve essere >= dei medici necessari (Occhio logica a "più strati")

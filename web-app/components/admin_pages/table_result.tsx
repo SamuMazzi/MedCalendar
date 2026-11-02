@@ -42,7 +42,7 @@ interface PropsTableCellMedici {
 function TableCellMedici(props: PropsTableCellMedici) {
   const getInfoTextMedico = (medico: any | undefined) => {
     if (medico === undefined) return ""
-    let out = medico.nome
+    let out = medico.name
     if (props.dettagli) {
       out += "\nTurni rimanenti: " + medico.n_turni_per_soddisfatto
     }

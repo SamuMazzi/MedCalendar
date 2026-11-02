@@ -143,8 +143,14 @@ def create_solution_response(sol: Soluzione):
 
     for med in Storage.original_all_medici:
         uid_med = med.uid
-        tmp_dict = {k: v for k, v in med.__dict__.items() if k != 'uid'}
-        tmp_dict['availability'] = [turno.strftime(format_turno) for turno in tmp_dict['availability']]
+        tmp_dict = {
+            'name': med.nome,
+            'role': med.ruolo,
+            'locations': med.sedi,
+            'n_turni_per_soddisfatto': med.n_turni_per_soddisfatto,
+            'n_shifts_max': med.n_shifts_max,
+            'availability': [turno.strftime(format_turno) for turno in med.disponibilita],
+        }
         data_out['doctors'][uid_med] = tmp_dict
 
     return jsonpickle.encode(data_out, unpicklable=False)

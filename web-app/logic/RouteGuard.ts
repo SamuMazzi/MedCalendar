@@ -45,14 +45,7 @@ export function RouteGuard(props: PropsRouteGuard) {
                 pathname: Routes.CompleteRegistration,
                 query: { returnUrl: router.asPath }
             })
-        } else if (distretto === undefined && !publicPaths.some((el) => path.includes(el))) {
-            logout()
-            setAuthorized(false)
-            router.push({
-                pathname: Routes.Login,
-                query: { returnUrl: router.asPath }
-            })
-        } else if (!publicPaths.some((el) => path.includes(el))) {
+        } else if (fbUser === null && !publicPaths.some((el) => path.includes(el))) {
             if (user.uid.length > 0) {
                 logout() //legacy -> if user was logged in standard way, so only locale, without signInAnonym, logout so everything is cleared
             }
@@ -61,8 +54,7 @@ export function RouteGuard(props: PropsRouteGuard) {
                 pathname: Routes.Login,
                 query: { returnUrl: router.asPath }
             })
-            //* condizione sui distretti deve ancora essere testata
-        } else if (path.includes('_admin')) { //* (distretto && authState.distretti.includes(distretto)) 
+        } else if (path.includes('_admin') && !(distretto && user.ownedDistricts.includes(distretto))) {
             setAuthorized(false);
             router.back()
         } else {

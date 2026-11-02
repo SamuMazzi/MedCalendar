@@ -135,16 +135,21 @@ export const uploadConfigurationDistrict = async (district: DistrictState, uid: 
     const districtRef = doc(firestore, firestore_distrettiCollectionKey, district.name)
     await setDoc(districtRef, {
         admins: [uid],
+        owners: [uid],
+        name: district.name,
+        locations: district.locations.map((l) => l.name),
+        doctors: Object.keys(district.doctors),
+        roles: Object.fromEntries(district.roles.map((r) => [r, r])),
         [firestore_lastTimeModifyInfoDoctorsKey]: Timestamp.now() 
     })
     // infoDistrict maybe?
     const infoLocations: Record<string, any> = {
-        sedi: {},
+        locations: {},
         special_days: [],
-        turni: {}
+        shifts: {}
     }
     for(const location of district.locations) {
-        infoLocations['locations'][location.name] = { medici_per_turno: location.doctors_for_shift }
+        infoLocations['locations'][location.name] = { doctors_for_shift: location.doctors_for_shift }
     }
     if(district.extraShifts) {
         //TODO: Check che timestamp non modifichi con fuso orario
@@ -161,4 +166,6 @@ export const uploadConfigurationDistrict = async (district: DistrictState, uid: 
         const doc = district.doctors[id_doc]
         infoMedici[id_doc] = doc
     }
+    await setDoc(doc(firestore, districtRef.path, firestore_infoCollectionKey, firestore_infoMediciKey), infoMedici)
+    await setDoc(doc(firestore, districtRef.path, firestore_infoCollectionKey, firestore_listaMediciKey), { list: Object.keys(infoMedici) })
 }

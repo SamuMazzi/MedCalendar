@@ -75,6 +75,11 @@ export const authSlice = createSlice({
       state.name = action.payload
       saveToStorage('user', state)
     },
+    setDistricts: (state, action: PayloadAction<{ districts: string[], ownedDistricts: string[] }>) => {
+      state.districts = action.payload.districts
+      state.ownedDistricts = action.payload.ownedDistricts
+      saveToStorage('user', state)
+    },
     setSelectedDistrict: (state, action: PayloadAction<string>) => {
       state.selectedDistrict = action.payload
       saveToStorage('user', state)
@@ -92,6 +97,6 @@ export const authSlice = createSlice({
 })
 
 // Action creators are generated for each case reducer function
-export const { setUser, setNameUserLocal, clearUserInfo, setSelectedDistrict } = authSlice.actions
+export const { setUser, setNameUserLocal, clearUserInfo, setSelectedDistrict, setDistricts } = authSlice.actions
 
 export default authSlice.reducer

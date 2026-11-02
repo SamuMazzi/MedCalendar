@@ -69,7 +69,7 @@ class LocationsSchema(Schema):
 
 
 class DoctorsSchema(Schema):
-    id = fields.Int(strict=True)
+    id = fields.Str()
     name = fields.Str()
     role = fields.Str()
     availability = fields.Dict(fields.Str(), fields.List(fields.Int()))
@@ -87,8 +87,8 @@ class DoctorsSchema(Schema):
 
 
 class DataRequestSchema(Schema):
-    year = fields.Int(strict=True, validates=validate.Range(min=2023))
-    month = fields.Int(strict=True, validates=validate.Range(min=0, max=11))  # Because months are 0-indexed in Javascript
+    year = fields.Int(strict=True, validate=validate.Range(min=2023))
+    month = fields.Int(strict=True, validate=validate.Range(min=0, max=11))  # Because months are 0-indexed in Javascript
     locations = fields.Nested(LocationsSchema, many=True)
     doctors = fields.Nested(DoctorsSchema, many=True)
 

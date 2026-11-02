@@ -1,3 +1,4 @@
+import { getAllDoctorsServer } from "../logic/server/firestore/firestore";
 import React from "react";
 import { useEffect, useState } from "react";
 import Typography from "@mui/material/Typography";
@@ -85,6 +86,16 @@ function DoctorItem(props: PropsDoctorItem) {
 
 export default function ContainerEditDoctors() {
     const doctors = useAppSelector(state => state.configurationDistr.doctors)
+    const district = useAppSelector(state => state.auth.selectedDistrict)
+    const dispatch = useAppDispatch()
+
+    useEffect(() => {
+        if (!district) return
+        getAllDoctorsServer(district).then(all =>
+            Object.values(all).forEach(doc => dispatch(setDoctorOfDistrictSlice(doc)))
+        )
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [district])
 
     return <List
         sx={{ bgcolor: 'background.paper', px: "15%" }}

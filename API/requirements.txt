@@ -2,3 +2,4 @@ flask
 jsonpickle
 openpyxl
 functions-framework
+marshmallow

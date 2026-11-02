@@ -68,13 +68,13 @@ def init_storage(data):
     reset_storage()
     sedi = []
     total_calendar_turni = []
-    for sede in data['sedi']:
-        calendar_sede = create_calendar_turni_from_data(data['year'], data['month'], sede['fasce_turno'])
-        s = Sede(sede['nome'], sede['medici_per_turno'], calendar_sede)
+    for sede in data['locations']:
+        calendar_sede = create_calendar_turni_from_data(data['year'], data['month'], sede['shifts'])
+        s = Sede(sede['name'], sede['doctors_for_shift'], calendar_sede)
         sedi.append(s)
         total_calendar_turni.extend([turno for turno in calendar_sede if turno not in total_calendar_turni])
-    if isinstance(data['medici'][0], Doctor):  # debug
-        all_medici = data['medici']
+    if isinstance(data['doctors'][0], Doctor):  # debug
+        all_medici = data['doctors']
     else:
         all_medici = [Doctor(info['id'], info['nome'], info['ruolo'], translate_turni(info['disponibilita'], data['year'], data['month']), info['sedi']) for info in data['medici']]
     Storage.calendar_turni = list(set(list(total_calendar_turni)))  # Lista con tutti i turni, ripetuti solo una volta

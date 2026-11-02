@@ -4,7 +4,8 @@ import Head from 'next/head';
 import React, { useEffect } from 'react';
 import Box from '@mui/material/Box';
 import CircularProgress from '@mui/material/CircularProgress';
-import { setUser } from '../logic/redux/auth_slice';
+import { setDistricts, setUser } from '../logic/redux/auth_slice';
+import { fetchDistrictsOwnedByUser, getDistrettiForMedico } from '../logic/server/firestore/districts';
 import { signInUserWithEmailLink } from '../logic/server/auth';
 import { useRouter } from 'next/router';
 import { fetchUserOnLogin } from '../logic/server/firestore/doctors';
@@ -40,6 +41,8 @@ export default function SignInConfirmation() {
         await signInUserWithEmailLink(email, window.location.href)
         const dataDoctor = await fetchUserOnLogin(email)
         dispatch(setUser({ uid: email, data: dataDoctor}))
+        const [districts, ownedDistricts] = await Promise.all([getDistrettiForMedico(email), fetchDistrictsOwnedByUser(email)])
+        dispatch(setDistricts({ districts: districts ?? [], ownedDistricts: ownedDistricts ?? [] }))
         /* if (returnUrl && !returnUrl.includes('login') && !returnUrl.includes('_admin')) {
             router.replace(Array.isArray(returnUrl) ? returnUrl.at(0)! : returnUrl)
         } else {

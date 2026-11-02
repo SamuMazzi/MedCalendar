@@ -68,6 +68,7 @@ export default function Home() {
                     <ArrowBackRoundedIcon />
                   </IconButton>
                 </Grid>
+                <ChoicesHomeDiv />
               </Grid>
             </Box>
           </Slide>
@@ -103,7 +104,7 @@ function ChoicesHomeDiv() {
         <Grid item>
           <Grid container direction="row" justifyContent="center">
             <ChoiceButton label="Aggiungi turni speciali" path='/configuration_turni_admin' />
-            <ChoiceButton label="Pianifica turni per mese" path='/pianificazione_turni_admin' />
+            <ChoiceButton label="Pianifica turni per mese" path='/scheduling_shifts_admin' />
             <ChoiceButton label="Modifica medici distretto" path='/modify_doctors_admin' />
           </Grid>
         </Grid>
