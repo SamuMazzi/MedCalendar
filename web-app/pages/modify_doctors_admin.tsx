@@ -214,7 +214,7 @@ export function FormSingleDoctor(props: PropsFormSingleDoctor) {
                         <NewListDropdown
                             label="Sedi"
                             value={doctor.locations}
-                            inputList={locations.map((s) => s.name)}
+                            inputList={infoDistrict?.locations ?? locations.map((s) => s.name)}
                             multiple
                             onChangeFn={(event) => setDoctor({
                                 ...doctor,

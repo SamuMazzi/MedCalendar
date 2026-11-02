@@ -14,6 +14,36 @@ export const mesi: MesiType = [
     'Dicembre'
 ]
 
+/** Human-readable labels for the role ids used by the scheduler */
+export const ROLE_LABELS: Record<string, string> = {
+    titolare24: 'Titolare 24h',
+    titolare36: 'Titolare 36h',
+    convenzionato24: 'Convenzionato 24h',
+    incaricato24: 'Incaricato 24h',
+    incaricato12: 'Incaricato 12h',
+    sostituto: 'Sostituto',
+}
+
+export const getRoleLabel = (role: string) => ROLE_LABELS[role.toLowerCase()] ?? role
+
+const ROLE_COLORS: Record<string, string> = {
+    titolare24: '#64B5F6',
+    titolare36: '#1E88E5',
+    convenzionato24: '#9575CD',
+    incaricato24: '#66BB6A',
+    incaricato12: '#AED581',
+    sostituto: '#FFB74D',
+}
+
+/** Same colour for a role everywhere (legend, table, change-shift dialog) */
+export const getColorRole = (role: string) => {
+    const key = role.toLowerCase()
+    if (ROLE_COLORS[key]) return ROLE_COLORS[key]
+    let hash = 0
+    for (const c of key) hash = (hash * 31 + c.charCodeAt(0)) % 360
+    return `hsl(${hash},58%,65%)`
+}
+
 export function generateColorRole(number: number){
     const hue = number * 137.508; // use golden angle approximation
     return `hsl(${hue},58%,75%)`;

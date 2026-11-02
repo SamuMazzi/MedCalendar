@@ -1,5 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-import { getFromStorage, saveToStorage } from '../local_utilities';
+import { getFromStorage, getRoleLabel, saveToStorage } from '../local_utilities';
 import { DoctorInterface } from '../server/firestore/firestore';
 
 export interface StateAuth {
@@ -25,15 +25,7 @@ export interface ParamSetUser {
  * @param user User with that role
  * @returns 
  */
-export const getGoodRole = (user: StateAuth) => {
-  const role = user.role.toLowerCase()
-  if(role.startsWith('titolare')) {
-    return 'Titolare'
-  } else if (role.startsWith('incaricato')) {
-    return 'Incaricato Temporaneo'
-  } 
-  return user.role
-}
+export const getGoodRole = (user: StateAuth) => getRoleLabel(user.role)
 
 const initialUser: StateAuth = getFromStorage('user');
 

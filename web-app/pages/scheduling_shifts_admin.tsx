@@ -17,7 +17,7 @@ import { AppFirebaseError } from '../logic/server/firebase'
 import { SelectMeseCalendar } from '../components/calendar'
 import { getDisponibilitaMeseDistretto } from '../logic/server/firestore/firestore'
 import useInfoDistrict from '../logic/hooks/use_info_district'
-import { generateColorRole } from '../logic/local_utilities'
+import { getColorRole, getRoleLabel } from '../logic/local_utilities'
 
 interface PropsTitleOfPage {
   title: string,
@@ -58,7 +58,7 @@ function InfoTable(props: PropsInfoTable) {
               <Grid item key={role} sx={{ mt: 1 }}>
                 <Grid container direction="row" alignItems="center">
                   <CircleIcon style={{ color: props.colorsRoles[role] }} sx={{ mr: 1 }} />
-                  <Typography>{role}</Typography>
+                  <Typography>{getRoleLabel(role)}</Typography>
                 </Grid>
               </Grid>
             )
@@ -100,7 +100,7 @@ export default function PianificazioneTurniPage() {
   const colorsRoles: Record<string, string> = {}
   if(infoDistrict) {
     Object.keys(infoDistrict.roles).forEach((role, index) => {
-      colorsRoles[role] = generateColorRole(index)
+      colorsRoles[role] = getColorRole(role)
     })
   }
 

@@ -17,15 +17,11 @@ import Button from '@mui/material/Button'
 import { useState } from 'react'
 import { useAppDispatch, useAppSelector } from '../../logic/redux/store'
 import { getAllShifts, InfoDoctor, SchedulerState, swapMediciInTurno } from '../../logic/redux/scheduler_slice'
-import { getGiornoSettimana } from '../../logic/local_utilities'
+import { getColorRole, getGiornoSettimana } from '../../logic/local_utilities'
 import ListItemIcon from '@mui/material/ListItemIcon'
 import WarningAmberRoundedIcon from '@mui/icons-material/WarningAmberRounded';
 import Tooltip from '@mui/material/Tooltip'
 
-const getColorRole = (ruolo: string) => {
-  const lower_ruolo = ruolo.toLowerCase()
-  return lower_ruolo.startsWith("inc") ? "#77BA84" : (lower_ruolo.startsWith("conven") || lower_ruolo.startsWith("titol")) ? "#b1f4ff" : "#ffd07d"
-}
 
 interface PropsTableResult {
   dettagli: boolean
